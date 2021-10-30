@@ -5,4 +5,4 @@ project(lajolla)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
-add_executable(lajolla main.cpp image.cpp)
+add_executable(lajolla main.cpp camera.cpp image.cpp transform.cpp)

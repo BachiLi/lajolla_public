@@ -1,6 +1,7 @@
 #pragma once
 
 #include "lajolla.h"
+#include <cmath>
 
 template <typename T>
 struct TVector2 {
@@ -77,3 +78,34 @@ using Vector3 = TVector3<Real>;
 using Vector4f = TVector4<float>;
 using Vector4d = TVector4<double>;
 using Vector4 = TVector4<Real>;
+
+template <typename T>
+inline TVector3<T> operator/(const TVector3<T> &v, T s) {
+    T inv_s = T(1) / s;
+    return TVector3<T>(v[0] * inv_s, v[1] * inv_s, v[2] * inv_s);
+}
+
+template <typename T>
+inline T dot(const TVector3<T> &v0, const TVector3<T> &v1) {
+    return v0[0] * v1[0] + v0[1] * v1[1] + v0[2] * v1[2];
+}
+
+template <typename T>
+inline T length_squared(const TVector3<T> &v) {
+    return dot(v, v);
+}
+
+template <typename T>
+inline T length(const TVector3<T> &v) {
+    return sqrt(length_squared(v));
+}
+
+template <typename T>
+inline TVector3<T> normalize(const TVector3<T> &v0) {
+    auto l = length(v0);
+    if (l <= 0) {
+        return TVector3<T>{0, 0, 0};
+    } else {
+        return v0 / l;
+    }
+}
