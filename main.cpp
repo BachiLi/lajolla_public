@@ -2,10 +2,13 @@
 #include "image.h"
 #include "ray.h"
 #include "vector.h"
+#include <embree3/rtcore.h>
 
 #include <vector>
 
 int main(int argc, char *argv[]) {
+	RTCDevice embree_device = rtcNewDevice(nullptr);
+
 	int w = 256, h = 256;
 	Image3 img(w, h);
 	Camera cam(Matrix4x4::identity(),
@@ -18,5 +21,6 @@ int main(int argc, char *argv[]) {
 		}
 	}
 	imwrite("out.pfm", img);
+	rtcReleaseDevice(embree_device);
 	return 0;
 }

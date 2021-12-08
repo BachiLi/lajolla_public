@@ -33,3 +33,9 @@
 
 # CMake
 build/
+
+# Embree binaries
+!embree/bin/*
+!embree/lib-linux/*
+!embree/lib-macos/*
+!embree/lib-win32/*
