@@ -13,9 +13,8 @@ int main(int argc, char *argv[]) {
     Camera camera(translate(Vector3{0, 0, -3}),
                   Real(45),
                   w, h);
-    std::vector<std::shared_ptr<const Shape>> shapes;
-    shapes.emplace_back(
-        std::make_shared<const Sphere>(Vector3{0, 0, 0} /* position */, Real(1) /* radius */));
+    std::vector<Shape> shapes;
+    shapes.push_back(Sphere{Vector3{0, 0, 0} /* position */, Real(1) /* radius */});
     Scene scene{embree_device, camera, shapes};
     std::shared_ptr<Image3> img = render(scene);
     imwrite("out.pfm", *img);

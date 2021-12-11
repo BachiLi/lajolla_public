@@ -136,11 +136,11 @@ void sphere_occluded_func(const RTCOccludedFunctionNArguments* args) {
     }
 }
 
-uint32_t Sphere::register_embree(const RTCDevice &device, const RTCScene &scene) const {
+uint32_t register_embree::operator()(const Sphere &sphere) const {
     RTCGeometry rtc_geom = rtcNewGeometry(device, RTC_GEOMETRY_TYPE_USER);
     uint32_t geomID = rtcAttachGeometry(scene, rtc_geom);
     rtcSetGeometryUserPrimitiveCount(rtc_geom, 1);
-    rtcSetGeometryUserData(rtc_geom, (void *)this);
+    rtcSetGeometryUserData(rtc_geom, (void *)&sphere);
     rtcSetGeometryBoundsFunction(rtc_geom, sphere_bounds_func, nullptr);
     rtcSetGeometryIntersectFunction(rtc_geom, sphere_intersect_func);
     rtcSetGeometryOccludedFunction(rtc_geom, sphere_occluded_func);
