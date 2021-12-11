@@ -90,6 +90,11 @@ inline TVector3<T> operator-(const TVector3<T> &v0, const TVector3<T> &v1) {
 }
 
 template <typename T>
+inline TVector3<T> operator-(const TVector3<T> &v) {
+    return TVector3<T>(-v.x, -v.y, -v.z);
+}
+
+template <typename T>
 inline TVector3<T> operator*(const T &s, const TVector3<T> &v) {
     return TVector3<T>(s * v[0], s * v[1], s * v[2]);
 }

@@ -1,5 +1,6 @@
 #include "render.h"
 #include "intersection.h"
+#include "material.h"
 #include "scene.h"
 
 std::shared_ptr<Image3> render(const Scene &scene) {
@@ -13,7 +14,10 @@ std::shared_ptr<Image3> render(const Scene &scene) {
             if (intersect(scene, ray, &isect)) {
                 Vector3 geometry_normal{isect.geometry_normal.x, isect.geometry_normal.y, isect.geometry_normal.z};
                 geometry_normal = normalize(geometry_normal);
-                img(x, y) = geometry_normal + Vector3{1, 1, 1};
+                auto f = eval_material{-ray.dir /* w_light */, -ray.dir /* w_view */,
+                                       geometry_normal};
+                assert(isect.material != nullptr);
+                img(x, y) = std::visit(f, *isect.material);
             } else {
                 img(x, y) = Vector3(0, 0, 0);
             }

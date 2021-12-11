@@ -15,6 +15,7 @@ set(SRCS camera.h
          image.h
          intersection.h
          lajolla.h
+         material.h
          matrix.h
          ray.h
          render.h
@@ -26,6 +27,7 @@ set(SRCS camera.h
          image.cpp
          intersection.cpp
          main.cpp
+         material.cpp
          render.cpp
          scene.cpp
          shape.cpp

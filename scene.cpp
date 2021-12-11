@@ -2,8 +2,9 @@
 
 Scene::Scene(const RTCDevice &embree_device,
              const Camera &camera,
+             const std::vector<Material> &materials,
              const std::vector<Shape> &shapes) : 
-        embree_device(embree_device), camera(camera), shapes(shapes) {
+        embree_device(embree_device), camera(camera), materials(materials), shapes(shapes) {
     embree_scene = rtcNewScene(embree_device);
     // We don't care about build time.
     rtcSetSceneBuildQuality(embree_scene, RTC_BUILD_QUALITY_HIGH);

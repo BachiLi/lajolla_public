@@ -1,5 +1,6 @@
 #include "camera.h"
 #include "render.h"
+#include "material.h"
 #include "scene.h"
 #include "shape.h"
 #include "transform.h"
@@ -13,9 +14,11 @@ int main(int argc, char *argv[]) {
     Camera camera(translate(Vector3{0, 0, -3}),
                   Real(45),
                   w, h);
+    std::vector<Material> materials;
+    materials.push_back(Lambertian{Vector3{0.3, 0.6, 0.3}});
     std::vector<Shape> shapes;
-    shapes.push_back(Sphere{Vector3{0, 0, 0} /* position */, Real(1) /* radius */});
-    Scene scene{embree_device, camera, shapes};
+    shapes.push_back(Sphere{0 /* material ID */, Vector3{0, 0, 0} /* position */, Real(1) /* radius */});
+    Scene scene{embree_device, camera, materials, shapes};
     std::shared_ptr<Image3> img = render(scene);
     imwrite("out.pfm", *img);
     rtcReleaseDevice(embree_device);
