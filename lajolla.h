@@ -1,5 +1,10 @@
 #pragma once
 
+#include <cassert>
+#include <cstdint>
+#include <iostream>
+#include <limits>
+
 // We use double for most of our computation.
 // Rendering is usually done in single precision Reals.
 // However, lajolla is a educational renderer with does not
@@ -19,3 +24,8 @@ const Real c_FOURPI = Real(4.0) * c_PI;
 const Real c_INVFOURPI = Real(1.0) / c_FOURPI;
 const Real c_PIOVERTWO = Real(0.5) * c_PI;
 const Real c_PIOVERFOUR = Real(0.25) * c_PI;
+
+template <typename T>
+inline T infinity() {
+    return std::numeric_limits<T>::infinity();
+}

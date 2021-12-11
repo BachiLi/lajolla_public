@@ -11,4 +11,24 @@ find_package(Embree REQUIRED)
 include_directories(${EMBREE_INCLUDE_PATH})
 link_libraries(${EMBREE_LIBRARY})
 
-add_executable(lajolla main.cpp camera.cpp image.cpp transform.cpp)
+set(SRCS camera.h
+         image.h
+         intersection.h
+         lajolla.h
+         matrix.h
+         ray.h
+         render.h
+         scene.h
+         shape.h
+         transform.h
+         vector.h
+         camera.cpp
+         image.cpp
+         intersection.cpp
+         main.cpp
+         render.cpp
+         scene.cpp
+         shape.cpp
+         transform.cpp)
+
+add_executable(lajolla ${SRCS})

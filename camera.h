@@ -13,6 +13,7 @@ struct Camera {
 
     Matrix4x4 sample_to_cam, cam_to_sample;
     Matrix4x4 cam_to_world, world_to_cam;
+    int width, height;
 };
 
 /// Given screen position in [0, 1] x [0, 1],

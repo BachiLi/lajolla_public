@@ -80,7 +80,27 @@ using Vector4d = TVector4<double>;
 using Vector4 = TVector4<Real>;
 
 template <typename T>
-inline TVector3<T> operator/(const TVector3<T> &v, T s) {
+inline TVector3<T> operator+(const TVector3<T> &v0, const TVector3<T> &v1) {
+    return TVector3<T>(v0.x + v1.x, v0.y + v1.y, v0.z + v1.z);
+}
+
+template <typename T>
+inline TVector3<T> operator-(const TVector3<T> &v0, const TVector3<T> &v1) {
+    return TVector3<T>(v0.x - v1.x, v0.y - v1.y, v0.z - v1.z);
+}
+
+template <typename T>
+inline TVector3<T> operator*(const T &s, const TVector3<T> &v) {
+    return TVector3<T>(s * v[0], s * v[1], s * v[2]);
+}
+
+template <typename T>
+inline TVector3<T> operator*(const TVector3<T> &v, const T &s) {
+    return TVector3<T>(v[0] * s, v[1] * s, v[2] * s);
+}
+
+template <typename T>
+inline TVector3<T> operator/(const TVector3<T> &v, const T &s) {
     T inv_s = T(1) / s;
     return TVector3<T>(v[0] * inv_s, v[1] * inv_s, v[2] * inv_s);
 }
@@ -108,4 +128,14 @@ inline TVector3<T> normalize(const TVector3<T> &v0) {
     } else {
         return v0 / l;
     }
+}
+
+template <typename T>
+inline std::ostream& operator<<(std::ostream &os, const TVector2<T> &v) {
+    return os << "(" << v[0] << ", " << v[1] << ")";
+}
+
+template <typename T>
+inline std::ostream& operator<<(std::ostream &os, const TVector3<T> &v) {
+    return os << "(" << v[0] << ", " << v[1] << ", " << v[2] << ")";
 }
