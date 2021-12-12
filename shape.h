@@ -19,16 +19,22 @@ struct Sphere : public ShapeBase {
     Real radius;
 };
 
-// To add more shapes, first create a struct for the shape, then overload the () operators for all the
-// functors below.
+struct TriangleMesh : public ShapeBase {
+
+};
+
+// To add more shapes, first create a struct for the shape, then implement all the relevant functions below.
 using Shape = std::variant<Sphere>;
 
-struct ShapeSample {
+struct ShapeSampleRecord {
     Vector3 position;
     Vector3 geometry_normal;
 };
 
 /// Add the shape to an Embree scene.
 uint32_t register_embree(const Shape &shape, const RTCDevice &device, const RTCScene &scene);
-ShapeSample sample_point_on_shape(const Shape &shape, const Vector2 &sample);
+/// Sample a point on the surface
+ShapeSampleRecord sample_point_on_shape(const Shape &shape, const Vector2 &uv);
+/// PDF of the operation above
+Real pdf_point_on_shape(const Shape &shape, const Vector2 &uv);
 Real surface_area(const Shape &shape);

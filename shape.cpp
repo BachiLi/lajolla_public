@@ -157,20 +157,20 @@ uint32_t register_embree_op::operator()(const Sphere &sphere) const {
 }
 
 struct sample_point_on_shape_op {
-    ShapeSample operator()(const Sphere &sphere) const;
+    ShapeSampleRecord operator()(const Sphere &sphere) const;
 
-    Vector2 sample;
+    const Vector2 &uv;
 };
 
-ShapeSample sample_point_on_shape_op::operator()(const Sphere &sphere) const {
+ShapeSampleRecord sample_point_on_shape_op::operator()(const Sphere &sphere) const {
     // https://www.pbr-book.org/3ed-2018/Monte_Carlo_Integration/2D_Sampling_with_Multidimensional_Transformations#UniformSampleSphere
-    Real z = 1 - 2 * sample.x;
+    Real z = 1 - 2 * uv.x;
     Real r = sqrt(fmax(Real(0), 1 - z * z));
-    Real phi = 2 * c_PI * sample.y;
+    Real phi = 2 * c_PI * uv.y;
     Vector3 offset(r * cos(phi), r * sin(phi), z);
     Vector3 position = sphere.position + sphere.radius * offset;
     Vector3 normal = offset;
-    return ShapeSample{position, normal};
+    return ShapeSampleRecord{position, normal};
 }
 
 struct surface_area_op {
@@ -181,12 +181,26 @@ Real surface_area_op::operator()(const Sphere &sphere) const {
     return 4 * c_PI * sphere.radius * sphere.radius;
 }
 
+struct pdf_point_on_shape_op {
+    Real operator()(const Sphere &sphere) const;
+
+    const Vector2 &uv;
+};
+
+Real pdf_point_on_shape_op::operator()(const Sphere &sphere) const {
+    return 1 / surface_area_op{}(sphere);
+}
+
 uint32_t register_embree(const Shape &shape, const RTCDevice &device, const RTCScene &scene) {
     return std::visit(register_embree_op{device, scene}, shape);
 }
 
-ShapeSample sample_point_on_shape(const Shape &shape, const Vector2 &sample) {
-    return std::visit(sample_point_on_shape_op{sample}, shape);
+ShapeSampleRecord sample_point_on_shape(const Shape &shape, const Vector2 &uv) {
+    return std::visit(sample_point_on_shape_op{uv}, shape);
+}
+
+Real pdf_point_on_shape(const Shape &shape, const Vector2 &uv) {
+    return std::visit(pdf_point_on_shape_op{uv}, shape);
 }
 
 Real surface_area(const Shape &shape) {

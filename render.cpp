@@ -22,16 +22,16 @@ std::shared_ptr<Image3> render(const Scene &scene) {
                     Real light_w = next_pcg32_real<Real>(rng);
                     int light_id = sample_light(scene, light_w);
                     const Light &light = scene.lights[light_id];
-                    LightSample ls = sample_point_on_light(light, light_uv, scene);
-                    const ShapeSample &ss = ls.shape_sample;
-                    Vector3 dir_light = normalize(ss.position - isect.position);
+                    LightSampleRecord lr = sample_point_on_light(light, light_uv, scene);
+                    const ShapeSampleRecord &sr = lr.shape_sample_rec;
+                    Vector3 dir_light = normalize(sr.position - isect.position);
                     Vector3 dir_view = -ray.dir;
-                    Real geometry_term = fmax(-dot(dir_light, ss.geometry_normal), Real(0)) /
-                        distance_squared(ss.position, isect.position);
-                    Real light_pdf = light_pmf(scene, light_id) * pdf_point_on_light(light, scene);
+                    Real geometry_term = fmax(-dot(dir_light, sr.geometry_normal), Real(0)) /
+                        distance_squared(sr.position, isect.position);
+                    Real light_pdf = light_pmf(scene, light_id) * pdf_point_on_light(light, lr, scene);
                     assert(isect.material != nullptr);
                     Spectrum brdf = eval(*isect.material, dir_light, dir_view, isect);
-                    radiance += (ls.intensity * brdf * geometry_term / light_pdf);
+                    radiance += (lr.intensity * brdf * geometry_term / light_pdf);
                 }
             }
             img(x, y) = radiance / Real(spp);

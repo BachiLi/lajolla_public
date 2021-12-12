@@ -16,11 +16,12 @@ struct DiffuseAreaLight {
 // functors below.
 using Light = std::variant<DiffuseAreaLight>;
 
-struct LightSample {
-    ShapeSample shape_sample;
+struct LightSampleRecord {
+    Vector2 uv;
+    ShapeSampleRecord shape_sample_rec;
     Vector3 intensity;
 };
 
 Real light_power(const Light &light, const Scene &scene);
-LightSample sample_point_on_light(const Light &light, const Vector2 &sample, const Scene &scene);
-Real pdf_point_on_light(const Light &light, const Scene &scene);
+LightSampleRecord sample_point_on_light(const Light &light, const Vector2 &uv, const Scene &scene);
+Real pdf_point_on_light(const Light &light, const LightSampleRecord &record, const Scene &scene);
