@@ -50,7 +50,7 @@ void sphere_intersect_func(const RTCIntersectFunctionNArguments* args) {
     void *ptr = args->geometryUserPtr;
     const Sphere *sphere = (const Sphere*)ptr;
     RTCRayHitN *rayhit = args->rayhit;
-    RTCRay *rtc_ray = (RTCRay*)rayhit;
+    RTCRay *rtc_ray = (RTCRay*)RTCRayHitN_RayN(rayhit, 1);
     RTCHit *rtc_hit = (RTCHit*)RTCRayHitN_HitN(rayhit, 1);
 
     Ray ray{Vector3{rtc_ray->org_x, rtc_ray->org_y, rtc_ray->org_z},
@@ -147,4 +147,19 @@ uint32_t register_embree::operator()(const Sphere &sphere) const {
     rtcCommitGeometry(rtc_geom);
     rtcReleaseGeometry(rtc_geom);
     return geomID;
+}
+
+ShapeSample sample_point_on_shape::operator()(const Sphere &sphere) const {
+    // https://www.pbr-book.org/3ed-2018/Monte_Carlo_Integration/2D_Sampling_with_Multidimensional_Transformations#UniformSampleSphere
+    Real z = 1 - 2 * sample.x;
+    Real r = sqrt(fmax(Real(0), 1 - z * z));
+    Real phi = 2 * c_PI * sample.y;
+    Vector3 offset(r * cos(phi), r * sin(phi), z);
+    Vector3 position = sphere.position + sphere.radius * offset;
+    Vector3 normal = offset;
+    return ShapeSample{position, normal};
+}
+
+Real surface_area::operator()(const Sphere &sphere) const {
+    return 4 * c_PI * sphere.radius * sphere.radius;
 }

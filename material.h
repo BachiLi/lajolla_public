@@ -4,6 +4,8 @@
 #include "vector.h"
 #include <variant>
 
+struct Intersection;
+
 struct Lambertian {
 	Vector3 reflectance;
 };
@@ -18,5 +20,5 @@ struct eval_material {
     Vector3 operator()(const Lambertian &lambertian) const;
 
     Vector3 w_light, w_view;
-    Vector3 normal;
+    const Intersection &isect;
 };

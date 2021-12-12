@@ -30,11 +30,11 @@ bool intersect(const Scene &scene, const Ray &ray, Intersection *isect) {
     rtcIntersect1(scene.embree_scene, &rtc_context, &rtc_rayhit);
     if (rtc_hit.geomID == RTC_INVALID_GEOMETRY_ID) {
         return false;
-    }
+    };
 
     isect->position = Vector3{ray.org.x, ray.org.y, ray.org.z} +
-        Vector3{ray.dir.x, ray.dir.y, ray.dir.z} * ray.tfar;
-    isect->geometry_normal = Vector3{rtc_hit.Ng_x, rtc_hit.Ng_y, rtc_hit.Ng_z};
+        Vector3{ray.dir.x, ray.dir.y, ray.dir.z} * Real(rtc_ray.tfar);
+    isect->geometry_normal = normalize(Vector3{rtc_hit.Ng_x, rtc_hit.Ng_y, rtc_hit.Ng_z});
     isect->material = &scene.materials[rtc_hit.geomID];
     return true;
 }

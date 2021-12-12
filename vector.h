@@ -85,6 +85,14 @@ inline TVector3<T> operator+(const TVector3<T> &v0, const TVector3<T> &v1) {
 }
 
 template <typename T>
+inline TVector3<T>& operator+=(TVector3<T> &v0, const TVector3<T> &v1) {
+    v0.x += v1.x;
+    v0.y += v1.y;
+    v0.z += v1.z;
+    return v0;
+}
+
+template <typename T>
 inline TVector3<T> operator-(const TVector3<T> &v0, const TVector3<T> &v1) {
     return TVector3<T>(v0.x - v1.x, v0.y - v1.y, v0.z - v1.z);
 }
@@ -105,6 +113,11 @@ inline TVector3<T> operator*(const TVector3<T> &v, const T &s) {
 }
 
 template <typename T>
+inline TVector3<T> operator*(const TVector3<T> &v0, const TVector3<T> &v1) {
+    return TVector3<T>(v0[0] * v1[0], v0[1] * v1[1], v0[2] * v1[2]);
+}
+
+template <typename T>
 inline TVector3<T> operator/(const TVector3<T> &v, const T &s) {
     T inv_s = T(1) / s;
     return TVector3<T>(v[0] * inv_s, v[1] * inv_s, v[2] * inv_s);
@@ -113,6 +126,11 @@ inline TVector3<T> operator/(const TVector3<T> &v, const T &s) {
 template <typename T>
 inline T dot(const TVector3<T> &v0, const TVector3<T> &v1) {
     return v0[0] * v1[0] + v0[1] * v1[1] + v0[2] * v1[2];
+}
+
+template <typename T>
+inline T distance_squared(const TVector3<T> &v0, const TVector3<T> &v1) {
+    return dot(v0 - v1, v0 - v1);
 }
 
 template <typename T>
@@ -133,6 +151,10 @@ inline TVector3<T> normalize(const TVector3<T> &v0) {
     } else {
         return v0 / l;
     }
+}
+
+inline Real luminance(const Vector3 &v) {
+    return v.x * Real(0.212671) + v.y * Real(0.715160) + v.z * Real(0.072169);
 }
 
 template <typename T>

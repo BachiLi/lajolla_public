@@ -6,9 +6,12 @@
 #include <variant>
 
 /// A Shape is a geometric entity that describes a surface. E.g., a sphere, a triangle mesh, a NURBS, etc.
-/// For each shape, we also store an integer "material ID" that points to a material.
+/// For each shape, we also store an integer "material ID" that points to a material, and an integer
+/// "area light ID" that points to a light source if the shape is an area light. area_lightID is set to -1
+/// if the shape is not an area light.
 struct ShapeBase {
     int materialID;
+    int area_lightID;
 };
 
 struct Sphere : public ShapeBase {
@@ -26,4 +29,19 @@ struct register_embree {
 
     RTCDevice device;
     RTCScene scene;
+};
+
+struct ShapeSample {
+    Vector3 position;
+    Vector3 geometry_normal;
+};
+
+struct sample_point_on_shape {
+    ShapeSample operator()(const Sphere &sphere) const;
+
+    Vector2 sample;
+};
+
+struct surface_area {
+    Real operator()(const Sphere &sphere) const;
 };
