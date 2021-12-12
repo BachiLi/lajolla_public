@@ -153,10 +153,6 @@ inline TVector3<T> normalize(const TVector3<T> &v0) {
     }
 }
 
-inline Real luminance(const Vector3 &v) {
-    return v.x * Real(0.212671) + v.y * Real(0.715160) + v.z * Real(0.072169);
-}
-
 template <typename T>
 inline std::ostream& operator<<(std::ostream &os, const TVector2<T> &v) {
     return os << "(" << v[0] << ", " << v[1] << ")";

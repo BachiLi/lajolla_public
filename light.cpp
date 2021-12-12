@@ -1,5 +1,6 @@
 #include "light.h"
 #include "scene.h"
+#include "spectrum.h"
 
 struct light_power_op {
     Real operator()(const DiffuseAreaLight &light) const;

@@ -22,6 +22,7 @@ set(SRCS camera.h
          render.h
          scene.h
          shape.h
+         spectrum.h
          transform.h
          vector.h
          camera.cpp

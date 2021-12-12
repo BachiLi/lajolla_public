@@ -12,7 +12,7 @@ std::shared_ptr<Image3> render(const Scene &scene) {
     int spp = 32;
     for (int y = 0; y < h; y++) {
         for (int x = 0; x < w; x++) {
-            Vector3 radiance = Vector3{0, 0, 0};
+            Spectrum radiance = make_zero_spectrum();
             for (int s = 0; s < spp; s++) {
                 Ray ray = sample_primary(scene.camera, Vector2((x + Real(0.5)) / w, (y + Real(0.5)) / h));
                 Intersection isect;
@@ -30,7 +30,7 @@ std::shared_ptr<Image3> render(const Scene &scene) {
                         distance_squared(ss.position, isect.position);
                     Real light_pdf = light_pmf(scene, light_id) * pdf_point_on_light(light, scene);
                     assert(isect.material != nullptr);
-                    Vector3 brdf = eval(*isect.material, dir_light, dir_view, isect);
+                    Spectrum brdf = eval(*isect.material, dir_light, dir_view, isect);
                     radiance += (ls.intensity * brdf * geometry_term / light_pdf);
                 }
             }
