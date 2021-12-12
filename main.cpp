@@ -22,7 +22,7 @@ int main(int argc, char *argv[]) {
     shapes.push_back(Sphere{0 /* material ID */, 0 /* light ID */,
                             Vector3{0, 0, -5} /* position */, Real(0.2) /* radius */});
     std::vector<Light> lights;
-    lights.push_back(DiffuseAreaLight{1 /* shape ID */, Vector3{40, 40, 40}});
+    lights.push_back(DiffuseAreaLight{1 /* shape ID */, Vector3{80, 80, 80}});
     Scene scene{embree_device, camera, materials, shapes, lights};
     std::shared_ptr<Image3> img = render(scene);
     imwrite("out.pfm", *img);

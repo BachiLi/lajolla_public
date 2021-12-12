@@ -21,21 +21,6 @@ struct LightSample {
     Vector3 intensity;
 };
 
-struct light_power {
-    Real operator()(const DiffuseAreaLight &light) const;
-
-    const Scene &scene;
-};
-
-struct sample_point_on_light {
-    LightSample operator()(const DiffuseAreaLight &light) const;
-
-    Vector2 sample;
-    const Scene &scene;
-};
-
-struct pdf_point_on_light {
-    Real operator()(const DiffuseAreaLight &light) const;
-
-    const Scene &scene;
-};
+Real light_power(const Light &light, const Scene &scene);
+LightSample sample_point_on_light(const Light &light, const Vector2 &sample, const Scene &scene);
+Real pdf_point_on_light(const Light &light, const Scene &scene);

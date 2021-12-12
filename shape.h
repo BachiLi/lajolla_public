@@ -23,25 +23,12 @@ struct Sphere : public ShapeBase {
 // functors below.
 using Shape = std::variant<Sphere>;
 
-/// Add the shape to an Embree scene.
-struct register_embree {
-    uint32_t operator()(const Sphere &sphere) const;
-
-    RTCDevice device;
-    RTCScene scene;
-};
-
 struct ShapeSample {
     Vector3 position;
     Vector3 geometry_normal;
 };
 
-struct sample_point_on_shape {
-    ShapeSample operator()(const Sphere &sphere) const;
-
-    Vector2 sample;
-};
-
-struct surface_area {
-    Real operator()(const Sphere &sphere) const;
-};
+/// Add the shape to an Embree scene.
+uint32_t register_embree(const Shape &shape, const RTCDevice &device, const RTCScene &scene);
+ShapeSample sample_point_on_shape(const Shape &shape, const Vector2 &sample);
+Real surface_area(const Shape &shape);

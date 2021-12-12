@@ -22,18 +22,15 @@ std::shared_ptr<Image3> render(const Scene &scene) {
                     Real light_w = next_pcg32_real<Real>(rng);
                     int light_id = sample_light(scene, light_w);
                     const Light &light = scene.lights[light_id];
-                    LightSample ls = std::visit(sample_point_on_light{light_uv, scene}, light);
+                    LightSample ls = sample_point_on_light(light, light_uv, scene);
                     const ShapeSample &ss = ls.shape_sample;
-                    Vector3 light_dir = normalize(ss.position - isect.position);
-                    Real geometry_term = fmax(-dot(light_dir, ss.geometry_normal), Real(0)) /
+                    Vector3 dir_light = normalize(ss.position - isect.position);
+                    Vector3 dir_view = -ray.dir;
+                    Real geometry_term = fmax(-dot(dir_light, ss.geometry_normal), Real(0)) /
                         distance_squared(ss.position, isect.position);
-                    Real light_pdf = light_pmf(scene, light_id) * 
-                        std::visit(pdf_point_on_light{scene}, light);
-
-                    auto f = eval_material{light_dir /* w_light */, -ray.dir /* w_view */, isect};
+                    Real light_pdf = light_pmf(scene, light_id) * pdf_point_on_light(light, scene);
                     assert(isect.material != nullptr);
-                    Vector3 brdf = std::visit(f, *isect.material);
-
+                    Vector3 brdf = eval(*isect.material, dir_light, dir_view, isect);
                     radiance += (ls.intensity * brdf * geometry_term / light_pdf);
                 }
             }

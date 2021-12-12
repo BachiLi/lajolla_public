@@ -136,7 +136,14 @@ void sphere_occluded_func(const RTCOccludedFunctionNArguments* args) {
     }
 }
 
-uint32_t register_embree::operator()(const Sphere &sphere) const {
+struct register_embree_op {
+    uint32_t operator()(const Sphere &sphere) const;
+
+    const RTCDevice &device;
+    const RTCScene &scene;
+};
+
+uint32_t register_embree_op::operator()(const Sphere &sphere) const {
     RTCGeometry rtc_geom = rtcNewGeometry(device, RTC_GEOMETRY_TYPE_USER);
     uint32_t geomID = rtcAttachGeometry(scene, rtc_geom);
     rtcSetGeometryUserPrimitiveCount(rtc_geom, 1);
@@ -149,7 +156,13 @@ uint32_t register_embree::operator()(const Sphere &sphere) const {
     return geomID;
 }
 
-ShapeSample sample_point_on_shape::operator()(const Sphere &sphere) const {
+struct sample_point_on_shape_op {
+    ShapeSample operator()(const Sphere &sphere) const;
+
+    Vector2 sample;
+};
+
+ShapeSample sample_point_on_shape_op::operator()(const Sphere &sphere) const {
     // https://www.pbr-book.org/3ed-2018/Monte_Carlo_Integration/2D_Sampling_with_Multidimensional_Transformations#UniformSampleSphere
     Real z = 1 - 2 * sample.x;
     Real r = sqrt(fmax(Real(0), 1 - z * z));
@@ -160,6 +173,22 @@ ShapeSample sample_point_on_shape::operator()(const Sphere &sphere) const {
     return ShapeSample{position, normal};
 }
 
-Real surface_area::operator()(const Sphere &sphere) const {
+struct surface_area_op {
+    Real operator()(const Sphere &sphere) const;
+};
+
+Real surface_area_op::operator()(const Sphere &sphere) const {
     return 4 * c_PI * sphere.radius * sphere.radius;
+}
+
+uint32_t register_embree(const Shape &shape, const RTCDevice &device, const RTCScene &scene) {
+    return std::visit(register_embree_op{device, scene}, shape);
+}
+
+ShapeSample sample_point_on_shape(const Shape &shape, const Vector2 &sample) {
+    return std::visit(sample_point_on_shape_op{sample}, shape);
+}
+
+Real surface_area(const Shape &shape) {
+    return std::visit(surface_area_op{}, shape);
 }

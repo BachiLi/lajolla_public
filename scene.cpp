@@ -12,7 +12,7 @@ Scene::Scene(const RTCDevice &embree_device,
     rtcSetSceneBuildQuality(embree_scene, RTC_BUILD_QUALITY_HIGH);
     rtcSetSceneFlags(embree_scene, RTC_SCENE_FLAG_ROBUST);
     for (const Shape &shape : shapes) {
-        std::visit(register_embree{embree_device, embree_scene}, shape);
+        register_embree(shape, embree_device, embree_scene);
     }
     rtcCommitScene(embree_scene);
 
@@ -21,7 +21,7 @@ Scene::Scene(const RTCDevice &embree_device,
     light_cdf.resize(lights.size() + 1);
     light_cdf[0] = 0;
     for (int i = 0; i < (int)lights.size(); i++) {
-        Real power = std::visit(light_power{*this}, lights[i]);
+        Real power = light_power(lights[i], *this);
         light_pmf[i] = power;
         light_cdf[i + 1] = light_cdf[i] + power;
     }
