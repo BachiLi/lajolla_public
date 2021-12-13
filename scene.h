@@ -9,12 +9,28 @@
 #include <memory>
 #include <vector>
 
+enum class Integrator {
+    Depth,
+    Path
+};
+
+struct RenderOptions {
+    Integrator integrator = Integrator::Path;
+    int samples_per_pixel = 4;
+};
+
+/// A "Scene" contains the camera, materials, geometry (shapes), lights,
+/// and also the rendering options such as number of samples per pixel or
+/// the parameters of our renderer.
 struct Scene {
+    Scene() {}
     Scene(const RTCDevice &embree_device,
           const Camera &camera,
           const std::vector<Material> &materials,
           const std::vector<Shape> &shapes,
-          const std::vector<Light> &lights);
+          const std::vector<Light> &lights,
+          const RenderOptions &options,
+          const std::string &output_filename);
     ~Scene();
 
     RTCDevice embree_device;
@@ -29,10 +45,12 @@ struct Scene {
     const std::vector<Material> materials;
     const std::vector<Shape> shapes;
     const std::vector<Light> lights;
+    
+    RenderOptions options;
+    std::string output_filename;
 
     // For sampling lights
-    std::vector<Real> light_pmf;
-    std::vector<Real> light_cdf;
+    TableDist1D light_dist;
 };
 
 int sample_light(const Scene &scene, Real u);

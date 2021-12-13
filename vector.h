@@ -118,9 +118,24 @@ inline TVector3<T> operator*(const TVector3<T> &v0, const TVector3<T> &v1) {
 }
 
 template <typename T>
+inline TVector3<T>& operator*=(TVector3<T> &v, const T &s) {
+    v[0] *= s;
+    v[1] *= s;
+    v[2] *= s;
+    return v;
+}
+
+template <typename T>
 inline TVector3<T> operator/(const TVector3<T> &v, const T &s) {
     T inv_s = T(1) / s;
     return TVector3<T>(v[0] * inv_s, v[1] * inv_s, v[2] * inv_s);
+}
+
+template <typename T>
+inline TVector3<T>& operator/=(TVector3<T> &v, const T &s) {
+    T inv_s = T(1) / s;
+    v *= inv_s;
+    return v;
 }
 
 template <typename T>
@@ -129,8 +144,21 @@ inline T dot(const TVector3<T> &v0, const TVector3<T> &v1) {
 }
 
 template <typename T>
+inline TVector3<T> cross(const TVector3<T> &v0, const TVector3<T> &v1) {
+    return TVector3<T>{
+        v0[1] * v1[2] - v0[2] * v1[1],
+        v0[2] * v1[0] - v0[0] * v1[2],
+        v0[0] * v1[1] - v0[1] * v1[0]};
+}
+
+template <typename T>
 inline T distance_squared(const TVector3<T> &v0, const TVector3<T> &v1) {
     return dot(v0 - v1, v0 - v1);
+}
+
+template <typename T>
+inline T distance(const TVector3<T> &v0, const TVector3<T> &v1) {
+    return sqrt(distance_squared(v0, v1));
 }
 
 template <typename T>

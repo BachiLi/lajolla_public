@@ -12,17 +12,23 @@ include_directories(${EMBREE_INCLUDE_PATH})
 link_libraries(${EMBREE_LIBRARY})
 
 set(SRCS camera.h
+         flexception.h
          image.h
          intersection.h
          lajolla.h
          light.h
          material.h
          matrix.h
+         parse_obj.h
+         parse_scene.h
+         pugiconfig.hpp
+         pugixml.hpp
          ray.h
          render.h
          scene.h
          shape.h
          spectrum.h
+         table_dist.h
          transform.h
          vector.h
          camera.cpp
@@ -31,9 +37,13 @@ set(SRCS camera.h
          light.cpp
          main.cpp
          material.cpp
+         parse_obj.cpp
+         parse_scene.cpp
+         pugixml.cpp
          render.cpp
          scene.cpp
          shape.cpp
+         table_dist.cpp
          transform.cpp)
 
 add_executable(lajolla ${SRCS})

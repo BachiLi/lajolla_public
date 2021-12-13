@@ -1,11 +1,16 @@
 #include "scene.h"
+#include "table_dist.h"
 
 Scene::Scene(const RTCDevice &embree_device,
              const Camera &camera,
              const std::vector<Material> &materials,
              const std::vector<Shape> &shapes,
-             const std::vector<Light> &lights) : 
-        embree_device(embree_device), camera(camera), materials(materials), shapes(shapes), lights(lights) {
+             const std::vector<Light> &lights,
+             const RenderOptions &options,
+             const std::string &output_filename) : 
+        embree_device(embree_device), camera(camera), materials(materials),
+        shapes(shapes), lights(lights), options(options),
+        output_filename(output_filename) {
     // Register the geometry to Embree
     embree_scene = rtcNewScene(embree_device);
     // We don't care about build time.
@@ -17,20 +22,17 @@ Scene::Scene(const RTCDevice &embree_device,
     rtcCommitScene(embree_scene);
 
     // build a sampling distributino for all the lights
-    light_pmf.resize(lights.size());
-    light_cdf.resize(lights.size() + 1);
-    light_cdf[0] = 0;
+    std::vector<Real> power(lights.size());
     for (int i = 0; i < (int)lights.size(); i++) {
-        Real power = light_power(lights[i], *this);
-        light_pmf[i] = power;
-        light_cdf[i + 1] = light_cdf[i] + power;
+        power[i] = light_power(lights[i], *this);
     }
-    Real total_power = light_cdf.back();
-    if (total_power > 0) {
-        for (int i = 0; i < (int)lights.size(); i++) {
-            light_pmf[i] /= total_power;
-            light_cdf[i] /= total_power;
-        }
+    light_dist = make_table_dist_1d(power);
+
+    // build shape sampling distributions if necessary
+    // TODO: const_cast is a bit ugly...
+    std::vector<Shape> &mod_shapes = const_cast<std::vector<Shape>&>(this->shapes);
+    for (Shape &shape : mod_shapes) {
+        init_sampling_dist(shape);
     }
 }
 
@@ -39,14 +41,9 @@ Scene::~Scene() {
 }
 
 int sample_light(const Scene &scene, Real u) {
-    int num_lights = scene.lights.size();
-    assert(num_lights > 0);
-    const Real *ptr = std::upper_bound(scene.light_cdf.data(), scene.light_cdf.data() + num_lights + 1, u);
-    int offset = std::clamp(int(ptr - scene.light_cdf.data() - 1), 0, num_lights - 1);
-    return offset;
+    return sample(scene.light_dist, u);
 }
 
 Real light_pmf(const Scene &scene, int light_id) {
-    assert(light_id >= 0 && light_id < (int)scene.lights.size());
-    return scene.light_pmf[light_id];
+    return pmf(scene.light_dist, light_id);
 }

@@ -4,12 +4,33 @@
 #include "pcg.h"
 #include "scene.h"
 
-std::shared_ptr<Image3> render(const Scene &scene) {
+std::shared_ptr<Image3> depth_render(const Scene &scene) {
     int w = scene.camera.width, h = scene.camera.height;
     std::shared_ptr<Image3> img_ = std::make_shared<Image3>(w, h);
     Image3 &img = *img_;
     pcg32_state rng = init_pcg32();
-    int spp = 32;
+    for (int y = 0; y < h; y++) {
+        for (int x = 0; x < w; x++) {
+            Spectrum radiance = make_zero_spectrum();
+            Ray ray = sample_primary(scene.camera, Vector2((x + Real(0.5)) / w, (y + Real(0.5)) / h));
+            Intersection isect;
+            if (intersect(scene, ray, &isect)) {
+                Real dist = distance(isect.position, ray.org);
+                img(x, y) = Vector3{dist, dist, dist};
+            } else {
+                img(x, y) = Vector3{0, 0, 0};
+            }
+        }
+    }
+    return img_;
+}
+
+std::shared_ptr<Image3> path_render(const Scene &scene) {
+    int w = scene.camera.width, h = scene.camera.height;
+    std::shared_ptr<Image3> img_ = std::make_shared<Image3>(w, h);
+    Image3 &img = *img_;
+    pcg32_state rng = init_pcg32();
+    int spp = 1;
     for (int y = 0; y < h; y++) {
         for (int x = 0; x < w; x++) {
             Spectrum radiance = make_zero_spectrum();
@@ -20,9 +41,10 @@ std::shared_ptr<Image3> render(const Scene &scene) {
                     Vector3 normal = isect.geometry_normal;
                     Vector2 light_uv{next_pcg32_real<Real>(rng), next_pcg32_real<Real>(rng)};
                     Real light_w = next_pcg32_real<Real>(rng);
+                    Real shape_w = next_pcg32_real<Real>(rng);
                     int light_id = sample_light(scene, light_w);
                     const Light &light = scene.lights[light_id];
-                    LightSampleRecord lr = sample_point_on_light(light, light_uv, scene);
+                    LightSampleRecord lr = sample_point_on_light(light, light_uv, shape_w, scene);
                     const ShapeSampleRecord &sr = lr.shape_sample_rec;
                     Vector3 dir_light = normalize(sr.position - isect.position);
                     Vector3 dir_view = -ray.dir;
@@ -38,4 +60,15 @@ std::shared_ptr<Image3> render(const Scene &scene) {
         }
     }
     return img_;
+}
+
+std::shared_ptr<Image3> render(const Scene &scene) {
+    if (scene.options.integrator == Integrator::Depth) {
+        return depth_render(scene);
+    } else if (scene.options.integrator == Integrator::Path) {
+        return path_render(scene);
+    } else {
+        assert(false);
+        return std::shared_ptr<Image3>();
+    }
 }

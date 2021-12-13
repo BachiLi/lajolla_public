@@ -23,5 +23,5 @@ struct LightSampleRecord {
 };
 
 Real light_power(const Light &light, const Scene &scene);
-LightSampleRecord sample_point_on_light(const Light &light, const Vector2 &uv, const Scene &scene);
+LightSampleRecord sample_point_on_light(const Light &light, const Vector2 &uv, Real w, const Scene &scene);
 Real pdf_point_on_light(const Light &light, const LightSampleRecord &record, const Scene &scene);

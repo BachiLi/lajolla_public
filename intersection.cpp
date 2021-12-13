@@ -35,6 +35,7 @@ bool intersect(const Scene &scene, const Ray &ray, Intersection *isect) {
     isect->position = Vector3{ray.org.x, ray.org.y, ray.org.z} +
         Vector3{ray.dir.x, ray.dir.y, ray.dir.z} * Real(rtc_ray.tfar);
     isect->geometry_normal = normalize(Vector3{rtc_hit.Ng_x, rtc_hit.Ng_y, rtc_hit.Ng_z});
-    isect->material = &scene.materials[rtc_hit.geomID];
+    isect->shape = &scene.shapes[rtc_hit.geomID];
+    isect->material = &scene.materials[get_material_id(*isect->shape)];
     return true;
 }

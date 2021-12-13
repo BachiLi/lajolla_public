@@ -3,6 +3,7 @@
 #include <cassert>
 #include <cmath>
 #include <cstdint>
+#include <filesystem>
 #include <iostream>
 #include <limits>
 
@@ -30,3 +31,5 @@ template <typename T>
 inline T infinity() {
     return std::numeric_limits<T>::infinity();
 }
+
+namespace fs = std::filesystem;

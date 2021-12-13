@@ -7,6 +7,7 @@
 
 /// Currently we only support a pinhole perspective camera
 struct Camera {
+    Camera() {}
     Camera(const Matrix4x4 &cam_to_world,
            const Real fov, // in degree
            int width, int height);
