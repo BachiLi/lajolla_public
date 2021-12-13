@@ -30,10 +30,10 @@ std::shared_ptr<Image3> path_render(const Scene &scene) {
     std::shared_ptr<Image3> img_ = std::make_shared<Image3>(w, h);
     Image3 &img = *img_;
     pcg32_state rng = init_pcg32();
-    int spp = 1;
     for (int y = 0; y < h; y++) {
         for (int x = 0; x < w; x++) {
             Spectrum radiance = make_zero_spectrum();
+            int spp = scene.options.samples_per_pixel;
             for (int s = 0; s < spp; s++) {
                 Ray ray = sample_primary(scene.camera, Vector2((x + Real(0.5)) / w, (y + Real(0.5)) / h));
                 Intersection isect;

@@ -12,6 +12,10 @@ const int c_default_res = 256;
 const std::string c_default_filename = "image.pfm";
 const std::string c_default_material_name = "___default_white";
 
+struct ParsedSampler {
+    int sample_count = 4;
+};
+
 std::string to_lowercase(const std::string &s) {
     std::string out = s;
     std::transform(s.begin(), s.end(), out.begin(), ::tolower);
@@ -166,12 +170,13 @@ parse_film(pugi::xml_node node) {
     return std::make_tuple(width, height, filename);
 }
 
-std::tuple<Camera, std::string /* output filename */>
+std::tuple<Camera, std::string /* output filename */, ParsedSampler>
 parse_sensor(pugi::xml_node node) {
     Real fov = c_default_fov;
     Matrix4x4 to_world = Matrix4x4::identity();
     int width = c_default_res, height = c_default_res;
     std::string filename = c_default_filename;
+    ParsedSampler sampler;
 
     std::string type = node.attribute("type").value();
     if (type == "perspective") {
@@ -181,14 +186,30 @@ parse_sensor(pugi::xml_node node) {
                 fov = std::stof(child.attribute("value").value());
             } else if (name == "toWorld") {
                 to_world = parse_transform(child);
-            } else if (std::string(child.name()) == "film") {
-                std::tie(width, height, filename) = parse_film(child);
             }
         }
     } else {
         Error(std::string("Unsupported sensor: ") + type);
     }
-    return std::make_tuple(Camera(to_world, fov, width, height), filename);
+
+    for (auto child : node.children()) {
+        if (std::string(child.name()) == "film") {
+            std::tie(width, height, filename) = parse_film(child);
+        } else if (std::string(child.name()) == "sampler") {
+            std::string name = child.attribute("name").value();
+            if (name != "independent") {
+                std::cerr << "Warning: the renderer currently only supports independent samplers." << std::endl;
+            }
+            for (auto grand_child : child.children()) {
+                std::string name = child.attribute("name").value();
+                if (name == "sampleCount") {
+                    sampler.sample_count = atoi(grand_child.attribute("value").value());
+                }
+            }
+        }
+    }
+
+    return std::make_tuple(Camera(to_world, fov, width, height), filename, sampler);
 }
 
 std::tuple<std::string /* ID */, Material> parse_bsdf(pugi::xml_node node) {
@@ -297,6 +318,7 @@ Shape parse_shape(pugi::xml_node node,
                     }
                 }
             }
+            set_area_light_id(shape, lights.size());
             lights.push_back(DiffuseAreaLight{(int)shapes.size() /* shape ID */, radiance});
         }
     }
@@ -317,7 +339,9 @@ Scene parse_scene(pugi::xml_node node, const RTCDevice &embree_device) {
         if (name == "integrator") {
             options = parse_integrator(child);
         } else if (name == "sensor") {
-            std::tie(camera, filename) = parse_sensor(child);
+            ParsedSampler sampler;
+            std::tie(camera, filename, sampler) = parse_sensor(child);
+            options.samples_per_pixel = sampler.sample_count;
         } else if (name == "bsdf") {
             std::string material_name;
             Material m;
