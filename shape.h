@@ -40,11 +40,17 @@ using Shape = std::variant<Sphere, TriangleMesh>;
 
 /// Add the shape to an Embree scene.
 uint32_t register_embree(const Shape &shape, const RTCDevice &device, const RTCScene &scene);
+
 /// Sample a point on the surface
 PointAndNormal sample_point_on_shape(const Shape &shape, const Vector2 &uv, Real w);
-/// PDF of the operation above
+
+/// Probability density of the operation above
 Real pdf_point_on_shape(const Shape &shape);
+
+/// Useful for sampling.
 Real surface_area(const Shape &shape);
+
+/// Some shapes require storing sampling data structures inside. This function initialize them.
 void init_sampling_dist(Shape &shape);
 
 

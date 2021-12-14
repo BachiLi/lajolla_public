@@ -40,10 +40,12 @@ struct Frame {
     Vector3 x, y, n;
 };
 
+/// Project a vector to a frame's local coordinates.
 inline Vector3 to_local(const Frame &frame, const Vector3 &v) {
     return Vector3{dot(v, frame[0]), dot(v, frame[1]), dot(v, frame[2])};
 }
 
+/// Convert a vector in a frame's local coordinates to the reference coordinate the frame is in.
 inline Vector3 to_world(const Frame &frame, const Vector3 &v) {
     return frame[0] * v[0] + frame[1] * v[1] + frame[2] * v[2];
 }

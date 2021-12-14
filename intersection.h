@@ -6,20 +6,28 @@
 #include "shape.h"
 #include "vector.h"
 
+#include <optional>
+
 struct Ray;
 struct Scene;
 
-struct Intersection {
+/// An "PathVertex" represents a vertex of a light path.
+/// We store the information we need for computing any sort of path contribution & sampling density.
+struct PathVertex {
     Vector3 position;
     Vector3 geometry_normal;
     Frame shading_frame;
-    int shape_id;
     const Shape *shape = nullptr;
     const Material *material = nullptr;
 };
 
-bool intersect(const Scene &scene, const Ray &ray, Intersection *isect);
+/// Intersect a ray with a scene. If the ray doesn't hit anything,
+/// returns an invalid optional output.
+std::optional<PathVertex> intersect(const Scene &scene, const Ray &ray);
+
+/// Test is a ray segment intersect with anything in a scene.
 bool occluded(const Scene &scene, const Ray &ray);
-// Computes the emission at Intersection isect, with the viewing direction
-// pointing outwards of the intersection.
-Spectrum emission(const Intersection &isect, const Vector3 &view_dir, const Scene &scene);
+
+/// Computes the emission at a path vertex v, with the viewing direction
+/// pointing outwards of the intersection.
+Spectrum emission(const PathVertex &v, const Vector3 &view_dir, const Scene &scene);

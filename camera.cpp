@@ -5,7 +5,7 @@
 #include <cmath>
 
 Camera::Camera(const Matrix4x4 &cam_to_world,
-               const Real fov,
+               Real fov,
                int width, int height)
     : cam_to_world(cam_to_world),
       world_to_cam(inverse(cam_to_world)),
@@ -18,7 +18,7 @@ Camera::Camera(const Matrix4x4 &cam_to_world,
 }
 
 Ray sample_primary(const Camera &camera,
-                   const Vector2 screen_pos) {
+                   const Vector2 &screen_pos) {
     Vector3 pt = xform_point(camera.sample_to_cam, Vector3(screen_pos[0], screen_pos[1], Real(0)));
     Vector3 dir = normalize(pt);
     return Ray{xform_point(camera.cam_to_world, Vector3{0, 0, 0}),

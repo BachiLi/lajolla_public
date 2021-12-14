@@ -17,14 +17,14 @@ Real light_power_op::operator()(const DiffuseAreaLight &light) const {
 struct sample_point_on_light_op {
     LightSampleRecord operator()(const DiffuseAreaLight &light) const;
 
-    const Vector2 &uv;
-    const Real &w;
+    const Vector2 &rnd_param_uv;
+    const Real &rnd_param_w;
     const Scene &scene;
 };
 LightSampleRecord sample_point_on_light_op::operator()(const DiffuseAreaLight &light) const {
     const Shape &shape = scene.shapes[light.shape_id];
-    PointAndNormal point_and_normal = sample_point_on_shape(shape, uv, w);
-    return LightSampleRecord{uv, point_and_normal, light.intensity};
+    PointAndNormal point_and_normal = sample_point_on_shape(shape, rnd_param_uv, rnd_param_w);
+    return LightSampleRecord{point_and_normal, light.intensity};
 }
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -59,8 +59,9 @@ Real light_power(const Light &light, const Scene &scene) {
     return std::visit(light_power_op{scene}, light);
 }
 
-LightSampleRecord sample_point_on_light(const Light &light, const Vector2 &uv, Real w, const Scene &scene) {
-    return std::visit(sample_point_on_light_op{uv, w, scene}, light);
+LightSampleRecord sample_point_on_light(const Light &light,
+        const Vector2 &rnd_param_uv, Real rnd_param_w, const Scene &scene) {
+    return std::visit(sample_point_on_light_op{rnd_param_uv, rnd_param_w, scene}, light);
 }
 
 Real pdf_point_on_light(const Light &light, const PointAndNormal &point_on_light, const Scene &scene) {

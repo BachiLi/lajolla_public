@@ -1,6 +1,6 @@
 #include "table_dist.h"
 
-TableDist1D make_table_dist_1d(const std::vector<Real> f) {
+TableDist1D make_table_dist_1d(const std::vector<Real> &f) {
 	std::vector<Real> pmf = f;
     std::vector<Real> cdf(f.size() + 1);
     cdf[0] = 0;

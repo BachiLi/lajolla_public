@@ -54,5 +54,8 @@ struct Scene {
     TableDist1D light_dist;
 };
 
+/// Sample a light source from the scene given a random number u \in [0, 1]
 int sample_light(const Scene &scene, Real u);
+
+/// The probability mass function of the sampling procedure above.
 Real light_pmf(const Scene &scene, int light_id);

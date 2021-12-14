@@ -9,7 +9,7 @@
 struct Camera {
     Camera() {}
     Camera(const Matrix4x4 &cam_to_world,
-           const Real fov, // in degree
+           Real fov, // in degree
            int width, int height);
 
     Matrix4x4 sample_to_cam, cam_to_sample;
@@ -18,6 +18,6 @@ struct Camera {
 };
 
 /// Given screen position in [0, 1] x [0, 1],
-/// generate a camera ray
+/// generate a camera ray.
 Ray sample_primary(const Camera &camera,
-                   const Vector2 screen_pos);
+                   const Vector2 &screen_pos);
