@@ -1,5 +1,6 @@
 #include "parse_scene.h"
 #include "flexception.h"
+#include "load_serialized.h"
 #include "parse_obj.h"
 #include "pugixml.hpp"
 #include "transform.h"
@@ -242,7 +243,7 @@ std::tuple<std::string /* ID */, Material> parse_bsdf(
                         fromRGB(parse_vector3(child.attribute("value").value())));
                 } else if (refl_type == "ref") {
                     // referencing a texture
-                    std::string ref_id = child.attribute("value").value();
+                    std::string ref_id = child.attribute("id").value();
                     auto t_it = texture_map.find(ref_id);
                     if (t_it == texture_map.end()) {
                         Error(std::string("Texture not found. ID = ") + ref_id);
@@ -321,8 +322,40 @@ Shape parse_shape(pugi::xml_node node,
             }
         }
         shape = parse_obj(filename, to_world);
+    } else if (type == "serialized") {
+        std::string filename;
+        int shape_index = 0;
+        Matrix4x4 to_world = Matrix4x4::identity();
+        for (auto child : node.children()) {
+            std::string name = child.attribute("name").value();
+            if (name == "filename") {
+                filename = child.attribute("value").value();
+            } else if (name == "toWorld") {
+                if (std::string(child.name()) == "transform") {
+                    to_world = parse_transform(child);
+                }
+            } else if (name == "shapeIndex") {
+                shape_index = atoi(child.attribute("value").value());
+            }
+        }
+        shape = load_serialized(filename, shape_index, to_world);
+    } else if (type == "sphere") {
+        Vector3 center{0, 0, 0};
+        Real radius = 1;
+        for (auto child : node.children()) {
+            std::string name = child.attribute("name").value();
+            if (name == "center") {
+                center = Vector3{
+                    std::stof(child.attribute("x").value()),
+                    std::stof(child.attribute("y").value()),
+                    std::stof(child.attribute("z").value())};
+            } else if (name == "radius") {
+                radius = std::stof(child.attribute("value").value());
+            }
+        }
+        shape = Sphere{-1 /*material_id*/, -1 /*area_light_id*/, center, radius};
     } else {
-        Error("Unknown shape");
+        Error(std::string("Unknown shape:") + type);
     }
     set_material_id(shape, material_id);
 
@@ -412,7 +445,10 @@ Scene parse_scene(pugi::xml_node node, const RTCDevice &embree_device) {
             shapes.push_back(s);
         } else if (name == "texture") {
             std::string id = child.attribute("id").value();
-            parse_texture(child);
+            if (texture_map.find(id) != texture_map.end()) {
+                Error(std::string("Duplicated texture ID:") + id);
+            }
+            texture_map[id] = parse_texture(child);
         }
     }
     return Scene{embree_device, camera, materials, shapes, lights, texture_pool, options, filename};

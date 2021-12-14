@@ -140,7 +140,9 @@
 			<lookat target="13.4563, 6.78438, -1.15861" origin="14.4499, 6.89415, -1.18547" up="-0.109708, 0.993957, 0.00374357"/>
 		</transform>
 
-		<sampler type="ldsampler"/>
+		<sampler type="ldsampler">
+			<integer name="sampleCount" value="64"/>
+		</sampler>
 
 		<film type="hdrfilm">
 			<integer name="height" value="575"/>

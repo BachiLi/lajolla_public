@@ -20,8 +20,10 @@ set(SRCS camera.h
          intersection.h
          lajolla.h
          light.h
+         load_serialized.h
          material.h
          matrix.h
+         miniz.h
          parse_obj.h
          parse_scene.h
          point_and_normal.h
@@ -41,8 +43,10 @@ set(SRCS camera.h
          image.cpp
          intersection.cpp
          light.cpp
+         load_serialized.cpp
          main.cpp
          material.cpp
+         miniz.c
          parse_obj.cpp
          parse_scene.cpp
          pugixml.cpp
