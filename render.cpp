@@ -235,7 +235,8 @@ Spectrum path_trace(const Scene &scene,
             radiance += (current_path_contrib / current_path_pdf) * C2 * w2;
         }
 
-        // Update intersection/current_path_contrib/current_pdf
+        // Update rays/intersection/current_path_contrib/current_pdf
+        ray = bsdf_ray;
         vertex = bsdf_vertex;
         current_path_contrib = current_path_contrib * G * f;
         current_path_pdf = current_path_pdf * p2;
