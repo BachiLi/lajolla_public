@@ -1,7 +1,9 @@
 #pragma once
 
 #include "lajolla.h"
+#include "point_and_normal.h"
 #include "shape.h"
+#include "spectrum.h"
 #include "vector.h"
 #include <variant>
 
@@ -18,10 +20,11 @@ using Light = std::variant<DiffuseAreaLight>;
 
 struct LightSampleRecord {
     Vector2 uv;
-    ShapeSampleRecord shape_sample_rec;
-    Vector3 intensity;
+    PointAndNormal point_on_light;
+    Vector3 radiance;
 };
 
 Real light_power(const Light &light, const Scene &scene);
 LightSampleRecord sample_point_on_light(const Light &light, const Vector2 &uv, Real w, const Scene &scene);
-Real pdf_point_on_light(const Light &light, const LightSampleRecord &record, const Scene &scene);
+Real pdf_point_on_light(const Light &light, const PointAndNormal &point_on_light, const Scene &scene);
+Spectrum emission(const Light &light, const Vector3 &view_dir, const PointAndNormal &point_on_light);

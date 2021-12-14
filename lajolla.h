@@ -27,6 +27,9 @@ const Real c_INVFOURPI = Real(1.0) / c_FOURPI;
 const Real c_PIOVERTWO = Real(0.5) * c_PI;
 const Real c_PIOVERFOUR = Real(0.25) * c_PI;
 
+const Real c_shadow_epsilon = 1e-4;
+const Real c_isect_epsilon = 1e-4;
+
 template <typename T>
 inline T infinity() {
     return std::numeric_limits<T>::infinity();

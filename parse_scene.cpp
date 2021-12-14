@@ -290,7 +290,7 @@ Shape parse_shape(pugi::xml_node node,
             std::string name = child.attribute("name").value();
             if (name == "filename") {
                 filename = child.attribute("value").value();
-            } else if (name == "to_world") {
+            } else if (name == "toWorld") {
                 if (std::string(child.name()) == "transform") {
                     to_world = parse_transform(child);
                 }

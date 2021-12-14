@@ -13,6 +13,7 @@ link_libraries(${EMBREE_LIBRARY})
 
 set(SRCS camera.h
          flexception.h
+         frame.h
          image.h
          intersection.h
          lajolla.h
@@ -21,6 +22,7 @@ set(SRCS camera.h
          matrix.h
          parse_obj.h
          parse_scene.h
+         point_and_normal.h
          pugiconfig.hpp
          pugixml.hpp
          ray.h

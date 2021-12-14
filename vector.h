@@ -182,6 +182,16 @@ inline TVector3<T> normalize(const TVector3<T> &v0) {
 }
 
 template <typename T>
+inline bool isnan(const TVector2<T> &v) {
+    return isnan(v[0]) || isnan(v[1]);
+}
+
+template <typename T>
+inline bool isnan(const TVector3<T> &v) {
+    return isnan(v[0]) || isnan(v[1]) || isnan(v[2]);
+}
+
+template <typename T>
 inline std::ostream& operator<<(std::ostream &os, const TVector2<T> &v) {
     return os << "(" << v[0] << ", " << v[1] << ")";
 }

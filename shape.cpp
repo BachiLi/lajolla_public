@@ -1,4 +1,5 @@
 #include "shape.h"
+#include "point_and_normal.h"
 #include "ray.h"
 #include <embree3/rtcore.h>
 
@@ -181,13 +182,13 @@ uint32_t register_embree_op::operator()(const TriangleMesh &mesh) const {
 
 ///////////////////////////////////////////////////////////////////////////
 struct sample_point_on_shape_op {
-    ShapeSampleRecord operator()(const Sphere &sphere) const;
-    ShapeSampleRecord operator()(const TriangleMesh &mesh) const;
+    PointAndNormal operator()(const Sphere &sphere) const;
+    PointAndNormal operator()(const TriangleMesh &mesh) const;
 
     const Vector2 &uv; // for selecting a point on a 2D surface
     const Real &w; // for selecting triangles
 };
-ShapeSampleRecord sample_point_on_shape_op::operator()(const Sphere &sphere) const {
+PointAndNormal sample_point_on_shape_op::operator()(const Sphere &sphere) const {
     // https://www.pbr-book.org/3ed-2018/Monte_Carlo_Integration/2D_Sampling_with_Multidimensional_Transformations#UniformSampleSphere
     Real z = 1 - 2 * uv.x;
     Real r = sqrt(fmax(Real(0), 1 - z * z));
@@ -195,9 +196,9 @@ ShapeSampleRecord sample_point_on_shape_op::operator()(const Sphere &sphere) con
     Vector3 offset(r * cos(phi), r * sin(phi), z);
     Vector3 position = sphere.position + sphere.radius * offset;
     Vector3 normal = offset;
-    return ShapeSampleRecord{position, normal};
+    return PointAndNormal{position, normal};
 }
-ShapeSampleRecord sample_point_on_shape_op::operator()(const TriangleMesh &mesh) const {
+PointAndNormal sample_point_on_shape_op::operator()(const TriangleMesh &mesh) const {
     int tri_id = sample(mesh.triangle_sampler, w);
     assert(tri_id >= 0 && tri_id < (int)mesh.indices.size());
     Vector3i index = mesh.indices[tri_id];
@@ -210,7 +211,7 @@ ShapeSampleRecord sample_point_on_shape_op::operator()(const TriangleMesh &mesh)
     Real a = sqrt(std::clamp(uv[0], Real(0), Real(1)));
     Real b1 = 1 - a;
     Real b2 = a * uv[1];
-    return ShapeSampleRecord{v0 + (e1 * b1) + (e2 * b2), normalize(cross(e1, e2))};
+    return PointAndNormal{v0 + (e1 * b1) + (e2 * b2), normalize(cross(e1, e2))};
 }
 ///////////////////////////////////////////////////////////////////////////
 
@@ -269,7 +270,7 @@ uint32_t register_embree(const Shape &shape, const RTCDevice &device, const RTCS
     return std::visit(register_embree_op{device, scene}, shape);
 }
 
-ShapeSampleRecord sample_point_on_shape(const Shape &shape, const Vector2 &uv, Real w) {
+PointAndNormal sample_point_on_shape(const Shape &shape, const Vector2 &uv, Real w) {
     return std::visit(sample_point_on_shape_op{uv, w}, shape);
 }
 

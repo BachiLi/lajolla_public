@@ -7,13 +7,15 @@
 #include <variant>
 #include <vector>
 
+struct PointAndNormal;
+
 /// A Shape is a geometric entity that describes a surface. E.g., a sphere, a triangle mesh, a NURBS, etc.
 /// For each shape, we also store an integer "material ID" that points to a material, and an integer
 /// "area light ID" that points to a light source if the shape is an area light. area_lightID is set to -1
 /// if the shape is not an area light.
 struct ShapeBase {
-    int material_id;
-    int area_light_id;
+    int material_id = -1;
+    int area_light_id = -1;
 };
 
 struct Sphere : public ShapeBase {
@@ -36,15 +38,10 @@ struct TriangleMesh : public ShapeBase {
 // then implement all the relevant functions below.
 using Shape = std::variant<Sphere, TriangleMesh>;
 
-struct ShapeSampleRecord {
-    Vector3 position;
-    Vector3 geometry_normal;
-};
-
 /// Add the shape to an Embree scene.
 uint32_t register_embree(const Shape &shape, const RTCDevice &device, const RTCScene &scene);
 /// Sample a point on the surface
-ShapeSampleRecord sample_point_on_shape(const Shape &shape, const Vector2 &uv, Real w);
+PointAndNormal sample_point_on_shape(const Shape &shape, const Vector2 &uv, Real w);
 /// PDF of the operation above
 Real pdf_point_on_shape(const Shape &shape);
 Real surface_area(const Shape &shape);
@@ -62,4 +59,7 @@ inline int get_material_id(const Shape &shape) {
 }
 inline int get_area_light_id(const Shape &shape) {
     return std::visit([&](const auto &s) { return s.area_light_id; }, shape);
+}
+inline bool is_light(const Shape &shape) {
+    return get_area_light_id(shape) >= 0;
 }

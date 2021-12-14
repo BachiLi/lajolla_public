@@ -17,6 +17,7 @@ enum class Integrator {
 struct RenderOptions {
     Integrator integrator = Integrator::Path;
     int samples_per_pixel = 4;
+    int max_depth = 6;
 };
 
 /// A "Scene" contains the camera, materials, geometry (shapes), lights,

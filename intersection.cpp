@@ -35,7 +35,36 @@ bool intersect(const Scene &scene, const Ray &ray, Intersection *isect) {
     isect->position = Vector3{ray.org.x, ray.org.y, ray.org.z} +
         Vector3{ray.dir.x, ray.dir.y, ray.dir.z} * Real(rtc_ray.tfar);
     isect->geometry_normal = normalize(Vector3{rtc_hit.Ng_x, rtc_hit.Ng_y, rtc_hit.Ng_z});
+    isect->shading_frame = Frame(isect->geometry_normal);
+    isect->shape_id = rtc_hit.geomID;
     isect->shape = &scene.shapes[rtc_hit.geomID];
     isect->material = &scene.materials[get_material_id(*isect->shape)];
     return true;
+}
+
+bool occluded(const Scene &scene, const Ray &ray) {
+    RTCIntersectContext rtc_context;
+    rtcInitIntersectContext(&rtc_context);
+    RTCRay rtc_ray;
+    rtc_ray.org_x = (float)ray.org[0];
+    rtc_ray.org_y = (float)ray.org[1];
+    rtc_ray.org_z = (float)ray.org[2];
+    rtc_ray.dir_x = (float)ray.dir[0];
+    rtc_ray.dir_y = (float)ray.dir[1];
+    rtc_ray.dir_z = (float)ray.dir[2];
+    rtc_ray.tnear = (float)ray.tnear;
+    rtc_ray.tfar = (float)ray.tfar;
+    rtc_ray.mask = (unsigned int)(-1);
+    rtc_ray.time = 0.f;
+    rtc_ray.flags = 0;
+    // TODO: switch to rtcOccluded16
+    rtcOccluded1(scene.embree_scene, &rtc_context, &rtc_ray);
+    return rtc_ray.tfar < 0;
+}
+
+Spectrum emission(const Intersection &isect, const Vector3 &view_dir, const Scene &scene) {
+    int light_id = get_area_light_id(*isect.shape);
+    assert(light_id >= 0);
+    const Light &light = scene.lights[light_id];
+    return emission(light, view_dir, PointAndNormal{isect.position, isect.geometry_normal});
 }
