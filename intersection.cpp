@@ -38,8 +38,8 @@ std::optional<PathVertex> intersect(const Scene &scene, const Ray &ray) {
         Vector3{ray.dir.x, ray.dir.y, ray.dir.z} * Real(rtc_ray.tfar);
     vertex.geometry_normal = normalize(Vector3{rtc_hit.Ng_x, rtc_hit.Ng_y, rtc_hit.Ng_z});
     vertex.shading_frame = Frame(vertex.geometry_normal);
-    vertex.shape = &scene.shapes[rtc_hit.geomID];
-    vertex.material = &scene.materials[get_material_id(*vertex.shape)];
+    vertex.shape_id = rtc_hit.geomID;
+    vertex.material_id = get_material_id(scene.shapes[vertex.shape_id]);
     return vertex;
 }
 
@@ -64,7 +64,7 @@ bool occluded(const Scene &scene, const Ray &ray) {
 }
 
 Spectrum emission(const PathVertex &v, const Vector3 &view_dir, const Scene &scene) {
-    int light_id = get_area_light_id(*v.shape);
+    int light_id = get_area_light_id(scene.shapes[v.shape_id]);
     assert(light_id >= 0);
     const Light &light = scene.lights[light_id];
     return emission(light, view_dir, PointAndNormal{v.position, v.geometry_normal});

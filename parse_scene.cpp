@@ -234,7 +234,7 @@ std::tuple<std::string /* ID */, Material> parse_bsdf(pugi::xml_node node) {
                 }
             }
         }
-        return std::make_tuple(id, Lambertian{reflectance});
+        return std::make_tuple(id, Lambertian{make_constant_spectrum_texture(reflectance)});
     } else {
         Error("Unknown BSDF.");
     }
@@ -276,7 +276,8 @@ Shape parse_shape(pugi::xml_node node,
     if (material_id == -1) {
         if (material_map.find(c_default_material_name) == material_map.end()) {
             material_map[c_default_material_name] = materials.size();
-            materials.push_back(Lambertian{fromRGB(Vector3{0.5, 0.5, 0.5})});
+            materials.push_back(Lambertian{
+                make_constant_spectrum_texture(fromRGB(Vector3{0.5, 0.5, 0.5}))});
         }
         material_id = material_map[c_default_material_name];
     }

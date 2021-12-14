@@ -2,6 +2,7 @@
 
 #include "lajolla.h"
 #include "spectrum.h"
+#include "texture.h"
 #include "vector.h"
 #include <optional>
 #include <variant>
@@ -9,7 +10,7 @@
 struct PathVertex;
 
 struct Lambertian {
-	Spectrum reflectance;
+    Texture<Spectrum> reflectance;
 };
 
 // To add more materials, first create a struct for the material, then overload the () operators for all the

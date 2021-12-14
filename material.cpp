@@ -22,7 +22,8 @@ Spectrum eval_op::operator()(const Lambertian &lambertian) const {
         // Incoming direction is below the surface.
         return make_zero_spectrum();
     }
-	return fmax(dot(dir_light, vertex.shading_frame.n), Real(0)) * lambertian.reflectance / c_PI;
+	return fmax(dot(dir_light, vertex.shading_frame.n), Real(0)) * 
+           eval(lambertian.reflectance, vertex) / c_PI;
 }
 ////////////////////////////////////////////////////////////////////////
 

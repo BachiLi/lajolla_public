@@ -62,7 +62,7 @@ Spectrum path_trace(const Scene &scene,
     // We hit a light immediately. 
     // This path has only two vertices and has contribution
     // C = W(v0, v1) * G(v0, v1) * L(v0, v1)
-    if (is_light(*(vertex.shape))) {
+    if (is_light(scene.shapes[vertex.shape_id])) {
         radiance += (current_path_contrib / current_path_pdf) * emission(vertex, -ray.dir, scene);
     }
 
@@ -95,6 +95,7 @@ Spectrum path_trace(const Scene &scene,
         // our hemisphere sampling.
 
         // Let's implement this!
+        const Material &mat = scene.materials[vertex.material_id];
 
         // First, we sample a point on the light source.
         // We do this by first picking a light source, then pick a point on it.
@@ -133,8 +134,8 @@ Spectrum path_trace(const Scene &scene,
             // Let's compute f (BSDF) next.
             Spectrum f;
             Vector3 dir_view = -ray.dir;
-            assert(vertex.material != nullptr);
-            f = eval(*vertex.material, dir_light, dir_view, vertex);
+            assert(vertex.material_id >= 0);
+            f = eval(mat, dir_light, dir_view, vertex);
             // L is stored in LightSampleRecord
             Spectrum L = lr.radiance;
 
@@ -153,7 +154,7 @@ Spectrum path_trace(const Scene &scene,
             Real p1 = light_pmf(scene, light_id) * pdf_point_on_light(light, point_on_light, scene);
             assert(p1 > 0);
             // The probability density for our hemispherical sampling to sample 
-            Real p2 = pdf_sample_bsdf(*vertex.material, dir_light, dir_view, vertex);
+            Real p2 = pdf_sample_bsdf(mat, dir_light, dir_view, vertex);
             // !!!! IMPORTANT !!!!
             // p1 and p2 now live in different spaces!!
             // our BSDF API outputs a probability density in the solid angle measure
@@ -176,7 +177,8 @@ Spectrum path_trace(const Scene &scene,
         // Let's do the hemispherical sampling next.
         Vector3 dir_view = -ray.dir;
         Vector2 bsdf_rnd_param{next_pcg32_real<Real>(rng), next_pcg32_real<Real>(rng)};
-        std::optional<Vector3> dir_bsdf_ = sample_bsdf(*vertex.material, dir_view, vertex, bsdf_rnd_param);
+        std::optional<Vector3> dir_bsdf_ =
+            sample_bsdf(mat, dir_view, vertex, bsdf_rnd_param);
         if (!dir_bsdf_) {
             // BSDF sampling failed. Abort the loop.
             break;
@@ -198,15 +200,16 @@ Spectrum path_trace(const Scene &scene,
         Real G = fabs(dot(dir_bsdf, bsdf_vertex.geometry_normal)) /
             distance_squared(bsdf_vertex.position, vertex.position);
         Spectrum f;
-        f = eval(*vertex.material, dir_bsdf, dir_view, vertex);
-        Real p2 = pdf_sample_bsdf(*vertex.material, dir_bsdf, dir_view, vertex);
+        f = eval(mat, dir_bsdf, dir_view, vertex);
+        Real p2 = pdf_sample_bsdf(mat, dir_bsdf, dir_view, vertex);
         // Remember to convert p2 to area measure!
         p2 *= G; 
         // note that G cancels out in the division f/p, but we still need
         // G later for the calculation of w2.
         assert(p2 > 0);
 
-        if (is_light(*(bsdf_vertex.shape))) {
+        assert(bsdf_vertex.shape_id >= 0);
+        if (is_light(scene.shapes[bsdf_vertex.shape_id])) {
             // Hit a light source: need to compute C2 & w2 & p2.
             // Again, we store C2/p2 in C2.
             Spectrum C2;
@@ -221,7 +224,7 @@ Spectrum path_trace(const Scene &scene,
             C2 = G * f * L;
 
             // Next let's compute w2
-            int light_id = get_area_light_id(*bsdf_vertex.shape);
+            int light_id = get_area_light_id(scene.shapes[bsdf_vertex.shape_id]);
             assert(light_id >= 0);
             const Light &light = scene.lights[light_id];
             PointAndNormal light_point{bsdf_vertex.position, bsdf_vertex.geometry_normal};

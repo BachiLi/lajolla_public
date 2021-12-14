@@ -2,8 +2,7 @@
 
 #include "lajolla.h"
 #include "frame.h"
-#include "material.h"
-#include "shape.h"
+#include "spectrum.h"
 #include "vector.h"
 
 #include <optional>
@@ -17,8 +16,8 @@ struct PathVertex {
     Vector3 position;
     Vector3 geometry_normal;
     Frame shading_frame;
-    const Shape *shape = nullptr;
-    const Material *material = nullptr;
+    int shape_id = -1;
+    int material_id = -1;
 };
 
 /// Intersect a ray with a scene. If the ray doesn't hit anything,

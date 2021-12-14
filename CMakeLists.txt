@@ -22,6 +22,7 @@ set(SRCS camera.h
          matrix.h
          parse_obj.h
          parse_scene.h
+         path_vertex.h
          point_and_normal.h
          pugiconfig.hpp
          pugixml.hpp
@@ -31,6 +32,7 @@ set(SRCS camera.h
          shape.h
          spectrum.h
          table_dist.h
+         texture.h
          transform.h
          vector.h
          camera.cpp
