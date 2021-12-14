@@ -10,7 +10,8 @@
 /// https://backend.orbit.dtu.dk/ws/portalfiles/portal/126824972/onb_frisvad_jgt2012_v2.pdf
 inline std::pair<Vector3, Vector3> coordinate_system(const Vector3 &n) {
     if (n[2] < Real(-1 + 1e-6)) {
-    	return std::make_pair(Vector3{ 0, -1, 0}, Vector3{-1,  0, 0});
+    	return std::make_pair(Vector3{0, -1, 0},
+                              Vector3{-1, 0, 0});
     } else {
         Real a = 1 / (1 + n[2]);
         Real b = -n[0] * n[1] * a;

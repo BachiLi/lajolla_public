@@ -137,6 +137,12 @@ RenderOptions parse_integrator(pugi::xml_node node) {
     std::string type = node.attribute("type").value();
     if (type == "path") {
         options.integrator = Integrator::Path;
+        for (auto child : node.children()) {
+            std::string name = child.attribute("name").value();
+            if (name == "maxDepth") {
+                options.max_depth = atoi(child.attribute("value").value());
+            }
+        }
     } else if (type == "depth") {
         options.integrator = Integrator::Depth;
     } else {
@@ -201,7 +207,7 @@ parse_sensor(pugi::xml_node node) {
                 std::cerr << "Warning: the renderer currently only supports independent samplers." << std::endl;
             }
             for (auto grand_child : child.children()) {
-                std::string name = child.attribute("name").value();
+                std::string name = grand_child.attribute("name").value();
                 if (name == "sampleCount") {
                     sampler.sample_count = atoi(grand_child.attribute("value").value());
                 }

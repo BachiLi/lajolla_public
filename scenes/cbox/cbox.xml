@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <scene version="0.4.0">
-	<integrator type="path"/>
+	<integrator type="path">
+		<integer name="maxDepth" value="3"/>
+	</integrator>
 
 	<sensor type="perspective">
 		<string name="fovAxis" value="smaller"/>
@@ -14,7 +16,7 @@
 		<float name="fov" value="39.3077"/>
 
 		<sampler type="ldsampler">
-			<integer name="sampleCount" value="64"/>
+			<integer name="sampleCount" value="4"/>
 		</sampler>
 
 		<film type="hdrfilm">
