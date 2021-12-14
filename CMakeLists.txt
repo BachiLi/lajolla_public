@@ -7,6 +7,8 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
+set(CMAKE_BUILD_TYPE RelWithDebInfo)
+
 find_package(Embree REQUIRED)
 include_directories(${EMBREE_INCLUDE_PATH})
 link_libraries(${EMBREE_LIBRARY})
@@ -30,6 +32,7 @@ set(SRCS camera.h
          scene.h
          shape.h
          spectrum.h
+         stb_image.h
          table_dist.h
          texture.h
          transform.h

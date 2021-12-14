@@ -135,7 +135,7 @@ Spectrum path_trace(const Scene &scene,
             Spectrum f;
             Vector3 dir_view = -ray.dir;
             assert(vertex.material_id >= 0);
-            f = eval(mat, dir_light, dir_view, vertex);
+            f = eval(mat, dir_light, dir_view, vertex, scene.texture_pool);
             // L is stored in LightSampleRecord
             Spectrum L = lr.radiance;
 
@@ -200,7 +200,7 @@ Spectrum path_trace(const Scene &scene,
         Real G = fabs(dot(dir_bsdf, bsdf_vertex.geometry_normal)) /
             distance_squared(bsdf_vertex.position, vertex.position);
         Spectrum f;
-        f = eval(mat, dir_bsdf, dir_view, vertex);
+        f = eval(mat, dir_bsdf, dir_view, vertex, scene.texture_pool);
         Real p2 = pdf_sample_bsdf(mat, dir_bsdf, dir_view, vertex);
         // Remember to convert p2 to area measure!
         p2 *= G; 

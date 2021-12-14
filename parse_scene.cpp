@@ -16,11 +16,10 @@ struct ParsedSampler {
     int sample_count = 4;
 };
 
-std::string to_lowercase(const std::string &s) {
-    std::string out = s;
-    std::transform(s.begin(), s.end(), out.begin(), ::tolower);
-    return out;
-}
+struct ParsedTexture {
+    fs::path filename;
+    Real uscale = 1, vscale = 1;
+};
 
 std::vector<std::string> split_string(const std::string &str, const std::regex &delim_regex) {
     std::sregex_token_iterator first{begin(str), end(str), delim_regex, -1}, last;
@@ -218,14 +217,17 @@ parse_sensor(pugi::xml_node node) {
     return std::make_tuple(Camera(to_world, fov, width, height), filename, sampler);
 }
 
-std::tuple<std::string /* ID */, Material> parse_bsdf(pugi::xml_node node) {
+std::tuple<std::string /* ID */, Material> parse_bsdf(
+        pugi::xml_node node,
+        const std::map<std::string /* name id */, ParsedTexture> &texture_map,
+        TexturePool &texture_pool) {
     std::string type = node.attribute("type").value();
     std::string id;
     if (!node.attribute("id").empty()) {
         id = node.attribute("id").value();
     }
     if (type == "diffuse") {
-        Spectrum reflectance = fromRGB(Vector3{0.5, 0.5, 0.5});
+        Texture<Spectrum> reflectance = make_constant_spectrum_texture(fromRGB(Vector3{0.5, 0.5, 0.5}));
         for (auto child : node.children()) {
             std::string name = child.attribute("name").value();
             if (name == "reflectance") {
@@ -234,13 +236,26 @@ std::tuple<std::string /* ID */, Material> parse_bsdf(pugi::xml_node node) {
                     std::vector<std::pair<Real, Real>> spec =
                         parse_spectrum(child.attribute("value").value());
                     Vector3 xyz = integrate_XYZ(spec);
-                    reflectance = fromRGB(XYZ_to_RGB(xyz));
+                    reflectance = make_constant_spectrum_texture(fromRGB(XYZ_to_RGB(xyz)));
+                } else if (refl_type == "rgb") {
+                    reflectance = make_constant_spectrum_texture(
+                        fromRGB(parse_vector3(child.attribute("value").value())));
+                } else if (refl_type == "ref") {
+                    // referencing a texture
+                    std::string ref_id = child.attribute("value").value();
+                    auto t_it = texture_map.find(ref_id);
+                    if (t_it == texture_map.end()) {
+                        Error(std::string("Texture not found. ID = ") + ref_id);
+                    }
+                    const ParsedTexture t = t_it->second;
+                    reflectance = make_image_spectrum_texture(
+                        ref_id, t.filename, texture_pool, t.uscale, t.vscale);
                 } else {
-                    Error("Unknown reflectance type.");
+                    Error(std::string("Unknown reflectance type:") + refl_type);
                 }
             }
         }
-        return std::make_tuple(id, Lambertian{make_constant_spectrum_texture(reflectance)});
+        return std::make_tuple(id, Lambertian{reflectance});
     } else {
         Error("Unknown BSDF.");
     }
@@ -250,6 +265,8 @@ std::tuple<std::string /* ID */, Material> parse_bsdf(pugi::xml_node node) {
 Shape parse_shape(pugi::xml_node node,
                   std::vector<Material> &materials,
                   std::map<std::string, int> &material_map,
+                  const std::map<std::string /* name id */, ParsedTexture> &texture_map,
+                  TexturePool &texture_pool,
                   std::vector<Light> &lights,
                   const std::vector<Shape> &shapes) {
     int material_id = -1;
@@ -270,7 +287,7 @@ Shape parse_shape(pugi::xml_node node,
         } else if (name == "bsdf") {
             Material m;
             std::string material_name;
-            std::tie(material_name, m) = parse_bsdf(child);
+            std::tie(material_name, m) = parse_bsdf(child, texture_map, texture_pool);
             if (!material_name.empty()) {
                 material_id = materials.size();
                 material_map[material_name] = materials.size();
@@ -333,12 +350,39 @@ Shape parse_shape(pugi::xml_node node,
     return shape;
 }
 
+/// We don't load the images to memory at this stage. Only record their names.
+ParsedTexture parse_texture(pugi::xml_node node) {
+    std::string type = node.attribute("type").value();
+    if (type == "bitmap") {
+        std::string filename = "";
+        Real uscale = 1;
+        Real vscale = 1;
+        for (auto child : node.children()) {
+            std::string name = child.attribute("name").value();
+            if (name == "filename") {
+                filename = child.attribute("value").value();
+            } else if (name == "uvscale") {
+                uscale = vscale = std::stof(child.attribute("value").value());
+            } else if (name == "uscale") {
+                uscale = std::stof(child.attribute("value").value());
+            } else if (name == "vscale") {
+                vscale = std::stof(child.attribute("value").value());
+            }
+        }
+        return ParsedTexture{fs::path(filename), uscale, vscale};
+    }
+    Error("Unknown texture type");
+    return ParsedTexture{};
+}
+
 Scene parse_scene(pugi::xml_node node, const RTCDevice &embree_device) {
     RenderOptions options;
     Camera camera(Matrix4x4::identity(), c_default_fov, c_default_res, c_default_res);
     std::string filename = c_default_filename;
     std::vector<Material> materials;
     std::map<std::string /* name id */, int /* index id */> material_map;
+    TexturePool texture_pool;
+    std::map<std::string /* name id */, ParsedTexture> texture_map;
     std::vector<Shape> shapes;
     std::vector<Light> lights;
     for (auto child : node.children()) {
@@ -352,17 +396,26 @@ Scene parse_scene(pugi::xml_node node, const RTCDevice &embree_device) {
         } else if (name == "bsdf") {
             std::string material_name;
             Material m;
-            std::tie(material_name, m) = parse_bsdf(child);
+            std::tie(material_name, m) = parse_bsdf(child, texture_map, texture_pool);
             if (!material_name.empty()) {
                 material_map[material_name] = materials.size();
                 materials.push_back(m);
             }
         } else if (name == "shape") {
-            Shape s = parse_shape(child, materials, material_map, lights, shapes);
+            Shape s = parse_shape(child,
+                                  materials,
+                                  material_map,
+                                  texture_map,
+                                  texture_pool,
+                                  lights,
+                                  shapes);
             shapes.push_back(s);
+        } else if (name == "texture") {
+            std::string id = child.attribute("id").value();
+            parse_texture(child);
         }
     }
-    return Scene{embree_device, camera, materials, shapes, lights, options, filename};
+    return Scene{embree_device, camera, materials, shapes, lights, texture_pool, options, filename};
 }
 
 Scene parse_scene(const fs::path &filename, const RTCDevice &embree_device) {

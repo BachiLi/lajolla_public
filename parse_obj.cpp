@@ -134,7 +134,7 @@ size_t get_vertex_id(const ObjVertex &vertex,
     return id;
 }
 
-TriangleMesh parse_obj(const std::string &filename, const Matrix4x4 &to_world) {
+TriangleMesh parse_obj(const fs::path &filename, const Matrix4x4 &to_world) {
     std::vector<Vector3> pos_pool;
     std::vector<Vector3> nor_pool;
     std::vector<Vector2> st_pool;

@@ -1,5 +1,7 @@
 #include "image.h"
-
+#include "flexception.h"
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
 #include <algorithm>
 #include <fstream>
 
@@ -20,15 +22,74 @@ inline bool ends_with(const string &str, const string &suffix) {
     return true;
 }
 
-void imwrite(const string &filename, const Image3 &image) {
+Image1 imread1(const fs::path &filename) {
+    Image1 img;
+    std::string extension = to_lowercase(filename.extension().string());
+    // JPG, PNG, TGA, BMP, PSD, GIF, HDR, PIC
+    if (extension == ".jpg" ||
+          extension == ".png" ||
+          extension == ".tga" ||
+          extension == ".bmp" ||
+          extension == ".psd" ||
+          extension == ".gif" ||
+          extension == ".hdr" ||
+          extension == ".pic") {
+        int w, h, n;
+        float *data = stbi_loadf(filename.c_str(), &w, &h, &n, 1);
+        img = Image1(w, h);
+        if (data == nullptr) {
+            Error(std::string("Failure when loading image: ") + filename.string());
+        }
+        for (int i = 0; i < w * h; i++) {
+            img(i) = data[i];
+        }
+        stbi_image_free(data);
+    } else {
+        Error(std::string("Unsupported image format: ") + filename.string());
+    }
+    return img;
+}
+
+Image3 imread3(const fs::path &filename) {
+    Image3 img;
+    std::string extension = to_lowercase(filename.extension().string());
+    // JPG, PNG, TGA, BMP, PSD, GIF, HDR, PIC
+    if (extension == ".jpg" ||
+          extension == ".png" ||
+          extension == ".tga" ||
+          extension == ".bmp" ||
+          extension == ".psd" ||
+          extension == ".gif" ||
+          extension == ".hdr" ||
+          extension == ".pic") {
+        int w, h, n;
+        float *data = stbi_loadf(filename.c_str(), &w, &h, &n, 3);
+        img = Image3(w, h);
+        if (data == nullptr) {
+            Error(std::string("Failure when loading image: ") + filename.string());
+        }
+        int j = 0;
+        for (int i = 0; i < w * h; i++) {
+            img(i)[0] = data[j++];
+            img(i)[1] = data[j++];
+            img(i)[2] = data[j++];
+        }
+        stbi_image_free(data);
+    } else {
+        Error(std::string("Unsupported image format: ") + filename.string());
+    }
+    return img;
+}
+
+void imwrite(const fs::path &filename, const Image3 &image) {
     if (ends_with(filename, ".pfm")) {
         std::ofstream ofs(filename.c_str(), std::ios::binary);
         ofs << "PF" << std::endl;
         ofs << image.width << " " << image.height << std::endl;
         ofs << "-1" << std::endl;
         // Convert image to float
-        vector<Vector3f> data;
-        std::transform(image.data.cbegin(), image.data.cend(), std::back_inserter(data),
+        vector<Vector3f> data(image.data.size());
+        std::transform(image.data.cbegin(), image.data.cend(), data.begin(),
             [] (const Vector3 &v) {return Vector3f(v.x, v.y, v.z);});
         ofs.write((const char *)data.data(), data.size() * sizeof(Vector3f));
     }

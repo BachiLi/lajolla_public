@@ -6,10 +6,11 @@ Scene::Scene(const RTCDevice &embree_device,
              const std::vector<Material> &materials,
              const std::vector<Shape> &shapes,
              const std::vector<Light> &lights,
+             const TexturePool &texture_pool,
              const RenderOptions &options,
              const std::string &output_filename) : 
         embree_device(embree_device), camera(camera), materials(materials),
-        shapes(shapes), lights(lights), options(options),
+        shapes(shapes), lights(lights), texture_pool(texture_pool), options(options),
         output_filename(output_filename) {
     // Register the geometry to Embree
     embree_scene = rtcNewScene(embree_device);
@@ -21,19 +22,19 @@ Scene::Scene(const RTCDevice &embree_device,
     }
     rtcCommitScene(embree_scene);
 
-    // build a sampling distributino for all the lights
-    std::vector<Real> power(lights.size());
-    for (int i = 0; i < (int)lights.size(); i++) {
-        power[i] = light_power(lights[i], *this);
-    }
-    light_dist = make_table_dist_1d(power);
-
     // build shape sampling distributions if necessary
     // TODO: const_cast is a bit ugly...
     std::vector<Shape> &mod_shapes = const_cast<std::vector<Shape>&>(this->shapes);
     for (Shape &shape : mod_shapes) {
         init_sampling_dist(shape);
     }
+
+    // build a sampling distributino for all the lights
+    std::vector<Real> power(lights.size());
+    for (int i = 0; i < (int)lights.size(); i++) {
+        power[i] = light_power(lights[i], *this);
+    }
+    light_dist = make_table_dist_1d(power);
 }
 
 Scene::~Scene() {

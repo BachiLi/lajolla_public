@@ -23,7 +23,8 @@ using Material = std::variant<Lambertian>;
 Spectrum eval(const Material &material,
               const Vector3 &dir_light,
               const Vector3 &dir_view,
-              const PathVertex &vertex);
+              const PathVertex &vertex,
+              const TexturePool &texture_pool);
 
 /// We allow non-reciprocal BRDFs, so it's important
 /// to distinguish which direction we are tracing the rays.

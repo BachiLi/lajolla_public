@@ -5,4 +5,4 @@
 #include "shape.h"
 #include <string>
 
-TriangleMesh parse_obj(const std::string &filename, const Matrix4x4 &to_world);
+TriangleMesh parse_obj(const fs::path &filename, const Matrix4x4 &to_world);

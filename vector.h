@@ -182,6 +182,11 @@ inline TVector3<T> normalize(const TVector3<T> &v0) {
 }
 
 template <typename T>
+inline T average(const TVector3<T> &v) {
+    return (v.x + v.y + v.z) / 3;
+}
+
+template <typename T>
 inline bool isnan(const TVector2<T> &v) {
     return isnan(v[0]) || isnan(v[1]);
 }

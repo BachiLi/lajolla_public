@@ -17,6 +17,7 @@ struct eval_op {
     const Vector3 &dir_light;
     const Vector3 &dir_view;
     const PathVertex &vertex;
+    const TexturePool &texture_pool;
 };
 Spectrum eval_op::operator()(const Lambertian &lambertian) const {
     if (dot(dir_view, vertex.shading_frame.n) < 0) {
@@ -24,7 +25,7 @@ Spectrum eval_op::operator()(const Lambertian &lambertian) const {
         return make_zero_spectrum();
     }
 	return fmax(dot(dir_light, vertex.shading_frame.n), Real(0)) * 
-           eval(lambertian.reflectance, vertex) / c_PI;
+           eval(lambertian.reflectance, vertex, texture_pool) / c_PI;
 }
 ////////////////////////////////////////////////////////////////////////
 
@@ -77,8 +78,9 @@ std::optional<Vector3> sample_bsdf_op::operator()(const Lambertian &lambertian) 
 Spectrum eval(const Material &material,
               const Vector3 &dir_light,
               const Vector3 &dir_view,
-              const PathVertex &vertex) {
-	return std::visit(eval_op{dir_light, dir_view, vertex}, material);
+              const PathVertex &vertex,
+              const TexturePool &texture_pool) {
+	return std::visit(eval_op{dir_light, dir_view, vertex, texture_pool}, material);
 }
 
 std::optional<Vector3> sample_bsdf(const Material &material,

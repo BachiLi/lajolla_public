@@ -1,5 +1,9 @@
 #pragma once
 
+// CMake insert NDEBUG when building with RelWithDebInfo
+// This is an ugly hack to undo that...
+#undef NDEBUG
+
 #include <cassert>
 #include <cmath>
 #include <cstdint>
@@ -36,3 +40,24 @@ inline T infinity() {
 }
 
 namespace fs = std::filesystem;
+
+inline std::string to_lowercase(const std::string &s) {
+    std::string out = s;
+    std::transform(s.begin(), s.end(), out.begin(), ::tolower);
+    return out;
+}
+
+inline int modulo(int a, int b) {
+    auto r = a % b;
+    return (r < 0) ? r+b : r;
+}
+
+inline float modulo(float a, float b) {
+    float r = ::fmodf(a, b);
+    return (r < 0.0f) ? r+b : r;
+}
+
+inline double modulo(double a, double b) {
+    double r = ::fmod(a, b);
+    return (r < 0.0) ? r+b : r;
+}

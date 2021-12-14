@@ -16,6 +16,7 @@ struct PathVertex {
     Vector3 position;
     Vector3 geometry_normal;
     Frame shading_frame;
+    Vector2 uv;
     int shape_id = -1;
     int material_id = -1;
 };

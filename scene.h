@@ -30,6 +30,7 @@ struct Scene {
           const std::vector<Material> &materials,
           const std::vector<Shape> &shapes,
           const std::vector<Light> &lights,
+          const TexturePool &texture_pool,
           const RenderOptions &options,
           const std::string &output_filename);
     ~Scene();
@@ -46,6 +47,7 @@ struct Scene {
     const std::vector<Material> materials;
     const std::vector<Shape> shapes;
     const std::vector<Light> lights;
+    const TexturePool texture_pool;
     
     RenderOptions options;
     std::string output_filename;
