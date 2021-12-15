@@ -3,6 +3,7 @@
 #include "vector.h"
 
 #include <string>
+#include <cstring>
 #include <vector>
 
 /// A N-channel image stored in a contiguous vector

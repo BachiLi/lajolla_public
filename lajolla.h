@@ -10,6 +10,7 @@
 #include <filesystem>
 #include <iostream>
 #include <limits>
+#include <algorithm>
 
 // We use double for most of our computation.
 // Rendering is usually done in single precision Reals.
