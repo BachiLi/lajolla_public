@@ -7,6 +7,7 @@
 
 <scene version="0.4.0">
 	<integrator type="path">
+		<integer name="maxDepth" value="2"/>
 	</integrator>
 
 	<texture type="bitmap" id="Map__1_image-image">
