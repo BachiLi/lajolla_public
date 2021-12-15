@@ -37,9 +37,20 @@ std::optional<PathVertex> intersect(const Scene &scene, const Ray &ray) {
     vertex.position = Vector3{ray.org.x, ray.org.y, ray.org.z} +
         Vector3{ray.dir.x, ray.dir.y, ray.dir.z} * Real(rtc_ray.tfar);
     vertex.geometry_normal = normalize(Vector3{rtc_hit.Ng_x, rtc_hit.Ng_y, rtc_hit.Ng_z});
-    vertex.shading_frame = Frame(vertex.geometry_normal);
     vertex.shape_id = rtc_hit.geomID;
+    vertex.primitive_id = rtc_hit.primID;
     vertex.material_id = get_material_id(scene.shapes[vertex.shape_id]);
+    vertex.st = Vector2{rtc_hit.u, rtc_hit.v};
+
+    ShadingInfo shading_info = compute_shading_info(scene.shapes[vertex.shape_id], vertex);
+    vertex.shading_frame = shading_info.shading_frame;
+    vertex.uv = shading_info.uv;
+
+    // Flip the geometry normal to the same direction as the shading normal
+    if (dot(vertex.geometry_normal, vertex.shading_frame.n) < 0) {
+        vertex.geometry_normal = -vertex.geometry_normal;
+    }
+
     return vertex;
 }
 

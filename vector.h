@@ -80,6 +80,31 @@ using Vector4d = TVector4<double>;
 using Vector4 = TVector4<Real>;
 
 template <typename T>
+inline TVector2<T> operator+(const TVector2<T> &v0, const TVector2<T> &v1) {
+    return TVector2<T>(v0.x + v1.x, v0.y + v1.y);
+}
+
+template <typename T>
+inline TVector2<T> operator-(const TVector2<T> &v0, const TVector2<T> &v1) {
+    return TVector2<T>(v0.x - v1.x, v0.y - v1.y);
+}
+
+template <typename T>
+inline TVector2<T> operator*(const T &s, const TVector2<T> &v) {
+    return TVector2<T>(s * v[0], s * v[1]);
+}
+
+template <typename T>
+inline TVector2<T> operator*(const TVector2<T> &v, const T &s) {
+    return TVector2<T>(v[0] * s, v[1] * s);
+}
+
+template <typename T>
+inline TVector2<T> operator/(const TVector2<T> &v, const T &s) {
+    return TVector2<T>(v[0] / s, v[1] / s);
+}
+
+template <typename T>
 inline TVector3<T> operator+(const TVector3<T> &v0, const TVector3<T> &v1) {
     return TVector3<T>(v0.x + v1.x, v0.y + v1.y, v0.z + v1.z);
 }

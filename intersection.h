@@ -16,8 +16,12 @@ struct PathVertex {
     Vector3 position;
     Vector3 geometry_normal;
     Frame shading_frame;
-    Vector2 uv;
+    Vector2 st; // A 2D parametrization of the surface. Irrelavant to UV mapping.
+                // for triangle this is the barycentric coordinates, which we use
+                // for interpolating the uv map.
+    Vector2 uv; // The actual UV we use for texture fetching.
     int shape_id = -1;
+    int primitive_id = -1; // For triangle meshes. This indicates which triangle it hits.
     int material_id = -1;
 };
 

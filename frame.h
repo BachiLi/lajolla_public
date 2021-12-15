@@ -50,3 +50,7 @@ inline Vector3 to_local(const Frame &frame, const Vector3 &v) {
 inline Vector3 to_world(const Frame &frame, const Vector3 &v) {
     return frame[0] * v[0] + frame[1] * v[1] + frame[2] * v[2];
 }
+
+inline std::ostream& operator<<(std::ostream &os, const Frame &f) {
+    return os << "Frame(" << f[0] << ", " << f[1] << ", " << f[2] << ")";
+}

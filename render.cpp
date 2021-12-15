@@ -202,8 +202,12 @@ Spectrum path_trace(const Scene &scene,
         Spectrum f;
         f = eval(mat, dir_bsdf, dir_view, vertex, scene.texture_pool);
         Real p2 = pdf_sample_bsdf(mat, dir_bsdf, dir_view, vertex);
+        if (p2 <= 0) {
+            // Numerical issue -- we generated some invalid rays.
+            break;
+        }
         // Remember to convert p2 to area measure!
-        p2 *= G; 
+        p2 *= G;
         // note that G cancels out in the division f/p, but we still need
         // G later for the calculation of w2.
         assert(p2 > 0);

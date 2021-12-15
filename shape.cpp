@@ -1,4 +1,5 @@
 #include "shape.h"
+#include "intersection.h"
 #include "point_and_normal.h"
 #include "ray.h"
 #include <embree3/rtcore.h>
@@ -84,12 +85,19 @@ void sphere_intersect_func(const RTCIntersectFunctionNArguments* args) {
 
     if (t >= ray.tnear && t < ray.tfar) {
         // Record the intersection
-        Vector3 geometry_normal = ray.org + t0 * ray.dir - sphere->position;
+        Vector3 p = ray.org + t0 * ray.dir;
+        Vector3 geometry_normal = p - sphere->position;
         rtc_hit->Ng_x = geometry_normal.x;
         rtc_hit->Ng_y = geometry_normal.y;
         rtc_hit->Ng_z = geometry_normal.z;
-        rtc_hit->u = 0.f; // in embree u,v are barycentric coordinates -- we just ignore this
-        rtc_hit->v = 0.f;
+        // We use the spherical coordinates as uv
+        Vector3 cartesian = geometry_normal / sphere->radius;
+        // https://en.wikipedia.org/wiki/Spherical_coordinate_system#Cartesian_coordinates
+        // We use the convention that y is up axis.
+        Real elevation = acos(cartesian.y);
+        Real azimuth = atan2(cartesian.z, cartesian.x);
+        rtc_hit->u = azimuth / c_TWOPI;
+        rtc_hit->v = elevation / c_PI;
         rtc_hit->primID = args->primID;
         rtc_hit->geomID = args->geomID;
         rtc_hit->instID[0] = args->context->instID[0];
@@ -266,6 +274,104 @@ void init_sampling_dist_op::operator()(TriangleMesh &mesh) const {
 }
 ///////////////////////////////////////////////////////////////////////////
 
+///////////////////////////////////////////////////////////////////////////
+struct compute_shading_info_op {
+    ShadingInfo operator()(const Sphere &sphere) const;
+    ShadingInfo operator()(const TriangleMesh &mesh) const;
+
+    const PathVertex &vertex;
+};
+ShadingInfo compute_shading_info_op::operator()(const Sphere &sphere) const {
+    // To compute the shading frame, we use the geometry normal as normal,
+    // and dpdu as one of the tangent vector. 
+    // We use the azimuthal angle as u, and the elevation as v, 
+    // thus the point p on sphere and u, v has the following relationship:
+    // p = center + {r * cos(u) * sin(v), r * sin(u) * sin(v), r * cos(v)}
+    // thus dpdu = {-r * sin(u), r * cos(u), 0}
+    Vector3 dpdu{-sphere.radius * sin(vertex.st.x),
+                 sphere.radius * cos(vertex.st.x),
+                 Real(0)};
+    // normalize for shading frame calculation
+    Vector3 tangent = normalize(dpdu);
+    Frame shading_frame(dpdu,
+                        cross(vertex.geometry_normal, dpdu),
+                        vertex.geometry_normal);
+    return ShadingInfo{shading_frame, vertex.st};
+}
+ShadingInfo compute_shading_info_op::operator()(const TriangleMesh &mesh) const {
+    // Get UVs of the three vertices
+    assert(vertex.primitive_id >= 0);
+    Vector3i index = mesh.indices[vertex.primitive_id];
+    Vector2 uvs[3];
+    if (mesh.uvs.size() > 0) {
+        uvs[0] = mesh.uvs[index[0]];
+        uvs[1] = mesh.uvs[index[1]];
+        uvs[2] = mesh.uvs[index[2]];
+    } else {
+        // Use barycentric coordinates
+        uvs[0] = Vector2{0, 0};
+        uvs[1] = Vector2{1, 0};
+        uvs[2] = Vector2{1, 1};
+    }
+    // Barycentric coordinates are stored in vertex.st
+    Vector2 uv = (1 - vertex.st[0] - vertex.st[1]) * uvs[0] +
+                 vertex.st[0] * uvs[1] +
+                 vertex.st[1] * uvs[2];
+    Vector3 p0 = mesh.positions[index[0]],
+            p1 = mesh.positions[index[1]],
+            p2 = mesh.positions[index[2]];
+    // We want to derive dp/du. We have the following
+    // relation:
+    // p  = (1 - s - t) * p0   + s * p1   + t * p2
+    // uv = (1 - s - t) * uvs0 + s * uvs1 + t * uvs2
+    // dp/duv = dp/dst * dst/duv = dp/dst * (duv/dst)^{-1}
+    // where dp/dst is a 3x2 matrix, duv/dst and dst/duv is a 2x2 matrix,
+    // and dp/duv is a 3x2 matrix.
+
+    // Let's build duv/dst first. To be clearer, it is
+    // [du/ds, du/dt]
+    // [dv/ds, dv/dt]
+    Vector2 duvds = uvs[2] - uvs[0];
+    Vector2 duvdt = uvs[2] - uvs[1];
+    // The inverse of this matrix is
+    // (1/det) [ dv/dt, -du/dt]
+    //         [-dv/ds,  du/ds]
+    // where det = duds * dvdt - dudt * dvds
+    Real det = duvds[0] * duvdt[1] - duvdt[0] * duvds[1];
+    Vector3 dpdu;
+    if (fabs(det) > 1e-8f) {
+        // For dp/du we only need the first column of the dst/duv matrix.
+        Vector2 dstdu = Vector2{duvdt[1], duvds[1]} / det;
+        Vector3 dpds = p2 - p0;
+        Vector3 dpdt = p2 - p1;
+        dpdu = dpds * dstdu[0] + dpdt * dstdu[1];
+    } else {
+        // degenerate uvs, use an arbitrary coordinate system
+        dpdu = coordinate_system(vertex.geometry_normal).first;
+    }
+
+    // Now let's get the shading normal.
+    // By default it is the geometry normal.
+    Vector3 shading_normal = vertex.geometry_normal;
+    // However if we have vertex normals, that overrides the geometry normal.
+    if (mesh.normals.size() > 0) {
+        Vector3 n0 = mesh.normals[index[0]],
+                n1 = mesh.normals[index[1]],
+                n2 = mesh.normals[index[2]];
+        shading_normal = normalize(
+            (1 - vertex.st[0] - vertex.st[1]) * n0 + 
+                                 vertex.st[0] * n1 +
+                                 vertex.st[1] * n2);
+    }
+
+    // normalize for shading frame calculation
+    Vector3 tangent = normalize(dpdu);
+    return ShadingInfo{Frame(tangent,
+                             cross(shading_normal, tangent),
+                             shading_normal), uv};
+}
+///////////////////////////////////////////////////////////////////////////
+
 uint32_t register_embree(const Shape &shape, const RTCDevice &device, const RTCScene &scene) {
     return std::visit(register_embree_op{device, scene}, shape);
 }
@@ -284,4 +390,8 @@ Real surface_area(const Shape &shape) {
 
 void init_sampling_dist(Shape &shape) {
     return std::visit(init_sampling_dist_op{}, shape);
+}
+
+ShadingInfo compute_shading_info(const Shape &shape, const PathVertex &vertex) {
+    return std::visit(compute_shading_info_op{vertex}, shape);
 }

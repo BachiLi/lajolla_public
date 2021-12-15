@@ -1,6 +1,7 @@
 #pragma once
 
 #include "lajolla.h"
+#include "frame.h"
 #include "table_dist.h"
 #include "vector.h"
 #include <embree3/rtcore.h>
@@ -8,6 +9,12 @@
 #include <vector>
 
 struct PointAndNormal;
+struct PathVertex;
+
+struct ShadingInfo {
+    Frame shading_frame;
+    Vector2 uv;
+};
 
 /// A Shape is a geometric entity that describes a surface. E.g., a sphere, a triangle mesh, a NURBS, etc.
 /// For each shape, we also store an integer "material ID" that points to a material, and an integer
@@ -53,6 +60,8 @@ Real surface_area(const Shape &shape);
 /// Some shapes require storing sampling data structures inside. This function initialize them.
 void init_sampling_dist(Shape &shape);
 
+/// Embree doesn't calculate some shading information for us. We have to do it ourselves.
+ShadingInfo compute_shading_info(const Shape &shape, const PathVertex &vertex);
 
 inline void set_material_id(Shape &shape, int material_id) {
     std::visit([&](auto &s) { s.material_id = material_id; }, shape);

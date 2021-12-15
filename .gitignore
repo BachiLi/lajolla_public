@@ -39,3 +39,6 @@ build/
 !embree/lib-linux/*
 !embree/lib-macos/*
 !embree/lib-win32/*
+
+# obj files in scenes directory
+!scenes/**/*.obj
