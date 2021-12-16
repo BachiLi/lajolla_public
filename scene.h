@@ -11,6 +11,7 @@
 
 enum class Integrator {
     Depth,
+    MeanCurvature,
     RayDifferential, // visualize radius & spread
     Path
 };

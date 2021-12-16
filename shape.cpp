@@ -376,8 +376,8 @@ ShadingInfo compute_shading_info_op::operator()(const TriangleMesh &mesh) const 
         // We want to compute dn/du & dn/dv for mean curvature.
         // This is computed in a similar way to dpdu.
         // dn/duv = dn/dst * dst/duv = dn/dst * (duv/dst)^{-1}
-        Vector3 dnds = p2 - p0;
-        Vector3 dndt = p2 - p1;
+        Vector3 dnds = n2 - n0;
+        Vector3 dndt = n2 - n1;
         Vector3 dndu = dnds * dsdu + dndt * dtdu;
         Vector3 dndv = dnds * dsdv + dndt * dtdv;
         Vector3 bitangent = normalize(cross(shading_normal, tangent));

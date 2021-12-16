@@ -145,6 +145,8 @@ RenderOptions parse_integrator(pugi::xml_node node) {
         }
     } else if (type == "depth") {
         options.integrator = Integrator::Depth;
+    } else if (type == "meanCurvature") {
+        options.integrator = Integrator::MeanCurvature;
     } else if (type == "rayDifferential") {
         options.integrator = Integrator::RayDifferential;
     } else {

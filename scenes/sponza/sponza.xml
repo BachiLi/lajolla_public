@@ -11,6 +11,8 @@
 	</integrator>
 <!-- 	<integrator type="rayDifferential">
 	</integrator> -->
+<!-- 	<integrator type="meanCurvature">
+	</integrator> -->
 
 	<texture type="bitmap" id="Map__1_image-image">
 		<string name="filename" value="textures/sp_luk.JPG"/>
