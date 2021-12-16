@@ -20,13 +20,14 @@ struct PathVertex {
                 // for triangle this is the barycentric coordinates, which we use
                 // for interpolating the uv map.
     Vector2 uv; // The actual UV we use for texture fetching.
+    Real mean_curvature; // For ray differential propagation.
     int shape_id = -1;
     int primitive_id = -1; // For triangle meshes. This indicates which triangle it hits.
     int material_id = -1;
 };
 
 /// Intersect a ray with a scene. If the ray doesn't hit anything,
-/// returns an invalid optional output.
+/// returns an invalid optional output. 
 std::optional<PathVertex> intersect(const Scene &scene, const Ray &ray);
 
 /// Test is a ray segment intersect with anything in a scene.

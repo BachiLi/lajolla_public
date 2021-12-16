@@ -75,6 +75,17 @@ std::optional<Vector3> sample_bsdf_op::operator()(const Lambertian &lambertian) 
 }
 ////////////////////////////////////////////////////////////////////////
 
+////////////////////////////////////////////////////////////////////////
+struct get_roughness_op {
+    Real operator()(const Lambertian &lambertian) const;
+
+    const PathVertex &vertex;
+};
+Real get_roughness_op::operator()(const Lambertian &lambertian) const {
+    return Real(1);
+}
+////////////////////////////////////////////////////////////////////////
+
 Spectrum eval(const Material &material,
               const Vector3 &dir_light,
               const Vector3 &dir_view,
@@ -97,4 +108,8 @@ Real pdf_sample_bsdf(const Material &material,
                      const PathVertex &vertex,
                      TransportDirection dir) {
     return std::visit(pdf_sample_bsdf_op{dir_light, dir_view, vertex, dir}, material);
+}
+
+Real get_roughness(const Material &material, const PathVertex &vertex) {
+    return std::visit(get_roughness_op{vertex}, material);
 }

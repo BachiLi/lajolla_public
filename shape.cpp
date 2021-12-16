@@ -287,16 +287,19 @@ ShadingInfo compute_shading_info_op::operator()(const Sphere &sphere) const {
     // We use the azimuthal angle as u, and the elevation as v, 
     // thus the point p on sphere and u, v has the following relationship:
     // p = center + {r * cos(u) * sin(v), r * sin(u) * sin(v), r * cos(v)}
-    // thus dpdu = {-r * sin(u), r * cos(u), 0}
-    Vector3 dpdu{-sphere.radius * sin(vertex.st.x),
-                 sphere.radius * cos(vertex.st.x),
+    // thus dpdu = {-r * sin(u) * sin(v), r * cos(u) * sin(v), 0}
+    //      dpdv = { r * cos(u) * cos(v), r * sin(u) * cos(v), - r * sin(v)}
+    Vector3 dpdu{-sphere.radius * sin(vertex.st[0]) * sin(vertex.st[1]),
+                  sphere.radius * cos(vertex.st[0]) * sin(vertex.st[1]),
                  Real(0)};
     // normalize for shading frame calculation
     Vector3 tangent = normalize(dpdu);
-    Frame shading_frame(dpdu,
-                        cross(vertex.geometry_normal, dpdu),
+    Frame shading_frame(tangent,
+                        normalize(cross(vertex.geometry_normal, tangent)),
                         vertex.geometry_normal);
-    return ShadingInfo{shading_frame, vertex.st};
+    return ShadingInfo{vertex.st,
+                       shading_frame,
+                       1 / sphere.radius /* mean curvature */};
 }
 ShadingInfo compute_shading_info_op::operator()(const TriangleMesh &mesh) const {
     // Get UVs of the three vertices
@@ -320,7 +323,7 @@ ShadingInfo compute_shading_info_op::operator()(const TriangleMesh &mesh) const 
     Vector3 p0 = mesh.positions[index[0]],
             p1 = mesh.positions[index[1]],
             p2 = mesh.positions[index[2]];
-    // We want to derive dp/du. We have the following
+    // We want to derive dp/du & dp/dv. We have the following
     // relation:
     // p  = (1 - s - t) * p0   + s * p1   + t * p2
     // uv = (1 - s - t) * uvs0 + s * uvs1 + t * uvs2
@@ -338,21 +341,29 @@ ShadingInfo compute_shading_info_op::operator()(const TriangleMesh &mesh) const 
     //         [-dv/ds,  du/ds]
     // where det = duds * dvdt - dudt * dvds
     Real det = duvds[0] * duvdt[1] - duvdt[0] * duvds[1];
+    Real dsdu =  duvdt[1] / det;
+    Real dtdu = -duvds[1] / det;
+    Real dsdv =  duvdt[0] / det;
+    Real dtdv = -duvds[0] / det;
     Vector3 dpdu;
     if (fabs(det) > 1e-8f) {
-        // For dp/du we only need the first column of the dst/duv matrix.
-        Vector2 dstdu = Vector2{duvdt[1], duvds[1]} / det;
+        // Now we just need to do the matrix multiplication
         Vector3 dpds = p2 - p0;
         Vector3 dpdt = p2 - p1;
-        dpdu = dpds * dstdu[0] + dpdt * dstdu[1];
+        dpdu = dpds * dsdu + dpdt * dtdu;
+        // dpdv = dpds * dsdv + dpdt * dtdv;
     } else {
-        // degenerate uvs, use an arbitrary coordinate system
+        // degenerate uvs. Use an arbitrary coordinate system
         dpdu = coordinate_system(vertex.geometry_normal).first;
     }
 
-    // Now let's get the shading normal.
-    // By default it is the geometry normal.
+    // normalize for shading frame calculation
+    Vector3 tangent = normalize(dpdu);
+
+    // Now let's get the shading normal & mean_curvature.
+    // By default it is the geometry normal and we have zero curvature.
     Vector3 shading_normal = vertex.geometry_normal;
+    Real mean_curvature = 0;
     // However if we have vertex normals, that overrides the geometry normal.
     if (mesh.normals.size() > 0) {
         Vector3 n0 = mesh.normals[index[0]],
@@ -360,15 +371,24 @@ ShadingInfo compute_shading_info_op::operator()(const TriangleMesh &mesh) const 
                 n2 = mesh.normals[index[2]];
         shading_normal = normalize(
             (1 - vertex.st[0] - vertex.st[1]) * n0 + 
-                                 vertex.st[0] * n1 +
-                                 vertex.st[1] * n2);
+                                vertex.st[0] * n1 +
+                                vertex.st[1] * n2);
+        // We want to compute dn/du & dn/dv for mean curvature.
+        // This is computed in a similar way to dpdu.
+        // dn/duv = dn/dst * dst/duv = dn/dst * (duv/dst)^{-1}
+        Vector3 dnds = p2 - p0;
+        Vector3 dndt = p2 - p1;
+        Vector3 dndu = dnds * dsdu + dndt * dtdu;
+        Vector3 dndv = dnds * dsdv + dndt * dtdv;
+        Vector3 bitangent = normalize(cross(shading_normal, tangent));
+        mean_curvature = (dot(dndu, tangent) + 
+                          dot(dndv, bitangent)) / Real(2);
     }
 
-    // normalize for shading frame calculation
-    Vector3 tangent = normalize(dpdu);
-    return ShadingInfo{Frame(tangent,
-                             cross(shading_normal, tangent),
-                             shading_normal), uv};
+    Frame shading_frame(tangent,
+                        normalize(cross(shading_normal, tangent)),
+                        shading_normal);
+    return ShadingInfo{uv, shading_frame, mean_curvature};
 }
 ///////////////////////////////////////////////////////////////////////////
 

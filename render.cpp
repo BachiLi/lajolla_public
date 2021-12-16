@@ -24,19 +24,44 @@ std::shared_ptr<Image3> depth_render(const Scene &scene) {
     return img_;
 }
 
+std::shared_ptr<Image3> ray_differential_render(const Scene &scene) {
+    int w = scene.camera.width, h = scene.camera.height;
+    std::shared_ptr<Image3> img_ = std::make_shared<Image3>(w, h);
+    Image3 &img = *img_;
+    pcg32_state rng = init_pcg32();
+    for (int y = 0; y < h; y++) {
+        for (int x = 0; x < w; x++) {
+            Spectrum radiance = make_zero_spectrum();
+            Ray ray = sample_primary(scene.camera, Vector2((x + Real(0.5)) / w, (y + Real(0.5)) / h));
+            if (std::optional<PathVertex> vertex = intersect(scene, ray)) {
+                Real dist = distance(vertex->position, ray.org);
+                RayDifferential ray_diff = init_ray_differential(w, h);
+                ray_diff = transfer(ray_diff, distance(ray.org, vertex->position));
+                img(x, y) = Vector3{ray_diff.radius, ray_diff.spread, Real(0)};
+            } else {
+                img(x, y) = Vector3{0, 0, 0};
+            }
+        }
+    }
+    return img_;
+}
+
 Spectrum path_trace(const Scene &scene,
                     int x, int y, /* pixel coordinates */
                     pcg32_state &rng) {
     int w = scene.camera.width, h = scene.camera.height;
-    Ray ray = sample_primary(scene.camera,
-        Vector2((x + next_pcg32_real<Real>(rng)) / w,
-                (y + next_pcg32_real<Real>(rng)) / h));
+    Vector2 screen_pos((x + next_pcg32_real<Real>(rng)) / w,
+                       (y + next_pcg32_real<Real>(rng)) / h);
+    Ray ray = sample_primary(scene.camera, screen_pos);
+    RayDifferential ray_diff = init_ray_differential(w, h);
+
     std::optional<PathVertex> vertex_ = intersect(scene, ray);
     if (!vertex_) {
         // Hit background -- nothing to see here.
         return make_zero_spectrum();
     }
     PathVertex vertex = *vertex_;
+    ray_diff = transfer(ray_diff, distance(ray.org, vertex.position));
 
     Spectrum radiance = make_zero_spectrum();
     // A path's contribution is 
@@ -239,7 +264,11 @@ Spectrum path_trace(const Scene &scene,
             radiance += (current_path_contrib / current_path_pdf) * C2 * w2;
         }
 
-        // Update rays/intersection/current_path_contrib/current_pdf
+        // Update rays/ray differentials/intersection/current_path_contrib/current_pdf
+        Real roughness = get_roughness(mat, vertex);
+        // TODO: add refraction.
+        ray_diff = reflect(ray_diff, vertex.mean_curvature, roughness);
+        ray_diff = transfer(ray_diff, distance(vertex.position, bsdf_vertex.position));
         ray = bsdf_ray;
         vertex = bsdf_vertex;
         current_path_contrib = current_path_contrib * G * f;
@@ -270,6 +299,8 @@ std::shared_ptr<Image3> path_render(const Scene &scene) {
 std::shared_ptr<Image3> render(const Scene &scene) {
     if (scene.options.integrator == Integrator::Depth) {
         return depth_render(scene);
+    } else if (scene.options.integrator == Integrator::RayDifferential) {
+        return ray_differential_render(scene);
     } else if (scene.options.integrator == Integrator::Path) {
         return path_render(scene);
     } else {

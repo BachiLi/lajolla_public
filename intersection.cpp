@@ -4,7 +4,8 @@
 #include "scene.h"
 #include <embree3/rtcore.h>
 
-std::optional<PathVertex> intersect(const Scene &scene, const Ray &ray) {
+std::optional<PathVertex> intersect(const Scene &scene,
+                                    const Ray &ray) {
     RTCIntersectContext rtc_context;
     rtcInitIntersectContext(&rtc_context);
     RTCRayHit rtc_rayhit;
@@ -45,6 +46,7 @@ std::optional<PathVertex> intersect(const Scene &scene, const Ray &ray) {
     ShadingInfo shading_info = compute_shading_info(scene.shapes[vertex.shape_id], vertex);
     vertex.shading_frame = shading_info.shading_frame;
     vertex.uv = shading_info.uv;
+    vertex.mean_curvature = shading_info.mean_curvature;
 
     // Flip the geometry normal to the same direction as the shading normal
     if (dot(vertex.geometry_normal, vertex.shading_frame.n) < 0) {

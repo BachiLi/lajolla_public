@@ -12,8 +12,9 @@ struct PointAndNormal;
 struct PathVertex;
 
 struct ShadingInfo {
-    Frame shading_frame;
-    Vector2 uv;
+    Vector2 uv; // UV coordinates for texture mapping
+    Frame shading_frame; // the coordinate basis for shading
+    Real mean_curvature; // -0.5 * (dN/du + dN/dv)
 };
 
 /// A Shape is a geometric entity that describes a surface. E.g., a sphere, a triangle mesh, a NURBS, etc.

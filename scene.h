@@ -11,6 +11,7 @@
 
 enum class Integrator {
     Depth,
+    RayDifferential, // visualize radius & spread
     Path
 };
 

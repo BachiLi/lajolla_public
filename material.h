@@ -53,3 +53,5 @@ Real pdf_sample_bsdf(const Material &material,
                      const Vector3 &dir_view,
                      const PathVertex &vertex,
                      TransportDirection dir = TransportDirection::TO_LIGHT);
+
+Real get_roughness(const Material &material, const PathVertex &vertex);
