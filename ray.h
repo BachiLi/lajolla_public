@@ -24,14 +24,13 @@ struct Ray {
 /// PDF of the sampling direction and use larger spread for low PDF.
 /// Here we use an even simpler heuristics: we linearly blend
 /// between the specular spread and a constant based on roughness.
-
 struct RayDifferential {
-    Real radius = 0, spread = 0;
+    Real radius = 0, spread = 0; // The units are pixels.
 };
 
 /// These functions propagate the ray differential information.
-inline RayDifferential init_ray_differential(int img_width, int img_height) {
-    return RayDifferential{Real(0), Real(0.25)/std::max(img_width, img_height)};
+inline RayDifferential init_ray_differential() {
+    return RayDifferential{Real(0), Real(0.25)};
 }
 
 inline RayDifferential transfer(const RayDifferential &r,
@@ -43,7 +42,7 @@ inline RayDifferential reflect(const RayDifferential &r,
                                Real mean_curvature,
                                Real roughness) {
     Real spec_spread = r.spread + 2 * mean_curvature * r.radius;
-    Real diff_spread = r.spread + Real(0.2);
+    Real diff_spread = Real(0.2);
     return RayDifferential{r.radius,
         fmax(spec_spread * (1 - roughness) + diff_spread * roughness, Real(0))};
 }
@@ -56,7 +55,7 @@ inline RayDifferential refract(const RayDifferential &r,
                                Real eta,
                                Real roughness) {
     Real spec_spread = eta * r.spread + 2 * (eta - 1) * (eta - 1) * mean_curvature * r.radius;
-    Real diff_spread = r.spread + Real(0.2);
+    Real diff_spread = Real(0.2);
     return RayDifferential{r.radius,
         fmax(spec_spread * (1 - roughness) + diff_spread * roughness, Real(0))};
 }

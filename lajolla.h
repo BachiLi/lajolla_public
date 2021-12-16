@@ -62,3 +62,13 @@ inline double modulo(double a, double b) {
     double r = ::fmod(a, b);
     return (r < 0.0) ? r+b : r;
 }
+
+template <typename T>
+inline T max(const T &a, const T &b) {
+    return a > b ? a : b;
+}
+
+template <typename T>
+inline T min(const T &a, const T &b) {
+    return a < b ? a : b;
+}

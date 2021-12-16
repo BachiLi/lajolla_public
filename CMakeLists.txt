@@ -24,6 +24,7 @@ set(SRCS camera.h
          material.h
          matrix.h
          miniz.h
+         mipmap.h
          parse_obj.h
          parse_scene.h
          point_and_normal.h

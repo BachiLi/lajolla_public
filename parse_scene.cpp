@@ -149,6 +149,8 @@ RenderOptions parse_integrator(pugi::xml_node node) {
         options.integrator = Integrator::MeanCurvature;
     } else if (type == "rayDifferential") {
         options.integrator = Integrator::RayDifferential;
+    } else if (type == "mipmapLevel") {
+        options.integrator = Integrator::MipmapLevel;
     } else {
         Error(std::string("Unsupported integrator: ") + type);
     }

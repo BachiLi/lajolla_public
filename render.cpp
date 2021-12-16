@@ -23,9 +23,25 @@ std::shared_ptr<Image3> aux_render(const Scene &scene) {
                     Real kappa = vertex->mean_curvature;
                     color = Vector3{kappa, kappa, kappa};
                 } else if (scene.options.integrator == Integrator::RayDifferential) {
-                    RayDifferential ray_diff = init_ray_differential(w, h);
+                    RayDifferential ray_diff = init_ray_differential();
                     ray_diff = transfer(ray_diff, distance(ray.org, vertex->position));
                     color = Vector3{ray_diff.radius, ray_diff.spread, Real(0)};
+                } else if (scene.options.integrator == Integrator::MipmapLevel) {
+                    RayDifferential ray_diff = init_ray_differential();
+                    ray_diff = transfer(ray_diff, distance(ray.org, vertex->position));
+                    const Material &mat = scene.materials[vertex->material_id];
+                    const TextureSpectrum &texture = get_texture(mat);
+                    auto *t = std::get_if<ImageTexture<Spectrum>>(&texture);
+                    if (t != nullptr) {
+                        const Mipmap3 &mipmap = get_img3(scene.texture_pool, t->texture_id);
+                        Vector2 uv{modulo(vertex->uv[0] * t->uscale, Real(1)),
+                                   modulo(vertex->uv[1] * t->vscale, Real(1))};
+                        Real footprint = ray_diff.radius;
+                        Real scaled_footprint = max(get_width(mipmap), get_height(mipmap)) *
+                                                max(t->uscale, t->vscale) * footprint;
+                        Real level = log2(max(footprint, Real(1e-8f)));
+                        color = Vector3{level, level, level};
+                    }
                 }
                 img(x, y) = color;
             } else {
@@ -43,7 +59,7 @@ Spectrum path_trace(const Scene &scene,
     Vector2 screen_pos((x + next_pcg32_real<Real>(rng)) / w,
                        (y + next_pcg32_real<Real>(rng)) / h);
     Ray ray = sample_primary(scene.camera, screen_pos);
-    RayDifferential ray_diff = init_ray_differential(w, h);
+    RayDifferential ray_diff = init_ray_differential();
 
     std::optional<PathVertex> vertex_ = intersect(scene, ray);
     if (!vertex_) {
@@ -143,14 +159,14 @@ Spectrum path_trace(const Scene &scene,
                 // this can be derived by the infinitesimal area of a surface projected on
                 // a unit sphere -- it's the Jacobian between the area measure and the solid angle
                 // measure.
-                G = fmax(-dot(dir_light, point_on_light.normal), Real(0)) /
+                G = max(-dot(dir_light, point_on_light.normal), Real(0)) /
                     distance_squared(point_on_light.position, vertex.position);
             }
             // Let's compute f (BSDF) next.
             Spectrum f;
             Vector3 dir_view = -ray.dir;
             assert(vertex.material_id >= 0);
-            f = eval(mat, dir_light, dir_view, vertex, scene.texture_pool);
+            f = eval(mat, dir_light, dir_view, vertex, ray_diff.radius, scene.texture_pool);
             // L is stored in LightSampleRecord
             Spectrum L = lr.radiance;
 
@@ -169,7 +185,7 @@ Spectrum path_trace(const Scene &scene,
             Real p1 = light_pmf(scene, light_id) * pdf_point_on_light(light, point_on_light, scene);
             assert(p1 > 0);
             // The probability density for our hemispherical sampling to sample 
-            Real p2 = pdf_sample_bsdf(mat, dir_light, dir_view, vertex);
+            Real p2 = pdf_sample_bsdf(mat, dir_light, dir_view, vertex, ray_diff.radius);
             // !!!! IMPORTANT !!!!
             // p1 and p2 now live in different spaces!!
             // our BSDF API outputs a probability density in the solid angle measure
@@ -193,7 +209,7 @@ Spectrum path_trace(const Scene &scene,
         Vector3 dir_view = -ray.dir;
         Vector2 bsdf_rnd_param{next_pcg32_real<Real>(rng), next_pcg32_real<Real>(rng)};
         std::optional<Vector3> dir_bsdf_ =
-            sample_bsdf(mat, dir_view, vertex, bsdf_rnd_param);
+            sample_bsdf(mat, dir_view, vertex, ray_diff.radius, bsdf_rnd_param);
         if (!dir_bsdf_) {
             // BSDF sampling failed. Abort the loop.
             break;
@@ -215,8 +231,8 @@ Spectrum path_trace(const Scene &scene,
         Real G = fabs(dot(dir_bsdf, bsdf_vertex.geometry_normal)) /
             distance_squared(bsdf_vertex.position, vertex.position);
         Spectrum f;
-        f = eval(mat, dir_bsdf, dir_view, vertex, scene.texture_pool);
-        Real p2 = pdf_sample_bsdf(mat, dir_bsdf, dir_view, vertex);
+        f = eval(mat, dir_bsdf, dir_view, vertex, ray_diff.radius, scene.texture_pool);
+        Real p2 = pdf_sample_bsdf(mat, dir_bsdf, dir_view, vertex, ray_diff.radius);
         if (p2 <= 0) {
             // Numerical issue -- we generated some invalid rays.
             break;
@@ -289,7 +305,8 @@ std::shared_ptr<Image3> path_render(const Scene &scene) {
 std::shared_ptr<Image3> render(const Scene &scene) {
     if (scene.options.integrator == Integrator::Depth ||
             scene.options.integrator == Integrator::MeanCurvature ||
-            scene.options.integrator == Integrator::RayDifferential) {
+            scene.options.integrator == Integrator::RayDifferential ||
+            scene.options.integrator == Integrator::MipmapLevel) {
         return aux_render(scene);
     } else if (scene.options.integrator == Integrator::Path) {
         return path_render(scene);

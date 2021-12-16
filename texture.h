@@ -3,6 +3,7 @@
 #include "lajolla.h"
 #include "image.h"
 #include "intersection.h"
+#include "mipmap.h"
 #include <map>
 #include <variant>
 
@@ -13,8 +14,8 @@ struct TexturePool {
     std::map<std::string, int> image1s_map;
     std::map<std::string, int> image3s_map;
 
-    std::vector<Image1> image1s;
-    std::vector<Image3> image3s;
+    std::vector<Mipmap1> image1s;
+    std::vector<Mipmap3> image3s;
 };
 
 inline int insert_image1(TexturePool &pool, const std::string &texture_name, const fs::path &filename) {
@@ -24,7 +25,7 @@ inline int insert_image1(TexturePool &pool, const std::string &texture_name, con
     }
     int id = (int)pool.image1s.size();
     pool.image1s_map[texture_name] = id;
-    pool.image1s.push_back(imread1(filename));
+    pool.image1s.push_back(make_mipmap(imread1(filename)));
     return id;
 }
 
@@ -35,15 +36,17 @@ inline int insert_image3(TexturePool &pool, const std::string &texture_name, con
     }
     int id = (int)pool.image3s.size();
     pool.image3s_map[texture_name] = id;
-    pool.image3s.push_back(imread3(filename));
+    pool.image3s.push_back(make_mipmap(imread3(filename)));
     return id;
 }
 
-inline const Image1 &get_img1(const TexturePool &pool, int texture_id) {
+inline const Mipmap1 &get_img1(const TexturePool &pool, int texture_id) {
+    assert(texture_id >= 0 && texture_id < pool.image1s.size());
     return pool.image1s[texture_id];
 }
 
-inline const Image3 &get_img3(const TexturePool &pool, int texture_id) {
+inline const Mipmap3 &get_img3(const TexturePool &pool, int texture_id) {
+    assert(texture_id >= 0 && texture_id < pool.image3s.size());
     return pool.image3s[texture_id];
 }
 
@@ -59,21 +62,22 @@ struct ImageTexture {
 };
 
 template <typename T>
-inline const Image<T> &get_img(const ImageTexture<T> &t, const TexturePool &pool) {
-    return Image<T>{};
+inline const Mipmap<T> &get_img(const ImageTexture<T> &t, const TexturePool &pool) {
+    return Mipmap<T>{};
 }
 template <>
-inline const Image<Real> &get_img(const ImageTexture<Real> &t, const TexturePool &pool) {
+inline const Mipmap<Real> &get_img(const ImageTexture<Real> &t, const TexturePool &pool) {
     return get_img1(pool, t.texture_id);
 }
 template <>
-inline const Image<Vector3> &get_img(const ImageTexture<Vector3> &t, const TexturePool &pool) {
+inline const Mipmap<Vector3> &get_img(const ImageTexture<Vector3> &t, const TexturePool &pool) {
     return get_img3(pool, t.texture_id);
 }
 
 template <typename T>
 using Texture = std::variant<ConstantTexture<T>, ImageTexture<T>>;
-using Texture1or3 = std::variant<Texture<Real>, Texture<Vector3>>;
+using Texture1 = Texture<Real>;
+using TextureSpectrum = Texture<Spectrum>;
 
 template <typename T>
 struct eval_texture_op {
@@ -81,6 +85,7 @@ struct eval_texture_op {
     T operator()(const ImageTexture<T> &t) const;
 
     const PathVertex &vertex;
+    const Real &footprint;
     const TexturePool &pool;
 };
 template <typename T>
@@ -89,17 +94,17 @@ T eval_texture_op<T>::operator()(const ConstantTexture<T> &t) const {
 }
 template <typename T>
 T eval_texture_op<T>::operator()(const ImageTexture<T> &t) const {
-    // TODO: proper texture filtering
-    const Image<T> &img = get_img(t, pool);
-    Vector2 uv = vertex.uv;
-    Vector2i coord{modulo(int(uv.x * img.width + 0.5f), img.width),
-                   modulo(int(uv.y * img.height + 0.5f), img.height)};
-    return img(coord.x, coord.y);
+    const Mipmap<T> &img = get_img(t, pool);
+    Vector2 uv{modulo(vertex.uv[0] * t.uscale, Real(1)),
+               modulo(vertex.uv[1] * t.vscale, Real(1))};
+    Real scaled_footprint = max(get_width(img), get_height(img)) * max(t.uscale, t.vscale) * footprint;
+    Real level = log2(max(footprint, Real(1e-8f)));
+    return lookup(img, uv[0], uv[1], level);
 }
 
 template <typename T>
-T eval(const Texture<T> &texture, const PathVertex &vertex, const TexturePool &pool) {
-    return std::visit(eval_texture_op<T>{vertex, pool}, texture);
+T eval(const Texture<T> &texture, const PathVertex &vertex, Real footprint, const TexturePool &pool) {
+    return std::visit(eval_texture_op<T>{vertex, footprint, pool}, texture);
 }
 
 inline ConstantTexture<Spectrum> make_constant_spectrum_texture(const Spectrum &spec) {

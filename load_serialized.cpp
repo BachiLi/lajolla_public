@@ -59,7 +59,7 @@ void ZStream::read(void *ptr, size_t size) {
         if (m_inflateStream.avail_in == 0) {
             size_t remaining = fsize - fs.tellg();
             m_inflateStream.next_in = m_inflateBuffer;
-            m_inflateStream.avail_in = (uInt)std::min(remaining, sizeof(m_inflateBuffer));
+            m_inflateStream.avail_in = (uInt)min(remaining, sizeof(m_inflateBuffer));
             if (m_inflateStream.avail_in == 0) {
                 Error("Read less data than expected");
             }

@@ -24,6 +24,7 @@ Spectrum eval(const Material &material,
               const Vector3 &dir_light,
               const Vector3 &dir_view,
               const PathVertex &vertex,
+              Real ray_footprint, // for texture filtering
               const TexturePool &texture_pool);
 
 /// We allow non-reciprocal BRDFs, so it's important
@@ -40,6 +41,7 @@ enum class TransportDirection {
 std::optional<Vector3> sample_bsdf(const Material &material,
                                    const Vector3 &dir_in,
                                    const PathVertex &vertex,
+                                   Real ray_footprint, // for texture filtering
                                    const Vector2 &rnd_param,
                                    TransportDirection dir = TransportDirection::TO_LIGHT);
 
@@ -52,6 +54,8 @@ Real pdf_sample_bsdf(const Material &material,
                      const Vector3 &dir_light,
                      const Vector3 &dir_view,
                      const PathVertex &vertex,
+                     Real ray_footprint, // for texture filtering
                      TransportDirection dir = TransportDirection::TO_LIGHT);
 
 Real get_roughness(const Material &material, const PathVertex &vertex);
+const TextureSpectrum &get_texture(const Material &material);
