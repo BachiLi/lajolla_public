@@ -22,6 +22,14 @@ struct ParsedTexture {
     Real uscale = 1, vscale = 1;
 };
 
+enum class FovAxis {
+    X,
+    Y,
+    DIAGONAL,
+    SMALLER,
+    LARGER
+};
+
 std::vector<std::string> split_string(const std::string &str, const std::regex &delim_regex) {
     std::sregex_token_iterator first{begin(str), end(str), delim_regex, -1}, last;
     std::vector<std::string> list{first, last};
@@ -32,13 +40,13 @@ Vector3 parse_vector3(const std::string &value) {
     std::vector<std::string> list = split_string(value, std::regex("(,| )+"));
     Vector3 v;
     if (list.size() == 1) {
-        v[0] = stof(list[0]);
-        v[1] = stof(list[0]);
-        v[2] = stof(list[0]);
+        v[0] = std::stof(list[0]);
+        v[1] = std::stof(list[0]);
+        v[2] = std::stof(list[0]);
     } else if (list.size() == 3) {
-        v[0] = stof(list[0]);
-        v[1] = stof(list[1]);
-        v[2] = stof(list[2]);
+        v[0] = std::stof(list[0]);
+        v[1] = std::stof(list[1]);
+        v[2] = std::stof(list[2]);
     } else {
         Error("parse_vector3 failed");
     }
@@ -132,6 +140,41 @@ Matrix4x4 parse_transform(pugi::xml_node node) {
     return tform;
 }
 
+Texture<Spectrum> parse_spectrum_texture(
+        pugi::xml_node node,
+        const std::map<std::string /* name id */, ParsedTexture> &texture_map,
+        TexturePool &texture_pool) {
+    std::string type = node.name();
+    if (type == "spectrum") {
+        std::vector<std::pair<Real, Real>> spec =
+            parse_spectrum(node.attribute("value").value());
+        if (spec.size() > 1) {
+            Vector3 xyz = integrate_XYZ(spec);
+            return make_constant_spectrum_texture(fromRGB(XYZ_to_RGB(xyz)));
+        } else if (spec.size() == 1) {
+            return make_constant_spectrum_texture(fromRGB(Vector3{1, 1, 1}));
+        } else {
+            return make_constant_spectrum_texture(fromRGB(Vector3{0, 0, 0}));
+        }
+    } else if (type == "rgb") {
+        return make_constant_spectrum_texture(
+            fromRGB(parse_vector3(node.attribute("value").value())));
+    } else if (type == "ref") {
+        // referencing a texture
+        std::string ref_id = node.attribute("id").value();
+        auto t_it = texture_map.find(ref_id);
+        if (t_it == texture_map.end()) {
+            Error(std::string("Texture not found. ID = ") + ref_id);
+        }
+        const ParsedTexture t = t_it->second;
+        return make_image_spectrum_texture(
+            ref_id, t.filename, texture_pool, t.uscale, t.vscale);
+    } else {
+        Error(std::string("Unknown spectrum texture type:") + type);
+        return ConstantTexture<Spectrum>{make_zero_spectrum()};
+    }
+}
+
 RenderOptions parse_integrator(pugi::xml_node node) {
     RenderOptions options;
     std::string type = node.attribute("type").value();
@@ -140,9 +183,12 @@ RenderOptions parse_integrator(pugi::xml_node node) {
         for (auto child : node.children()) {
             std::string name = child.attribute("name").value();
             if (name == "maxDepth") {
-                options.max_depth = atoi(child.attribute("value").value());
+                options.max_depth = std::stoi(child.attribute("value").value());
             }
         }
+    } else if (type == "direct") {
+        options.integrator = Integrator::Path;
+        options.max_depth = 2;
     } else if (type == "depth") {
         options.integrator = Integrator::Depth;
     } else if (type == "meanCurvature") {
@@ -166,9 +212,9 @@ parse_film(pugi::xml_node node) {
         std::string type = child.name();
         std::string name = child.attribute("name").value();
         if (name == "width") {
-            width = atoi(child.attribute("value").value());
+            width = std::stoi(child.attribute("value").value());
         } else if (name == "height") {
-            height = atoi(child.attribute("value").value());
+            height = std::stoi(child.attribute("value").value());
         } else if (name == "filename") {
             filename = std::string(child.attribute("value").value());
         }
@@ -188,6 +234,7 @@ parse_sensor(pugi::xml_node node) {
     Matrix4x4 to_world = Matrix4x4::identity();
     int width = c_default_res, height = c_default_res;
     std::string filename = c_default_filename;
+    FovAxis fov_axis = FovAxis::X;
     ParsedSampler sampler;
 
     std::string type = node.attribute("type").value();
@@ -198,6 +245,21 @@ parse_sensor(pugi::xml_node node) {
                 fov = std::stof(child.attribute("value").value());
             } else if (name == "toWorld") {
                 to_world = parse_transform(child);
+            } else if (name == "fovAxis") {
+                std::string value = child.attribute("value").value();
+                if (value == "x") {
+                    fov_axis = FovAxis::X;
+                } else if (value == "y") {
+                    fov_axis = FovAxis::Y;
+                } else if (value == "diagonal") {
+                    fov_axis = FovAxis::DIAGONAL;
+                } else if (value == "smaller") {
+                    fov_axis = FovAxis::SMALLER;
+                } else if (value == "larger") {
+                    fov_axis = FovAxis::LARGER;
+                } else {
+                    Error(std::string("Unknown fovAxis value: ") + value);
+                }
             }
         }
     } else {
@@ -215,10 +277,25 @@ parse_sensor(pugi::xml_node node) {
             for (auto grand_child : child.children()) {
                 std::string name = grand_child.attribute("name").value();
                 if (name == "sampleCount") {
-                    sampler.sample_count = atoi(grand_child.attribute("value").value());
+                    sampler.sample_count = std::stoi(grand_child.attribute("value").value());
                 }
             }
         }
+    }
+
+    // convert to fovX (code taken from 
+    // https://github.com/mitsuba-renderer/mitsuba/blob/master/src/librender/sensor.cpp)
+    if (fov_axis == FovAxis::Y ||
+            (fov_axis == FovAxis::SMALLER && height < width) ||
+            (fov_axis == FovAxis::LARGER && width < height)) {
+        Real aspect = width / Real(height);
+        fov = degrees(2 * atan(
+            tan(radians(fov) / 2) * aspect));
+    } else if (fov_axis == FovAxis::DIAGONAL) {
+        Real aspect = width / Real(height);
+        Real diagonal = 2 * tan(radians(fov) / 2);
+        Real width = diagonal / sqrt(1 + 1 / (aspect * aspect));
+        fov = degrees(2 * atan(width / 2));
     }
 
     return std::make_tuple(Camera(to_world, fov, width, height), filename, sampler);
@@ -238,16 +315,25 @@ std::tuple<std::string /* ID */, Material> parse_bsdf(
         for (auto child : node.children()) {
             std::string name = child.attribute("name").value();
             if (name == "reflectance") {
-                std::string refl_type = child.name();
-                if (refl_type == "spectrum") {
-                    std::vector<std::pair<Real, Real>> spec =
-                        parse_spectrum(child.attribute("value").value());
-                    Vector3 xyz = integrate_XYZ(spec);
-                    reflectance = make_constant_spectrum_texture(fromRGB(XYZ_to_RGB(xyz)));
-                } else if (refl_type == "rgb") {
-                    reflectance = make_constant_spectrum_texture(
-                        fromRGB(parse_vector3(child.attribute("value").value())));
-                } else if (refl_type == "ref") {
+                reflectance = parse_spectrum_texture(child, texture_map, texture_pool);
+            }
+        }
+        return std::make_tuple(id, Lambertian{reflectance});
+    } else if (type == "roughplastic") {
+        Texture<Spectrum> diffuse_reflectance = make_constant_spectrum_texture(fromRGB(Vector3{0.5, 0.5, 0.5}));
+        Texture<Spectrum> specular_reflectance = make_constant_spectrum_texture(fromRGB(Vector3{1, 1, 1}));
+        Texture<Real> roughness = make_constant_float_texture(Real(0.1));
+        Real intIOR = 1.49;
+        Real extIOR = 1.000277;
+        for (auto child : node.children()) {
+            std::string name = child.attribute("name").value();
+            if (name == "diffuseReflectance") {
+                diffuse_reflectance = parse_spectrum_texture(child, texture_map, texture_pool);
+            } else if (name == "specularReflectance") {
+                specular_reflectance = parse_spectrum_texture(child, texture_map, texture_pool);
+            } else if (name == "alpha") {
+                std::string type = child.name();
+                if (type == "ref") {
                     // referencing a texture
                     std::string ref_id = child.attribute("id").value();
                     auto t_it = texture_map.find(ref_id);
@@ -255,16 +341,47 @@ std::tuple<std::string /* ID */, Material> parse_bsdf(
                         Error(std::string("Texture not found. ID = ") + ref_id);
                     }
                     const ParsedTexture t = t_it->second;
-                    reflectance = make_image_spectrum_texture(
-                        ref_id, t.filename, texture_pool, t.uscale, t.vscale);
+                    Image1 alpha = imread1(t.filename);
+                    // Convert alpha to roughness.
+                    Image1 roughness_img(alpha.width, alpha.height);
+                    for (int i = 0; i < alpha.width * alpha.height; i++) {
+                        roughness_img.data[i] = sqrt(alpha.data[i]);
+                    }
+                    roughness = make_image_float_texture(
+                        ref_id, roughness_img, texture_pool, t.uscale, t.vscale);
+                } else if (type == "float") {
+                    Real alpha = std::stof(child.attribute("value").value());
+                    roughness = make_constant_float_texture(sqrt(alpha));
                 } else {
-                    Error(std::string("Unknown reflectance type:") + refl_type);
+                    Error(std::string("Unknown float texture type:") + type);
                 }
+            } else if (name == "roughness") {
+                std::string type = child.name();
+                if (type == "ref") {
+                    // referencing a texture
+                    std::string ref_id = child.attribute("id").value();
+                    auto t_it = texture_map.find(ref_id);
+                    if (t_it == texture_map.end()) {
+                        Error(std::string("Texture not found. ID = ") + ref_id);
+                    }
+                    const ParsedTexture t = t_it->second;
+                    roughness = make_image_float_texture(
+                        ref_id, t.filename, texture_pool, t.uscale, t.vscale);
+                } else if (type == "float") {
+                    roughness = make_constant_float_texture(std::stof(child.attribute("value").value()));
+                } else {
+                    Error(std::string("Unknown float texture type:") + type);
+                }
+            } else if (name == "intIOR") {
+                intIOR = std::stof(child.attribute("value").value()); 
+            } else if (name == "extIOR") {
+                extIOR = std::stof(child.attribute("value").value()); 
             }
         }
-        return std::make_tuple(id, Lambertian{reflectance});
+        return std::make_tuple(id, RoughPlastic{
+            diffuse_reflectance, specular_reflectance, roughness, intIOR / extIOR});
     } else {
-        Error("Unknown BSDF.");
+        Error(std::string("Unknown BSDF: ") + type);
     }
     return std::make_tuple("", Material{});
 }
@@ -296,10 +413,10 @@ Shape parse_shape(pugi::xml_node node,
             std::string material_name;
             std::tie(material_name, m) = parse_bsdf(child, texture_map, texture_pool);
             if (!material_name.empty()) {
-                material_id = materials.size();
                 material_map[material_name] = materials.size();
-                materials.push_back(m);
             }
+            material_id = materials.size();
+            materials.push_back(m);
             break;
         }
     }
@@ -341,7 +458,7 @@ Shape parse_shape(pugi::xml_node node,
                     to_world = parse_transform(child);
                 }
             } else if (name == "shapeIndex") {
-                shape_index = atoi(child.attribute("value").value());
+                shape_index = std::stoi(child.attribute("value").value());
             }
         }
         shape = load_serialized(filename, shape_index, to_world);
@@ -378,6 +495,8 @@ Shape parse_shape(pugi::xml_node node,
                             parse_spectrum(grand_child.attribute("value").value());
                         Vector3 xyz = integrate_XYZ(spec);
                         radiance = fromRGB(XYZ_to_RGB(xyz));
+                    } else if (rad_type == "rgb") {
+                        radiance = fromRGB(parse_vector3(grand_child.attribute("value").value()));
                     }
                 }
             }

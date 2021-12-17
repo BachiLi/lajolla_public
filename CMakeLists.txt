@@ -23,6 +23,7 @@ set(SRCS camera.h
          load_serialized.h
          material.h
          matrix.h
+         microfacet.h
          miniz.h
          mipmap.h
          parse_obj.h

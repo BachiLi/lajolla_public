@@ -58,9 +58,6 @@ inline Vector3 integrate_XYZ(const std::vector<std::pair<Real, Real>> &data) {
     if (data.size() == 0) {
         return Vector3{0, 0, 0};
     }
-    if (data.size() == 1) {
-        return Vector3{data[0].second, data[0].second, data[0].second};
-    }
     Vector3 ret = Vector3{0, 0, 0};
     int data_pos = 0;
     // integrate from wavelength 400 nm to 700 nm, increment by 1nm at a time
@@ -77,9 +74,9 @@ inline Vector3 integrate_XYZ(const std::vector<std::pair<Real, Real>> &data) {
         Real measurement = 0;
         if (data_pos < data.size() - 1 && data[0].first <= wavelength) {
             Real curr_data = data[data_pos].second;
-            Real next_data = data[data_pos + 1].second;
+            Real next_data = data[min(data_pos + 1, 0)].second;
             Real curr_wave = data[data_pos].first;
-            Real next_wave = data[data_pos + 1].first;
+            Real next_wave = data[min(data_pos + 1, 0)].first;
             // linearly interpolate
             measurement = curr_data * (next_wave - wavelength) / (next_wave - curr_wave) +
                           next_data * (wavelength - curr_wave) / (next_wave - curr_wave);

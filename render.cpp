@@ -185,7 +185,8 @@ Spectrum path_trace(const Scene &scene,
             Real p1 = light_pmf(scene, light_id) * pdf_point_on_light(light, point_on_light, scene);
             assert(p1 > 0);
             // The probability density for our hemispherical sampling to sample 
-            Real p2 = pdf_sample_bsdf(mat, dir_light, dir_view, vertex, ray_diff.radius);
+            Real p2 = pdf_sample_bsdf(
+                mat, dir_light, dir_view, vertex, ray_diff.radius, scene.texture_pool);
             // !!!! IMPORTANT !!!!
             // p1 and p2 now live in different spaces!!
             // our BSDF API outputs a probability density in the solid angle measure
@@ -209,7 +210,7 @@ Spectrum path_trace(const Scene &scene,
         Vector3 dir_view = -ray.dir;
         Vector2 bsdf_rnd_param{next_pcg32_real<Real>(rng), next_pcg32_real<Real>(rng)};
         std::optional<Vector3> dir_bsdf_ =
-            sample_bsdf(mat, dir_view, vertex, ray_diff.radius, bsdf_rnd_param);
+            sample_bsdf(mat, dir_view, vertex, ray_diff.radius, scene.texture_pool, bsdf_rnd_param);
         if (!dir_bsdf_) {
             // BSDF sampling failed. Abort the loop.
             break;
@@ -232,7 +233,7 @@ Spectrum path_trace(const Scene &scene,
             distance_squared(bsdf_vertex.position, vertex.position);
         Spectrum f;
         f = eval(mat, dir_bsdf, dir_view, vertex, ray_diff.radius, scene.texture_pool);
-        Real p2 = pdf_sample_bsdf(mat, dir_bsdf, dir_view, vertex, ray_diff.radius);
+        Real p2 = pdf_sample_bsdf(mat, dir_bsdf, dir_view, vertex, ray_diff.radius, scene.texture_pool);
         if (p2 <= 0) {
             // Numerical issue -- we generated some invalid rays.
             break;
@@ -267,11 +268,11 @@ Spectrum path_trace(const Scene &scene,
             w2 = (p2*p2) / (p1*p1 + p2*p2);
 
             C2 /= p2;
-            radiance += (current_path_contrib / current_path_pdf) * C2 * w2;
+            radiance += (current_path_contrib / current_path_pdf) * C2;
         }
 
         // Update rays/ray differentials/intersection/current_path_contrib/current_pdf
-        Real roughness = get_roughness(mat, vertex);
+        Real roughness = get_roughness(mat, vertex, ray_diff.radius, scene.texture_pool);
         // TODO: add refraction.
         ray_diff = reflect(ray_diff, vertex.mean_curvature, roughness);
         ray_diff = transfer(ray_diff, distance(vertex.position, bsdf_vertex.position));

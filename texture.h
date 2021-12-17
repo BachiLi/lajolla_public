@@ -29,6 +29,17 @@ inline int insert_image1(TexturePool &pool, const std::string &texture_name, con
     return id;
 }
 
+inline int insert_image1(TexturePool &pool, const std::string &texture_name, const Image1 &img) {
+    if (pool.image1s_map.find(texture_name) != pool.image1s_map.end()) {
+        // We don't check if img is the same as the one in the cache!
+        return pool.image1s_map[texture_name];
+    }
+    int id = (int)pool.image1s.size();
+    pool.image1s_map[texture_name] = id;
+    pool.image1s.push_back(make_mipmap(img));
+    return id;
+}
+
 inline int insert_image3(TexturePool &pool, const std::string &texture_name, const fs::path &filename) {
     if (pool.image3s_map.find(texture_name) != pool.image3s_map.end()) {
         // We don't check if img is the same as the one in the cache!
@@ -37,6 +48,17 @@ inline int insert_image3(TexturePool &pool, const std::string &texture_name, con
     int id = (int)pool.image3s.size();
     pool.image3s_map[texture_name] = id;
     pool.image3s.push_back(make_mipmap(imread3(filename)));
+    return id;
+}
+
+inline int insert_image3(TexturePool &pool, const std::string &texture_name, const Image3 &img) {
+    if (pool.image3s_map.find(texture_name) != pool.image3s_map.end()) {
+        // We don't check if img is the same as the one in the cache!
+        return pool.image3s_map[texture_name];
+    }
+    int id = (int)pool.image3s.size();
+    pool.image3s_map[texture_name] = id;
+    pool.image3s.push_back(make_mipmap(img));
     return id;
 }
 
@@ -111,6 +133,10 @@ inline ConstantTexture<Spectrum> make_constant_spectrum_texture(const Spectrum &
     return ConstantTexture<Spectrum>{spec};
 }
 
+inline ConstantTexture<Real> make_constant_float_texture(Real f) {
+    return ConstantTexture<Real>{f};
+}
+
 inline ImageTexture<Spectrum> make_image_spectrum_texture(
         const std::string &texture_name,
         const fs::path &filename,
@@ -120,6 +146,15 @@ inline ImageTexture<Spectrum> make_image_spectrum_texture(
     return ImageTexture<Spectrum>{insert_image3(pool, texture_name, filename), uscale, vscale};
 }
 
+inline ImageTexture<Spectrum> make_image_spectrum_texture(
+        const std::string &texture_name,
+        const Image3 &img,
+        TexturePool &pool,
+        Real uscale = 1,
+        Real vscale = 1) {
+    return ImageTexture<Spectrum>{insert_image3(pool, texture_name, img), uscale, vscale};
+}
+
 inline ImageTexture<Real> make_image_float_texture(
         const std::string &texture_name,
         const fs::path &filename,
@@ -127,4 +162,13 @@ inline ImageTexture<Real> make_image_float_texture(
         Real uscale = 1,
         Real vscale = 1) {
     return ImageTexture<Real>{insert_image1(pool, texture_name, filename), uscale, vscale};
+}
+
+inline ImageTexture<Real> make_image_float_texture(
+        const std::string &texture_name,
+        const Image1 &img,
+        TexturePool &pool,
+        Real uscale = 1,
+        Real vscale = 1) {
+    return ImageTexture<Real>{insert_image1(pool, texture_name, img), uscale, vscale};
 }

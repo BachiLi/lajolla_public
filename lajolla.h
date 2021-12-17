@@ -72,3 +72,11 @@ template <typename T>
 inline T min(const T &a, const T &b) {
     return a < b ? a : b;
 }
+
+inline Real radians(const Real deg) {
+    return (c_PI / Real(180)) * deg;
+}
+
+inline Real degrees(const Real rad) {
+    return (Real(180) / c_PI) * rad;
+}

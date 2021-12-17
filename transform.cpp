@@ -1,10 +1,6 @@
 #include "transform.h"
 
-/// Much of the code is taken from Mitsuba https://github.com/mitsuba-renderer/mitsuba
-
-inline Real radians(const Real deg) {
-    return (c_PI / Real(180)) * deg;
-}
+/// Much of the code is taken from pbrt https://github.com/mmp/pbrt-v3/tree/master/src
 
 Matrix4x4 translate(const Vector3 &delta) {
     return Matrix4x4(Real(1), Real(0), Real(0), delta[0],
@@ -49,12 +45,6 @@ Matrix4x4 rotate(Real angle, const Vector3 &axis) {
 
 Matrix4x4 look_at(const Vector3 &pos, const Vector3 &look, const Vector3 &up) {
     Matrix4x4 m;
-    m(0, 3) = pos[0];
-    m(1, 3) = pos[1];
-    m(2, 3) = pos[2];
-    m(3, 3) = 1;
-
-    // Initialize first three columns of viewing matrix
     Vector3 dir = normalize(look - pos);
     assert(length(cross(normalize(up), dir)) != 0);
     Vector3 left = normalize(cross(normalize(up), dir));
@@ -71,6 +61,10 @@ Matrix4x4 look_at(const Vector3 &pos, const Vector3 &look, const Vector3 &up) {
     m(1, 2) = dir[1];
     m(2, 2) = dir[2];
     m(3, 2) = 0;
+    m(0, 3) = pos[0];
+    m(1, 3) = pos[1];
+    m(2, 3) = pos[2];
+    m(3, 3) = 1;
     return m;
 }
 
