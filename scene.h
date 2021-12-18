@@ -23,6 +23,12 @@ struct RenderOptions {
     int max_depth = 6;
 };
 
+/// Bounding sphere
+struct BSphere {
+    Real radius;
+    Vector3 center;
+};
+
 /// A "Scene" contains the camera, materials, geometry (shapes), lights,
 /// and also the rendering options such as number of samples per pixel or
 /// the parameters of our renderer.
@@ -33,6 +39,7 @@ struct Scene {
           const std::vector<Material> &materials,
           const std::vector<Shape> &shapes,
           const std::vector<Light> &lights,
+          int envmap_light_id /* -1 if the scene has no envmap */,
           const TexturePool &texture_pool,
           const RenderOptions &options,
           const std::string &output_filename);
@@ -51,6 +58,10 @@ struct Scene {
     const std::vector<Shape> shapes;
     const std::vector<Light> lights;
     const TexturePool texture_pool;
+    int envmap_light_id;
+
+    // Bounding sphere of the scene.
+    BSphere bounds;
     
     RenderOptions options;
     std::string output_filename;
@@ -64,3 +75,12 @@ int sample_light(const Scene &scene, Real u);
 
 /// The probability mass function of the sampling procedure above.
 Real light_pmf(const Scene &scene, int light_id);
+
+inline bool has_envmap(const Scene &scene) {
+    return scene.envmap_light_id != -1;
+}
+
+inline const Light &get_envmap(const Scene &scene) {
+    assert(scene.envmap_light_id != -1);
+    return scene.lights[scene.envmap_light_id];
+}

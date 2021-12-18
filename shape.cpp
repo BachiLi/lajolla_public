@@ -386,7 +386,7 @@ ShadingInfo compute_shading_info_op::operator()(const TriangleMesh &mesh) const 
     }
 
     Frame shading_frame(tangent,
-                        normalize(cross(shading_normal, tangent)),
+                        cross(shading_normal, tangent),
                         shading_normal);
     return ShadingInfo{uv, shading_frame, mean_curvature};
 }

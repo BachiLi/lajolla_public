@@ -2,6 +2,9 @@
 #include "flexception.h"
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
+#define TINYEXR_USE_MINIZ 1
+#define TINYEXR_IMPLEMENTATION
+#include "tinyexr.h"
 #include <algorithm>
 #include <fstream>
 
@@ -44,6 +47,21 @@ Image1 imread1(const fs::path &filename) {
             img(i) = data[i];
         }
         stbi_image_free(data);
+    } else if (extension == ".exr") {
+        float* data = nullptr;
+        int width;
+        int height;
+        const char* err = nullptr;
+        int ret = LoadEXR(&data, &width, &height, filename.c_str(), &err);
+        if (ret != TINYEXR_SUCCESS) {
+            std::cerr << "OpenEXR error: " << err << std::endl;
+            FreeEXRErrorMessage(err);
+            Error(std::string("Failure when loading image: ") + filename.string());
+        }
+        for (int i = 0; i < width * height; i++) {
+            img(i) = (data[4 * i] + data[4 * i + 1] + data[4 * i + 2]) / 3;
+        }
+        free(data);
     } else {
         Error(std::string("Unsupported image format: ") + filename.string());
     }
@@ -75,6 +93,22 @@ Image3 imread3(const fs::path &filename) {
             img(i)[2] = data[j++];
         }
         stbi_image_free(data);
+    } else if (extension == ".exr") {
+        float* data = nullptr;
+        int width;
+        int height;
+        const char* err = nullptr;
+        int ret = LoadEXR(&data, &width, &height, filename.c_str(), &err);
+        if (ret != TINYEXR_SUCCESS) {
+            std::cerr << "OpenEXR error: " << err << std::endl;
+            FreeEXRErrorMessage(err);
+            Error(std::string("Failure when loading image: ") + filename.string());
+        }
+        img = Image3(width, height);
+        for (int i = 0; i < width * height; i++) {
+            img(i) = Vector3{data[4 * i], data[4 * i + 1], data[4 * i + 2]};
+        }
+        free(data);
     } else {
         Error(std::string("Unsupported image format: ") + filename.string());
     }

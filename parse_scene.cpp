@@ -17,9 +17,17 @@ struct ParsedSampler {
     int sample_count = 4;
 };
 
+enum class TextureType {
+    BITMAP,
+    CHECKERBOARD
+};
+
 struct ParsedTexture {
+    TextureType type;
     fs::path filename;
+    Spectrum color0, color1; // for checkerboard
     Real uscale = 1, vscale = 1;
+    Real uoffset = 0, voffset = 0;
 };
 
 enum class FovAxis {
@@ -52,6 +60,24 @@ Vector3 parse_vector3(const std::string &value) {
     }
     return v;
 }
+
+Vector3 parse_srgb(const std::string &value) {
+    Vector3 srgb;
+    if (value.size() == 7 && value[0] == '#') {
+        char *end_ptr = NULL;
+        // parse hex code (#abcdef)
+        int encoded = strtol(value.c_str()+1, &end_ptr, 16);
+        if (*end_ptr != '\0') {
+            Error(std::string("Invalid SRGB value: ") + value);
+        }
+        srgb[0] = ((encoded & 0xFF0000) >> 16) / 255.0f;
+        srgb[1] = ((encoded & 0x00FF00) >> 8) / 255.0f;
+        srgb[2] =  (encoded & 0x0000FF) / 255.0f;
+    } else {
+        Error(std::string("Unknown SRGB format: ") + value);
+    }
+    return srgb;
+} 
 
 std::vector<std::pair<Real, Real>> parse_spectrum(const std::string &value) {
     std::vector<std::string> list = split_string(value, std::regex("(,| )+"));
@@ -159,6 +185,10 @@ Texture<Spectrum> parse_spectrum_texture(
     } else if (type == "rgb") {
         return make_constant_spectrum_texture(
             fromRGB(parse_vector3(node.attribute("value").value())));
+    } else if (type == "srgb") {
+        Vector3 srgb = parse_srgb(node.attribute("value").value());
+        return make_constant_spectrum_texture(
+            fromRGB(sRGB_to_RGB(srgb)));
     } else if (type == "ref") {
         // referencing a texture
         std::string ref_id = node.attribute("id").value();
@@ -167,8 +197,15 @@ Texture<Spectrum> parse_spectrum_texture(
             Error(std::string("Texture not found. ID = ") + ref_id);
         }
         const ParsedTexture t = t_it->second;
-        return make_image_spectrum_texture(
-            ref_id, t.filename, texture_pool, t.uscale, t.vscale);
+        if (t.type == TextureType::BITMAP) {
+            return make_image_spectrum_texture(
+                ref_id, t.filename, texture_pool, t.uscale, t.vscale, t.uoffset, t.voffset);
+        } else if (t.type == TextureType::CHECKERBOARD) {
+            return make_checkerboard_spectrum_texture(
+                t.color0, t.color1, t.uscale, t.vscale, t.uoffset, t.voffset);
+        } else {
+            return make_constant_spectrum_texture(fromRGB(Vector3{0, 0, 0}));
+        }
     } else {
         Error(std::string("Unknown spectrum texture type:") + type);
         return ConstantTexture<Spectrum>{make_zero_spectrum()};
@@ -319,10 +356,14 @@ std::tuple<std::string /* ID */, Material> parse_bsdf(
             }
         }
         return std::make_tuple(id, Lambertian{reflectance});
-    } else if (type == "roughplastic") {
+    } else if (type == "roughplastic" || type == "plastic") {
         Texture<Spectrum> diffuse_reflectance = make_constant_spectrum_texture(fromRGB(Vector3{0.5, 0.5, 0.5}));
         Texture<Spectrum> specular_reflectance = make_constant_spectrum_texture(fromRGB(Vector3{1, 1, 1}));
         Texture<Real> roughness = make_constant_float_texture(Real(0.1));
+        if (type == "plastic") {
+            // Approximate plastic materials with very small roughness
+            roughness = make_constant_float_texture(Real(0.01));
+        }
         Real intIOR = 1.49;
         Real extIOR = 1.000277;
         for (auto child : node.children()) {
@@ -497,6 +538,10 @@ Shape parse_shape(pugi::xml_node node,
                         radiance = fromRGB(XYZ_to_RGB(xyz));
                     } else if (rad_type == "rgb") {
                         radiance = fromRGB(parse_vector3(grand_child.attribute("value").value()));
+                    } else if (rad_type == "srgb") {
+                        std::string value = grand_child.attribute("value").value();
+                        Vector3 srgb = parse_srgb(value);
+                        radiance = fromRGB(sRGB_to_RGB(srgb));
                     }
                 }
             }
@@ -511,10 +556,13 @@ Shape parse_shape(pugi::xml_node node,
 /// We don't load the images to memory at this stage. Only record their names.
 ParsedTexture parse_texture(pugi::xml_node node) {
     std::string type = node.attribute("type").value();
+    TextureType tex_type = TextureType::BITMAP;
     if (type == "bitmap") {
         std::string filename = "";
         Real uscale = 1;
         Real vscale = 1;
+        Real uoffset = 0;
+        Real voffset = 0;
         for (auto child : node.children()) {
             std::string name = child.attribute("name").value();
             if (name == "filename") {
@@ -525,11 +573,42 @@ ParsedTexture parse_texture(pugi::xml_node node) {
                 uscale = std::stof(child.attribute("value").value());
             } else if (name == "vscale") {
                 vscale = std::stof(child.attribute("value").value());
+            } else if (name == "uoffset") {
+                uoffset = std::stof(child.attribute("value").value());
+            } else if (name == "voffset") {
+                voffset = std::stof(child.attribute("value").value());
             }
         }
-        return ParsedTexture{fs::path(filename), uscale, vscale};
+        return ParsedTexture{TextureType::BITMAP, fs::path(filename),
+            make_zero_spectrum(), make_zero_spectrum(),
+            uscale, vscale, uoffset, voffset};
+    } else if (type == "checkerboard") {
+        Spectrum color0 = fromRGB(Vector3{Real(0.4), Real(0.4), Real(0.4)});
+        Spectrum color1 = fromRGB(Vector3{Real(0.2), Real(0.2), Real(0.2)});
+        Real uscale = 1;
+        Real vscale = 1;
+        Real uoffset = 0;
+        Real voffset = 0;
+        for (auto child : node.children()) {
+            std::string name = child.attribute("name").value();
+            if (name == "color0") {
+
+            } else if (name == "uvscale") {
+                uscale = vscale = std::stof(child.attribute("value").value());
+            } else if (name == "uscale") {
+                uscale = std::stof(child.attribute("value").value());
+            } else if (name == "vscale") {
+                vscale = std::stof(child.attribute("value").value());
+            } else if (name == "uoffset") {
+                uoffset = std::stof(child.attribute("value").value());
+            } else if (name == "voffset") {
+                voffset = std::stof(child.attribute("value").value());
+            }
+        }
+        return ParsedTexture{TextureType::CHECKERBOARD,
+            "", color0, color1, uscale, vscale, uoffset, voffset};
     }
-    Error("Unknown texture type");
+    Error(std::string("Unknown texture type: ") + type);
     return ParsedTexture{};
 }
 
@@ -543,6 +622,7 @@ Scene parse_scene(pugi::xml_node node, const RTCDevice &embree_device) {
     std::map<std::string /* name id */, ParsedTexture> texture_map;
     std::vector<Shape> shapes;
     std::vector<Light> lights;
+    int envmap_light_id = -1;
     for (auto child : node.children()) {
         std::string name = child.name();
         if (name == "integrator") {
@@ -574,9 +654,45 @@ Scene parse_scene(pugi::xml_node node, const RTCDevice &embree_device) {
                 Error(std::string("Duplicated texture ID:") + id);
             }
             texture_map[id] = parse_texture(child);
+        } else if (name == "emitter") {
+            std::string type = child.attribute("type").value();
+            if (type == "envmap") {
+                std::string filename;
+                Real scale = 1;
+                Matrix4x4 to_world = Matrix4x4::identity();
+                for (auto grand_child : child.children()) {
+                    std::string name = grand_child.attribute("name").value();
+                    if (name == "filename") {
+                        filename = grand_child.attribute("value").value();
+                    } else if (name == "toWorld") {
+                        to_world = parse_transform(grand_child);
+                    } else if (name == "scale") {
+                        scale = std::stof(grand_child.attribute("value").value());
+                    }
+                }
+                if (filename.size() > 0) {
+                    Texture<Spectrum> t = make_image_spectrum_texture(
+                        "__envmap_texture__", filename, texture_pool, 1, 1);
+                    Matrix4x4 to_local = inverse(to_world);
+                    lights.push_back(Envmap{t, to_world, to_local});
+                    envmap_light_id = (int)lights.size() - 1;
+                } else {
+                    Error("Filename unspecified for envmap.");
+                }
+            } else {
+                Error(std::string("Unknown emitter type:") + type);
+            }
         }
     }
-    return Scene{embree_device, camera, materials, shapes, lights, texture_pool, options, filename};
+    return Scene{embree_device,
+                 camera,
+                 materials,
+                 shapes,
+                 lights,
+                 envmap_light_id,
+                 texture_pool,
+                 options,
+                 filename};
 }
 
 Scene parse_scene(const fs::path &filename, const RTCDevice &embree_device) {

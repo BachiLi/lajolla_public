@@ -39,6 +39,7 @@ set(SRCS camera.h
          stb_image.h
          table_dist.h
          texture.h
+         tinyexr.h
          transform.h
          vector.h
          camera.cpp

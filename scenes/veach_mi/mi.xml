@@ -81,7 +81,7 @@
 			<rgb name="diffuseReflectance" value="0.07 0.09 0.13"/>
 			<spectrum name="specularReflectance" value="1"/>
 			<float name="intIOR" value="2"/>
-			<float name="alpha" value="0.001"/>
+			<float name="alpha" value="0.005"/>
 		</bsdf>
 	</shape>
 

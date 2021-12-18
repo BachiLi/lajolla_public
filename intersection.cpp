@@ -76,9 +76,16 @@ bool occluded(const Scene &scene, const Ray &ray) {
     return rtc_ray.tfar < 0;
 }
 
-Spectrum emission(const PathVertex &v, const Vector3 &view_dir, const Scene &scene) {
+Spectrum emission(const PathVertex &v,
+                  const Vector3 &view_dir,
+                  Real view_footprint,
+                  const Scene &scene) {
     int light_id = get_area_light_id(scene.shapes[v.shape_id]);
     assert(light_id >= 0);
     const Light &light = scene.lights[light_id];
-    return emission(light, view_dir, PointAndNormal{v.position, v.geometry_normal});
+    return emission(light,
+                    view_dir,
+                    view_footprint,
+                    PointAndNormal{v.position, v.geometry_normal},
+                    scene);
 }

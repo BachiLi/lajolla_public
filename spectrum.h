@@ -74,9 +74,9 @@ inline Vector3 integrate_XYZ(const std::vector<std::pair<Real, Real>> &data) {
         Real measurement = 0;
         if (data_pos < data.size() - 1 && data[0].first <= wavelength) {
             Real curr_data = data[data_pos].second;
-            Real next_data = data[min(data_pos + 1, 0)].second;
+            Real next_data = data[std::min(data_pos + 1, (int)data.size() - 1)].second;
             Real curr_wave = data[data_pos].first;
-            Real next_wave = data[min(data_pos + 1, 0)].first;
+            Real next_wave = data[std::min(data_pos + 1, (int)data.size() - 1)].first;
             // linearly interpolate
             measurement = curr_data * (next_wave - wavelength) / (next_wave - curr_wave) +
                           next_data * (wavelength - curr_wave) / (next_wave - curr_wave);
@@ -97,4 +97,15 @@ inline Vector3 XYZ_to_RGB(const Vector3 &xyz) {
         Real( 3.240479) * xyz[0] - Real(1.537150) * xyz[1] - Real(0.498535) * xyz[2],
         Real(-0.969256) * xyz[0] + Real(1.875991) * xyz[1] + Real(0.041556) * xyz[2],
         Real( 0.055648) * xyz[0] - Real(0.204043) * xyz[1] + Real(1.057311) * xyz[2]};
+}
+
+inline Vector3 sRGB_to_RGB(const Vector3 &srgb) {
+    // https://en.wikipedia.org/wiki/SRGB#From_sRGB_to_CIE_XYZ
+    Vector3 rgb = srgb;
+    for (int i = 0; i < 3; i++) {
+        rgb[i] = rgb[i] <= Real(0.04045) ?
+            rgb[i] / Real(12.92) :
+            pow((rgb[i] + Real(0.055)) / Real(1.055), Real(2.4));
+    }
+    return rgb;
 }

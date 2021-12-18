@@ -5,6 +5,8 @@
 #include <memory>
 #include <vector>
 
+#include "microfacet.h"
+
 int main(int argc, char *argv[]) {
     if (argc <= 1) {
         return 0;

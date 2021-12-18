@@ -233,6 +233,16 @@ inline bool isnan(const TVector3<T> &v) {
 }
 
 template <typename T>
+inline bool isfinite(const TVector2<T> &v) {
+    return isfinite(v[0]) || isfinite(v[1]);
+}
+
+template <typename T>
+inline bool isfinite(const TVector3<T> &v) {
+    return isfinite(v[0]) || isfinite(v[1]) || isfinite(v[2]);
+}
+
+template <typename T>
 inline std::ostream& operator<<(std::ostream &os, const TVector2<T> &v) {
     return os << "(" << v[0] << ", " << v[1] << ")";
 }

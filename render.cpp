@@ -52,9 +52,10 @@ std::shared_ptr<Image3> aux_render(const Scene &scene) {
     return img_;
 }
 
-Spectrum path_trace(const Scene &scene,
-                    int x, int y, /* pixel coordinates */
-                    pcg32_state &rng) {
+/// Unidirectional path tracing
+Spectrum path_tracing(const Scene &scene,
+                      int x, int y, /* pixel coordinates */
+                      pcg32_state &rng) {
     int w = scene.camera.width, h = scene.camera.height;
     Vector2 screen_pos((x + next_pcg32_real<Real>(rng)) / w,
                        (y + next_pcg32_real<Real>(rng)) / h);
@@ -63,7 +64,15 @@ Spectrum path_trace(const Scene &scene,
 
     std::optional<PathVertex> vertex_ = intersect(scene, ray);
     if (!vertex_) {
-        // Hit background -- nothing to see here.
+        // Hit background. Account for the environment map if needed.
+        if (has_envmap(scene)) {
+            const Light &envmap = get_envmap(scene);
+            return emission(envmap,
+                            -ray.dir, // pointing outwards from light
+                            ray_diff.spread,
+                            PointAndNormal{}, // dummy parameter for envmap
+                            scene);
+        }
         return make_zero_spectrum();
     }
     PathVertex vertex = *vertex_;
@@ -94,7 +103,8 @@ Spectrum path_trace(const Scene &scene,
     // This path has only two vertices and has contribution
     // C = W(v0, v1) * G(v0, v1) * L(v0, v1)
     if (is_light(scene.shapes[vertex.shape_id])) {
-        radiance += (current_path_contrib / current_path_pdf) * emission(vertex, -ray.dir, scene);
+        radiance += (current_path_contrib / current_path_pdf) *
+            emission(vertex, -ray.dir, ray_diff.radius, scene);
     }
 
     // We iteratively sum up path contributions from paths with different number of vertices
@@ -138,71 +148,99 @@ Spectrum path_trace(const Scene &scene,
         LightSampleRecord lr = sample_point_on_light(light, light_uv, shape_w, scene);
 
         // Next, we compute w1*C1/p1. We store C1/p1 in C1.
-        Spectrum C1;
-        Real w1;
+        Spectrum C1 = make_zero_spectrum();
+        Real w1 = 0;
         // Remember "current_path_contrib" already stores all the path contribution on and before v_i.
         // So we only need to compute G(v_{i}, v_{i+1}) * f(v_{i-1}, v_{i}, v_{i+1}) * L(v_{i}, v_{i+1})
         {
+            const PointAndNormal &point_on_light = lr.point_on_light;
             // Let's first deal with C1 = G * f * L.
             // Let's first compute G.
             Real G = 0;
-            const PointAndNormal &point_on_light = lr.point_on_light;
-            Vector3 dir_light = normalize(point_on_light.position - vertex.position);
-            // If the point on light is occluded, G is 0. So we need to test for occlusion.
-            // To avoid self intersection, we need to set the tnear of the ray
-            // to a small "epsilon" which we define as c_shadow_epsilon as a global constant.
-            Ray shadow_ray{vertex.position, dir_light, 
-                           c_shadow_epsilon,
-                           (1 - c_shadow_epsilon) * distance(point_on_light.position, vertex.position)};
-            if (!occluded(scene, shadow_ray)) {
-                // geometry term is cosine at v_{i+1} divided by distance squared
-                // this can be derived by the infinitesimal area of a surface projected on
-                // a unit sphere -- it's the Jacobian between the area measure and the solid angle
-                // measure.
-                G = max(-dot(dir_light, point_on_light.normal), Real(0)) /
-                    distance_squared(point_on_light.position, vertex.position);
+            Vector3 dir_light;
+            // The geometry term is different between directional light sources and
+            // others. Currently we only have environment maps as directional light sources.
+            if (!is_envmap(light)) {
+                dir_light = normalize(point_on_light.position - vertex.position);
+                // If the point on light is occluded, G is 0. So we need to test for occlusion.
+                // To avoid self intersection, we need to set the tnear of the ray
+                // to a small "epsilon" which we define as c_shadow_epsilon as a global constant.
+                Ray shadow_ray{vertex.position, dir_light, 
+                               c_shadow_epsilon,
+                               (1 - c_shadow_epsilon) * distance(point_on_light.position, vertex.position)};
+                if (!occluded(scene, shadow_ray)) {
+                    // geometry term is cosine at v_{i+1} divided by distance squared
+                    // this can be derived by the infinitesimal area of a surface projected on
+                    // a unit sphere -- it's the Jacobian between the area measure and the solid angle
+                    // measure.
+                    G = max(-dot(dir_light, point_on_light.normal), Real(0)) /
+                        distance_squared(point_on_light.position, vertex.position);
+                }
+            } else {
+                // The direction from envmap towards the point is stored in
+                // point_on_light.normal.
+                dir_light = -point_on_light.normal;
+                // If the point on light is occluded, G is 0. So we need to test for occlusion.
+                // To avoid self intersection, we need to set the tnear of the ray
+                // to a small "epsilon" which we define as c_shadow_epsilon as a global constant.
+                Ray shadow_ray{vertex.position, dir_light, 
+                               c_shadow_epsilon,
+                               infinity<Real>() /* envmaps are infinitely far away */};
+                if (!occluded(scene, shadow_ray)) {
+                    // We integrate envmaps using the solid angle measure,
+                    // so the geometry term is 1.
+                    G = 1;
+                }
             }
-            // Let's compute f (BSDF) next.
-            Spectrum f;
-            Vector3 dir_view = -ray.dir;
-            assert(vertex.material_id >= 0);
-            f = eval(mat, dir_light, dir_view, vertex, ray_diff.radius, scene.texture_pool);
-            // L is stored in LightSampleRecord
-            Spectrum L = lr.radiance;
 
-            // C1 is just a product of all of them!
-            C1 = G * f * L;
-        
-            // Next let's compute w1
-
-            // Remember that we want to set
-            // w1 = p_1(v^1)^2 / (p_1(v^1)^2 + p_2(v^1)^2)
-            // Notice that all of the probability density share the same path prefix and those cancel out.
-            // Therefore we only need to account for the generation of the vertex v_{i+1}.
-
+            // Before we proceed, we first compute the probability density p1(v1)
             // The probability density for light sampling to sample our point is
             // just the probability of sampling a light times the probability of sampling a point
-            Real p1 = light_pmf(scene, light_id) * pdf_point_on_light(light, point_on_light, scene);
-            assert(p1 > 0);
-            // The probability density for our hemispherical sampling to sample 
-            Real p2 = pdf_sample_bsdf(
-                mat, dir_light, dir_view, vertex, ray_diff.radius, scene.texture_pool);
-            // !!!! IMPORTANT !!!!
-            // p1 and p2 now live in different spaces!!
-            // our BSDF API outputs a probability density in the solid angle measure
-            // while our light probability density is in the area measure.
-            // We need to make sure that they are in the same space.
-            // This can be done by accounting for the Jacobian of the transformation
-            // between the two measures.
-            // In general, I recommend to transform everything to area measure since
-            // it fits to the path-space math better.
-            // Converting a solid angle measure to an area measure is just a
-            // multiplication of the geometry term G (let solid angle be dS, area be dA,
-            // we have dA/dS = G).
-            p2 *= G;
+            Real p1 = light_pmf(scene, light_id) *
+                pdf_point_on_light(light, point_on_light, scene);
 
-            w1 = (p1*p1) / (p1*p1 + p2*p2);
-            C1 /= p1;
+            // We don't need to continue the computation if G is 0.
+            // Also sometimes there can be some numerical issue such that we generate
+            // a light path with probability zero
+            if (G > 0 && p1 > 0) {
+                // Let's compute f (BSDF) next.
+                Spectrum f;
+                Vector3 dir_view = -ray.dir;
+                assert(vertex.material_id >= 0);
+                f = eval(mat, dir_light, dir_view, vertex, ray_diff.radius, scene.texture_pool);
+                // L is stored in LightSampleRecord
+                Spectrum L = lr.radiance;
+
+                // C1 is just a product of all of them!
+                C1 = G * f * L;
+            
+                // Next let's compute w1
+
+                // Remember that we want to set
+                // w1 = p_1(v^1)^2 / (p_1(v^1)^2 + p_2(v^1)^2)
+                // Notice that all of the probability density share the same path prefix and those cancel out.
+                // Therefore we only need to account for the generation of the vertex v_{i+1}.
+
+                // The probability density for our hemispherical sampling to sample 
+                Real p2 = pdf_sample_bsdf(
+                    mat, dir_light, dir_view, vertex, ray_diff.radius, scene.texture_pool);
+                // !!!! IMPORTANT !!!!
+                // In general, p1 and p2 now live in different spaces!!
+                // our BSDF API outputs a probability density in the solid angle measure
+                // while our light probability density is in the area measure.
+                // We need to make sure that they are in the same space.
+                // This can be done by accounting for the Jacobian of the transformation
+                // between the two measures.
+                // In general, I recommend to transform everything to area measure 
+                // (except for directional lights) since it fits to the path-space math better.
+                // Converting a solid angle measure to an area measure is just a
+                // multiplication of the geometry term G (let solid angle be dS, area be dA,
+                // we have dA/dS = G).
+                p2 *= G;
+
+                w1 = (p1*p1) / (p1*p1 + p2*p2);
+                C1 /= p1;
+            }
         }
         radiance += (current_path_contrib / current_path_pdf) * C1 * w1;
 
@@ -219,18 +257,20 @@ Spectrum path_trace(const Scene &scene,
         // Trace a ray towards bsdf_dir. Note that again we have
         // to have an "epsilon" tnear to prevent self intersection.
         Ray bsdf_ray{vertex.position, dir_bsdf, c_isect_epsilon, infinity<Real>()};
-        std::optional<PathVertex> bsdf_vertex_ = intersect(scene, bsdf_ray);
-        if (!bsdf_vertex_) {
-            // Hit nothing: end the loop.
-            break;
-        }
-        PathVertex bsdf_vertex = *bsdf_vertex_;
+        std::optional<PathVertex> bsdf_vertex = intersect(scene, bsdf_ray);
 
         // To update current_path_contrib & current_path_pdf,
         // we need to multiply G(v_{i}, v_{i+1}) * f(v_{i-1}, v_{i}, v_{i+1}) to current_path_contrib
         // and the pdf for getting v_{i+1} using hemisphere sampling.
-        Real G = fabs(dot(dir_bsdf, bsdf_vertex.geometry_normal)) /
-            distance_squared(bsdf_vertex.position, vertex.position);
+        Real G;
+        if (bsdf_vertex) {
+            G = fabs(dot(dir_bsdf, bsdf_vertex->geometry_normal)) /
+                distance_squared(bsdf_vertex->position, vertex.position);
+        } else {
+            // We hit nothing, set G to 1 to account for the environment map contribution.
+            G = 1;
+        }
+
         Spectrum f;
         f = eval(mat, dir_bsdf, dir_view, vertex, ray_diff.radius, scene.texture_pool);
         Real p2 = pdf_sample_bsdf(mat, dir_bsdf, dir_view, vertex, ray_diff.radius, scene.texture_pool);
@@ -238,46 +278,65 @@ Spectrum path_trace(const Scene &scene,
             // Numerical issue -- we generated some invalid rays.
             break;
         }
+
         // Remember to convert p2 to area measure!
         p2 *= G;
         // note that G cancels out in the division f/p, but we still need
         // G later for the calculation of w2.
-        assert(p2 > 0);
 
-        assert(bsdf_vertex.shape_id >= 0);
-        if (is_light(scene.shapes[bsdf_vertex.shape_id])) {
-            // Hit a light source: need to compute C2 & w2 & p2.
-            // Again, we store C2/p2 in C2.
-            Spectrum C2;
-            Real w2;
-            // Similar to C1, we need to compute 
-            // G(v_{i}, v_{i+1}) * f(v_{i-1}, v_{i}, v_{i+1}) * L(v_{i}, v_{i+1})
-
-            // G & f are already computed above. So we only need L
-            Spectrum L = emission(bsdf_vertex, -dir_bsdf, scene);
-
-            // C2 is then G * f * L 
-            C2 = G * f * L;
-
-            // Next let's compute w2
-            int light_id = get_area_light_id(scene.shapes[bsdf_vertex.shape_id]);
+        // Now we want to check whether dir_bsdf hit a light source, and
+        // account for the light contribution (C2 & w2 & p2).
+        // There are two possibilities: either we hit an emissive surface,
+        // or we hit an environment map.
+        // We will handle them separately.
+        if (bsdf_vertex && is_light(scene.shapes[bsdf_vertex->shape_id])) {
+            // G & f are already computed.
+            RayDifferential next_ray_diff = transfer(ray_diff, distance(ray.org, bsdf_vertex->position));
+            Spectrum L = emission(*bsdf_vertex, -dir_bsdf, next_ray_diff.radius, scene);
+            Spectrum C2 = G * f * L;
+            // Next let's compute p1(v2): the probability of the light source sampling
+            // directly drawing the point corresponds to bsdf_dir.
+            int light_id = get_area_light_id(scene.shapes[bsdf_vertex->shape_id]);
             assert(light_id >= 0);
             const Light &light = scene.lights[light_id];
-            PointAndNormal light_point{bsdf_vertex.position, bsdf_vertex.geometry_normal};
+            PointAndNormal light_point{bsdf_vertex->position, bsdf_vertex->geometry_normal};
             Real p1 = light_pmf(scene, light_id) * pdf_point_on_light(light, light_point, scene);
-            w2 = (p2*p2) / (p1*p1 + p2*p2);
+            Real w2 = (p2*p2) / (p1*p1 + p2*p2);
 
             C2 /= p2;
-            radiance += (current_path_contrib / current_path_pdf) * C2;
+            radiance += (current_path_contrib / current_path_pdf) * C2 * w2;
+        } else if (!bsdf_vertex && has_envmap(scene)) {
+            // G & f are already computed.
+            const Light &light = get_envmap(scene);
+            Spectrum L = emission(light,
+                                  -dir_bsdf, // pointing outwards from light
+                                  ray_diff.spread,
+                                  PointAndNormal{}, // dummy parameter for envmap
+                                  scene);
+            Spectrum C2 = G * f * L;
+            // Next let's compute p1(v2): the probability of the light source sampling
+            // directly drawing the direction bsdf_dir.
+            PointAndNormal light_point{Vector3{0, 0, 0}, dir_bsdf}; // pointing towards the scene
+            Real p1 = light_pmf(scene, scene.envmap_light_id) *
+                      pdf_point_on_light(light, light_point, scene);
+            Real w2 = (p2*p2) / (p1*p1 + p2*p2);
+
+            C2 /= p2;
+            radiance += (current_path_contrib / current_path_pdf) * C2 * w2;
+        }
+
+        if (!bsdf_vertex) {
+            // Hit nothing -- can't continue tracing.
+            break;
         }
 
         // Update rays/ray differentials/intersection/current_path_contrib/current_pdf
         Real roughness = get_roughness(mat, vertex, ray_diff.radius, scene.texture_pool);
         // TODO: add refraction.
         ray_diff = reflect(ray_diff, vertex.mean_curvature, roughness);
-        ray_diff = transfer(ray_diff, distance(vertex.position, bsdf_vertex.position));
+        ray_diff = transfer(ray_diff, distance(vertex.position, bsdf_vertex->position));
         ray = bsdf_ray;
-        vertex = bsdf_vertex;
+        vertex = *bsdf_vertex;
         current_path_contrib = current_path_contrib * G * f;
         current_path_pdf = current_path_pdf * p2;
     }
@@ -295,7 +354,7 @@ std::shared_ptr<Image3> path_render(const Scene &scene) {
             Spectrum radiance = make_zero_spectrum();
             int spp = scene.options.samples_per_pixel;
             for (int s = 0; s < spp; s++) {
-                radiance += path_trace(scene, x, y, rng);
+                radiance += path_tracing(scene, x, y, rng);
             }
             img(x, y) = radiance / Real(spp);
         }

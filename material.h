@@ -52,6 +52,22 @@ enum class TransportDirection {
     TO_VIEW
 };
 
+/// When sampling a material (BSDF), in addition to returning
+/// the outgoing direction in the world coordinates, we also
+/// provide the evaluation of the BSDF and the probability density
+/// of the sampling procedure.
+/// It is of course possible to evaluate eval & pdf using eval() and
+/// pdf_sample_bsdf() later. However, it is crucial for
+/// numerical accuracy, especially for very low roughness materials,
+/// that we evaluate the BSDF/PDF while sampling the materials, otherwise
+/// we suffer from floating point number precision loss when transforming/
+/// normalizing vectors, etc.
+struct MaterialSampleRecord {
+    Vector3 dir;
+    Spectrum eval;
+    Real pdf;
+};
+
 /// Given incoming direction pointing outwards of the surface point,
 /// samples an outgoing direction.
 /// If dir == TO_LIGHT, incoming direction is dir_view and 

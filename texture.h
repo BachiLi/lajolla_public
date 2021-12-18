@@ -81,6 +81,14 @@ template <typename T>
 struct ImageTexture {
     int texture_id;
     Real uscale, vscale;
+    Real uoffset, voffset;
+};
+
+template <typename T>
+struct CheckerboardTexture {
+    T color0, color1;
+    Real uscale, vscale;
+    Real uoffset, voffset;
 };
 
 template <typename T>
@@ -97,7 +105,7 @@ inline const Mipmap<Vector3> &get_img(const ImageTexture<Vector3> &t, const Text
 }
 
 template <typename T>
-using Texture = std::variant<ConstantTexture<T>, ImageTexture<T>>;
+using Texture = std::variant<ConstantTexture<T>, ImageTexture<T>, CheckerboardTexture<T>>;
 using Texture1 = Texture<Real>;
 using TextureSpectrum = Texture<Spectrum>;
 
@@ -105,8 +113,9 @@ template <typename T>
 struct eval_texture_op {
     T operator()(const ConstantTexture<T> &t) const;
     T operator()(const ImageTexture<T> &t) const;
+    T operator()(const CheckerboardTexture<T> &t) const;
 
-    const PathVertex &vertex;
+    const Vector2 &uv;
     const Real &footprint;
     const TexturePool &pool;
 };
@@ -117,16 +126,29 @@ T eval_texture_op<T>::operator()(const ConstantTexture<T> &t) const {
 template <typename T>
 T eval_texture_op<T>::operator()(const ImageTexture<T> &t) const {
     const Mipmap<T> &img = get_img(t, pool);
-    Vector2 uv{modulo(vertex.uv[0] * t.uscale, Real(1)),
-               modulo(vertex.uv[1] * t.vscale, Real(1))};
+    Vector2 local_uv{modulo(uv[0] * t.uscale + t.uoffset, Real(1)),
+                     modulo(uv[1] * t.vscale + t.voffset, Real(1))};
     Real scaled_footprint = max(get_width(img), get_height(img)) * max(t.uscale, t.vscale) * footprint;
     Real level = log2(max(footprint, Real(1e-8f)));
-    return lookup(img, uv[0], uv[1], level);
+    return lookup(img, local_uv[0], local_uv[1], level);
+}
+template <typename T>
+T eval_texture_op<T>::operator()(const CheckerboardTexture<T> &t) const {
+    Vector2 local_uv{modulo(uv[0] * t.uscale + t.uoffset, Real(1)),
+                     modulo(uv[1] * t.vscale + t.voffset, Real(1))};
+    int x = 2 * modulo((int)(local_uv.x * 2), 2) - 1,
+        y = 2 * modulo((int)(local_uv.y * 2), 2) - 1;
+
+    if (x * y == 1) {
+        return t.color0;
+    } else {
+        return t.color1;
+    }
 }
 
 template <typename T>
-T eval(const Texture<T> &texture, const PathVertex &vertex, Real footprint, const TexturePool &pool) {
-    return std::visit(eval_texture_op<T>{vertex, footprint, pool}, texture);
+T eval(const Texture<T> &texture, const Vector2 &uv, Real footprint, const TexturePool &pool) {
+    return std::visit(eval_texture_op<T>{uv, footprint, pool}, texture);
 }
 
 inline ConstantTexture<Spectrum> make_constant_spectrum_texture(const Spectrum &spec) {
@@ -142,8 +164,11 @@ inline ImageTexture<Spectrum> make_image_spectrum_texture(
         const fs::path &filename,
         TexturePool &pool,
         Real uscale = 1,
-        Real vscale = 1) {
-    return ImageTexture<Spectrum>{insert_image3(pool, texture_name, filename), uscale, vscale};
+        Real vscale = 1,
+        Real uoffset = 0,
+        Real voffset = 0) {
+    return ImageTexture<Spectrum>{insert_image3(pool, texture_name, filename),
+        uscale, vscale, uoffset, voffset};
 }
 
 inline ImageTexture<Spectrum> make_image_spectrum_texture(
@@ -151,8 +176,11 @@ inline ImageTexture<Spectrum> make_image_spectrum_texture(
         const Image3 &img,
         TexturePool &pool,
         Real uscale = 1,
-        Real vscale = 1) {
-    return ImageTexture<Spectrum>{insert_image3(pool, texture_name, img), uscale, vscale};
+        Real vscale = 1,
+        Real uoffset = 0,
+        Real voffset = 0) {
+    return ImageTexture<Spectrum>{insert_image3(pool, texture_name, img),
+        uscale, vscale, uoffset, voffset};
 }
 
 inline ImageTexture<Real> make_image_float_texture(
@@ -160,8 +188,11 @@ inline ImageTexture<Real> make_image_float_texture(
         const fs::path &filename,
         TexturePool &pool,
         Real uscale = 1,
-        Real vscale = 1) {
-    return ImageTexture<Real>{insert_image1(pool, texture_name, filename), uscale, vscale};
+        Real vscale = 1,
+        Real uoffset = 0,
+        Real voffset = 0) {
+    return ImageTexture<Real>{insert_image1(pool, texture_name, filename),
+        uscale, vscale, uoffset, voffset};
 }
 
 inline ImageTexture<Real> make_image_float_texture(
@@ -169,6 +200,17 @@ inline ImageTexture<Real> make_image_float_texture(
         const Image1 &img,
         TexturePool &pool,
         Real uscale = 1,
-        Real vscale = 1) {
-    return ImageTexture<Real>{insert_image1(pool, texture_name, img), uscale, vscale};
+        Real vscale = 1,
+        Real uoffset = 0,
+        Real voffset = 0) {
+    return ImageTexture<Real>{insert_image1(pool, texture_name, img),
+        uscale, vscale, uoffset, voffset};
+}
+
+inline CheckerboardTexture<Spectrum> make_checkerboard_spectrum_texture(
+        const Spectrum &color0, const Spectrum &color1,
+        Real uscale = 1, Real vscale = 1,
+        Real uoffset = 0, Real voffset = 0) {
+    return CheckerboardTexture<Spectrum>{
+        color0, color1, uscale, vscale, uoffset, voffset};
 }

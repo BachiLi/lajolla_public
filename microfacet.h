@@ -61,9 +61,10 @@ inline Real GGX(Real n_dot_h, Real roughness) {
 /// for a great explanation.
 /// https://jcgt.org/published/0003/02/03/paper.pdf
 /// The derivation is based on Smith's paper "Geometrical shadowing of a random rough surface".
-inline Real smith_masking(Real n_dot_v, Real roughness) {
+inline Real smith_masking(const Vector3 &v_local, Real roughness) {
     Real alpha = roughness * roughness;
-    Real a = alpha * alpha;
-    Real b = n_dot_v * n_dot_v;
-    return Real(1) / (n_dot_v + sqrt(a + b - a * b));
+    Real a2 = alpha * alpha;
+    Vector3 v2 = v_local * v_local;
+    Real Lambda = (-1 + sqrt(1 + (v2.x * a2 + v2.y * a2) / v2.z)) / 2;
+    return 1 / (1 + Lambda);
 }

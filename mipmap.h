@@ -66,7 +66,7 @@ inline T lookup(const Mipmap<T> &mipmap, Real x, Real y, int level) {
     return vff * (1 - x_off) * (1 - y_off) +
            vfc * (1 - x_off) * y_off +
            vcf *      x_off  * (1 - y_off) +
-           vcc *      x_off *      y_off;
+           vcc *      x_off  *      y_off;
 }
 
 template <typename T>
