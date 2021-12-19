@@ -29,4 +29,6 @@ We use [pugixml](https://pugixml.org/) to parse XML files.
 
 We use [pcg](https://www.pcg-random.org/) for random number generation.
 
-We use [stb_image](https://github.com/nothings/stb) and [tinyexr](https://github.com/syoyo/tinyexr) for reading images.
+We use [stb_image](https://github.com/nothings/stb) and [tinyexr](https://github.com/syoyo/tinyexr) for reading & writing images.
+
+We use [miniz](https://github.com/richgel999/miniz) for compression & decompression.
