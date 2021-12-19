@@ -223,7 +223,7 @@ Spectrum path_tracing(const Scene &scene,
                 Spectrum f;
                 Vector3 dir_view = -ray.dir;
                 assert(vertex.material_id >= 0);
-                f = eval(mat, dir_view, dir_light, vertex, scene.texture_pool, false);
+                f = eval(mat, dir_view, dir_light, vertex, scene.texture_pool);
                 // L is stored in LightSampleRecord
                 Spectrum L = lr.radiance;
 
@@ -239,7 +239,7 @@ Spectrum path_tracing(const Scene &scene,
 
                 // The probability density for our hemispherical sampling to sample 
                 Real p2 = pdf_sample_bsdf(
-                    mat, dir_view, dir_light, vertex, scene.texture_pool, false);
+                    mat, dir_view, dir_light, vertex, scene.texture_pool);
                 // !!!! IMPORTANT !!!!
                 // In general, p1 and p2 now live in different spaces!!
                 // our BSDF API outputs a probability density in the solid angle measure
