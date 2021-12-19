@@ -31,6 +31,9 @@ set(SRCS src/3rdparty/miniz.h
          src/filters/tent.inl
          src/lights/diffuse_area_light.inl
          src/lights/envmap.inl
+         src/materials/lambertian.inl
+         src/materials/roughdielectric.inl
+         src/materials/roughplastic.inl
          src/camera.h
          src/filter.h
          src/flexception.h
