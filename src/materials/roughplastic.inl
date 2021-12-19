@@ -1,4 +1,4 @@
-#include "microfacet.h"
+#include "../microfacet.h"
 
 Spectrum eval_op::operator()(const RoughPlastic &bsdf) const {
     Real n_dot_in = dot(dir_in, vertex.shading_frame.n);

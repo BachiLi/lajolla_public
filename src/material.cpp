@@ -53,9 +53,9 @@ struct get_texture_op {
     const TextureSpectrum& operator()(const RoughDielectric &bsdf) const;
 };
 
-#include "lambertian.inl"
-#include "roughplastic.inl"
-#include "roughdielectric.inl"
+#include "materials/lambertian.inl"
+#include "materials/roughplastic.inl"
+#include "materials/roughdielectric.inl"
 
 Spectrum eval(const Material &material,
               const Vector3 &dir_light,
