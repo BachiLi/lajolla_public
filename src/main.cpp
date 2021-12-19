@@ -2,6 +2,7 @@
 #include "parse_scene.h"
 #include "image.h"
 #include "render.h"
+#include "timer.h"
 #include <embree3/rtcore.h>
 #include <memory>
 #include <thread>
@@ -27,8 +28,14 @@ int main(int argc, char *argv[]) {
     parallel_init(num_threads);
 
     for (const std::string &filename : filenames) {
+        Timer timer;
+        tick(timer);
+        std::cout << "Parsing and constructing scene " << filename << "." << std::endl;
         Scene scene = parse_scene(filename, embree_device);
+        std::cout << "Done. Took " << tick(timer) << " seconds." << std::endl;
+        std::cout << "Rendering..." << std::endl;
         Image3 img = render(scene);
+        std::cout << "Done. Took " << tick(timer) << " seconds." << std::endl;
         imwrite(scene.output_filename, img);
     }
 

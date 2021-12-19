@@ -3,6 +3,7 @@
 #include "material.h"
 #include "parallel.h"
 #include "pcg.h"
+#include "progress_reporter.h"
 #include "scene.h"
 
 /// Render auxiliary buffers e.g., depth.
@@ -391,6 +392,7 @@ Image3 path_render(const Scene &scene) {
     int num_tiles_x = (w + tile_size - 1) / tile_size;
     int num_tiles_y = (h + tile_size - 1) / tile_size;
 
+    ProgressReporter reporter(num_tiles_x * num_tiles_y);
     parallel_for([&](const Vector2i &tile) {
         // Use a different rng stream for each thread.
         pcg32_state rng = init_pcg32(tile[1] * num_tiles_x + tile[0]);
@@ -408,7 +410,9 @@ Image3 path_render(const Scene &scene) {
                 img(x, y) = radiance / Real(spp);
             }
         }
+        reporter.update(1);
     }, Vector2i(num_tiles_x, num_tiles_y));
+    reporter.done();
     return img;
 }
 
