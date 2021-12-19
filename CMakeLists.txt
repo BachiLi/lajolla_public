@@ -34,6 +34,8 @@ set(SRCS src/3rdparty/miniz.h
          src/materials/lambertian.inl
          src/materials/roughdielectric.inl
          src/materials/roughplastic.inl
+         src/shapes/sphere.inl
+         src/shapes/triangle_mesh.inl
          src/camera.h
          src/filter.h
          src/flexception.h
