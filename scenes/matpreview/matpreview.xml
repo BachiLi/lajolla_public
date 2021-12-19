@@ -2,7 +2,7 @@
 
 <scene version="0.5.0">
 	<integrator type="path">
-		<integer name="maxDepth" value="3"/>
+		<integer name="maxDepth" value="2"/>
 	</integrator>
 
 	<shape type="serialized">
@@ -17,6 +17,11 @@
 			<srgb name="diffuseReflectance" value="#18455c"/>
 			<float name="intIOR" value="1.9"/>
 		</bsdf>
+
+<!-- 		<bsdf type="roughdielectric">
+			<float name="intIOR" value="1.33"/>
+			<float name="alpha" value="0.0001"/>
+		</bsdf> -->
 	</shape>
 
 	<sensor type="perspective" id="Camera-camera">

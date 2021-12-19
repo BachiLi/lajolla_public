@@ -129,7 +129,7 @@ T eval_texture_op<T>::operator()(const ImageTexture<T> &t) const {
     Vector2 local_uv{modulo(uv[0] * t.uscale + t.uoffset, Real(1)),
                      modulo(uv[1] * t.vscale + t.voffset, Real(1))};
     Real scaled_footprint = max(get_width(img), get_height(img)) * max(t.uscale, t.vscale) * footprint;
-    Real level = log2(max(footprint, Real(1e-8f)));
+    Real level = log2(max(scaled_footprint, Real(1e-8f)));
     return lookup(img, local_uv[0], local_uv[1], level);
 }
 template <typename T>

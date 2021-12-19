@@ -15,6 +15,8 @@ struct ShadingInfo {
     Vector2 uv; // UV coordinates for texture mapping
     Frame shading_frame; // the coordinate basis for shading
     Real mean_curvature; // -0.5 * (dN/du + dN/dv)
+    // Stores min(length(dp/du), length(dp/dv)), for ray differentials.
+    Real inv_uv_size;
 };
 
 /// A Shape is a geometric entity that describes a surface. E.g., a sphere, a triangle mesh, a NURBS, etc.

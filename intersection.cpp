@@ -5,7 +5,8 @@
 #include <embree3/rtcore.h>
 
 std::optional<PathVertex> intersect(const Scene &scene,
-                                    const Ray &ray) {
+                                    const Ray &ray,
+                                    const RayDifferential &ray_diff) {
     RTCIntersectContext rtc_context;
     rtcInitIntersectContext(&rtc_context);
     RTCRayHit rtc_rayhit;
@@ -47,6 +48,12 @@ std::optional<PathVertex> intersect(const Scene &scene,
     vertex.shading_frame = shading_info.shading_frame;
     vertex.uv = shading_info.uv;
     vertex.mean_curvature = shading_info.mean_curvature;
+    vertex.ray_radius = transfer(ray_diff, distance(ray.org, vertex.position));
+    // vertex.ray_radius stores approximatedly dp/dx, 
+    // we get uv_screen_size (du/dx) using (dp/dx)/(dp/du)
+    vertex.uv_screen_size = vertex.ray_radius / shading_info.inv_uv_size;
+
+    // vertex.inv_uv_size = shading_info.inv_uv_size;
 
     // Flip the geometry normal to the same direction as the shading normal
     if (dot(vertex.geometry_normal, vertex.shading_frame.n) < 0) {
@@ -78,14 +85,13 @@ bool occluded(const Scene &scene, const Ray &ray) {
 
 Spectrum emission(const PathVertex &v,
                   const Vector3 &view_dir,
-                  Real view_footprint,
                   const Scene &scene) {
     int light_id = get_area_light_id(scene.shapes[v.shape_id]);
     assert(light_id >= 0);
     const Light &light = scene.lights[light_id];
     return emission(light,
                     view_dir,
-                    view_footprint,
+                    v.uv_screen_size,
                     PointAndNormal{v.position, v.geometry_normal},
                     scene);
 }

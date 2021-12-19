@@ -28,7 +28,7 @@ inline uint32_t next_pcg32(pcg32_state &rng) {
 }
 
 // https://github.com/wjakob/pcg32/blob/master/pcg32.h#L47
-inline pcg32_state init_pcg32(uint64_t seed = 0x853c49e6748fea9bULL, uint64_t stream_id = 1) {
+inline pcg32_state init_pcg32(uint64_t stream_id = 1, uint64_t seed = 0x853c49e6748fea9bULL) {
     pcg32_state s;
     s.state = 0U;
     s.inc = (stream_id << 1u) | 1u;

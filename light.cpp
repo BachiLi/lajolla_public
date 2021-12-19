@@ -118,7 +118,25 @@ Spectrum emission_op::operator()(const Envmap &light) const {
     if (uv[0] < 0) {
         uv[0] += 1;
     }
-    return eval(light.values, uv, view_footprint, scene.texture_pool);
+
+    // For envmap, view_footprint stores (approximatedly) d view_dir / dx
+    // We want to convert it to du/dx -- we do it by computing (d dir / dx) * (d u / d dir)
+    // To do this we differentiate through the process above:
+    
+    // We abbrevite local_dir as w
+    Vector3 w = local_dir;
+    Real dudwx = -w.z / (w.x * w.x + w.z * w.z);
+    Real dudwz = w.x / (w.x * w.x + w.z * w.z);
+    Real dvdwy = -1 / sqrt(std::max(1 - w.y * w.y, Real(0)));
+    // We only want to know the length of dudw & dvdw
+    // The local coordinate transformation is length preserving,
+    // so we don't need to differentiate through it.
+    Real footprint = min(sqrt(dudwx * dudwx + dudwz * dudwz), dvdwy);
+    // (I haven't see this in any renderer I know...the closest one is 
+    // "real-time shading with filtered importance sampling" from Colbert et al.
+    // I don't know why people don't do this.)
+
+    return eval(light.values, uv, footprint, scene.texture_pool);
 }
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -146,10 +164,10 @@ void init_sampling_dist_op::operator()(Envmap &light) const {
             // unbiased, as we can interpolate at a position of a black pixel
             // and get a non-zero contribution.
             Real v = (y + Real(0.5)) / Real(h);
-            Real sin_theta = sin(c_PI * v);
+            Real sin_elevation = sin(c_PI * v);
             for (int x = 0; x < w; x++) {
                 Real u = (x + Real(0.5)) / Real(w);
-                f[i++] = luminance(lookup(mipmap, u, v, 0));
+                f[i++] = luminance(lookup(mipmap, u, v, 0)) * sin_elevation;
             }
         }
         light.sampling_dist = make_table_dist_2d(f, w, h);

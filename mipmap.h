@@ -25,7 +25,7 @@ template <typename T>
 inline Mipmap<T> make_mipmap(const Image<T> &img) {
     Mipmap<T> mipmap;
     int size = max(img.width, img.height);
-    int num_levels = std::min((int)ceil(log2(Real(img.width)) + 1), c_max_mipmap_levels);
+    int num_levels = std::min((int)ceil(log2(Real(size)) + 1), c_max_mipmap_levels);
     mipmap.images.push_back(img);
     for (int i = 1; i < num_levels; i++) {
         const Image<T> &prev_img = mipmap.images.back();

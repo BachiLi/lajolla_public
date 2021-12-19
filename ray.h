@@ -25,37 +25,40 @@ struct Ray {
 /// Here we use an even simpler heuristics: we linearly blend
 /// between the specular spread and a constant based on roughness.
 struct RayDifferential {
+    // Radius is approximatedly (length(dp/dx) + length(dp/dy)) / 2
+    // Spread is approximatedly (length(dd/dx) + length(dd/dy)) / 2
+    // p is ray position, d is ray direction.
     Real radius = 0, spread = 0; // The units are pixels.
 };
 
 /// These functions propagate the ray differential information.
-inline RayDifferential init_ray_differential() {
-    return RayDifferential{Real(0), Real(0.25)};
+inline RayDifferential init_ray_differential(int w, int h) {
+    return RayDifferential{Real(0), Real(0.25) / max(w, h)};
 }
 
-inline RayDifferential transfer(const RayDifferential &r,
-                                Real dist) {
-    return RayDifferential{r.radius + r.spread * dist, r.spread};
+/// Update the radius (dp/dx) of a ray differential by propagating it over a distance.
+inline Real transfer(const RayDifferential &r, Real dist) {
+    return r.radius + r.spread * dist;
 }
 
-inline RayDifferential reflect(const RayDifferential &r,
-                               Real mean_curvature,
-                               Real roughness) {
+/// Update the spread (dd/dx) of a ray differential by scattering over a reflective surface.
+inline Real reflect(const RayDifferential &r,
+                    Real mean_curvature,
+                    Real roughness) {
     Real spec_spread = r.spread + 2 * mean_curvature * r.radius;
     Real diff_spread = Real(0.2);
-    return RayDifferential{r.radius,
-        fmax(spec_spread * (1 - roughness) + diff_spread * roughness, Real(0))};
+    return fmax(spec_spread * (1 - roughness) + diff_spread * roughness, Real(0));
 }
 
+/// Update the spread (dd/dx) of a ray differential by scattering over a refractive surface.
 /// The Renderman reference https://graphics.pixar.com/library/RendermanTog2018/paper.pdf
 /// did not specify how they propagate ray differentials through the refraction.
 /// We simply guess a formula here: when eta == 1, the spread & radius should not change.
-inline RayDifferential refract(const RayDifferential &r,
-                               Real mean_curvature,
-                               Real eta,
-                               Real roughness) {
+inline Real refract(const RayDifferential &r,
+                    Real mean_curvature,
+                    Real eta,
+                    Real roughness) {
     Real spec_spread = eta * r.spread + 2 * (eta - 1) * (eta - 1) * mean_curvature * r.radius;
     Real diff_spread = Real(0.2);
-    return RayDifferential{r.radius,
-        fmax(spec_spread * (1 - roughness) + diff_spread * roughness, Real(0))};
+    return fmax(spec_spread * (1 - roughness) + diff_spread * roughness, Real(0));
 }

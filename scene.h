@@ -57,8 +57,8 @@ struct Scene {
     const std::vector<Material> materials;
     const std::vector<Shape> shapes;
     const std::vector<Light> lights;
-    const TexturePool texture_pool;
     int envmap_light_id;
+    const TexturePool texture_pool;
 
     // Bounding sphere of the scene.
     BSphere bounds;

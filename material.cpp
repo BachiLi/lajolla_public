@@ -19,7 +19,6 @@ struct eval_op {
     const Vector3 &dir_light;
     const Vector3 &dir_view;
     const PathVertex &vertex;
-    Real ray_footprint;
     const TexturePool &texture_pool;
 };
 Spectrum eval_op::operator()(const Lambertian &bsdf) const {
@@ -28,7 +27,7 @@ Spectrum eval_op::operator()(const Lambertian &bsdf) const {
         return make_zero_spectrum();
     }
     return fmax(dot(dir_light, vertex.shading_frame.n), Real(0)) * 
-           eval(bsdf.reflectance, vertex.uv, ray_footprint, texture_pool) / c_PI;
+           eval(bsdf.reflectance, vertex.uv, vertex.uv_screen_size, texture_pool) / c_PI;
 }
 Spectrum eval_op::operator()(const RoughPlastic &bsdf) const {
     Real cos_theta_l = dot(dir_light, vertex.shading_frame.n);
@@ -38,11 +37,11 @@ Spectrum eval_op::operator()(const RoughPlastic &bsdf) const {
         return make_zero_spectrum();
     }
     Spectrum R = eval(
-        bsdf.diffuse_reflectance, vertex.uv, ray_footprint, texture_pool);
+        bsdf.diffuse_reflectance, vertex.uv, vertex.uv_screen_size, texture_pool);
     Spectrum S = eval(
-        bsdf.specular_reflectance, vertex.uv, ray_footprint, texture_pool);
+        bsdf.specular_reflectance, vertex.uv, vertex.uv_screen_size, texture_pool);
     Real roughness = eval(
-        bsdf.roughness, vertex.uv, ray_footprint, texture_pool);
+        bsdf.roughness, vertex.uv, vertex.uv_screen_size, texture_pool);
     // Clamp roughness to avoid numerical issues.
     roughness = std::clamp(roughness, Real(0.01), Real(1));
     // We first account for the dielectric layer.
@@ -79,7 +78,6 @@ struct pdf_sample_bsdf_op {
     const Vector3 &dir_light;
     const Vector3 &dir_view;
     const PathVertex &vertex;
-    Real ray_footprint;
     const TexturePool &texture_pool;
     const TransportDirection &dir;
 };
@@ -108,15 +106,14 @@ Real pdf_sample_bsdf_op::operator()(const RoughPlastic &bsdf) const {
     const Vector3 &dir_in = dir == TransportDirection::TO_LIGHT ? dir_view : dir_light;
     Real cos_theta_out = dir == TransportDirection::TO_LIGHT ? cos_theta_l : cos_theta_v;
     Spectrum S = eval(
-        bsdf.specular_reflectance, vertex.uv, ray_footprint, texture_pool);
+        bsdf.specular_reflectance, vertex.uv, vertex.uv_screen_size, texture_pool);
     Spectrum R = eval(
-        bsdf.diffuse_reflectance, vertex.uv, ray_footprint, texture_pool);
+        bsdf.diffuse_reflectance, vertex.uv, vertex.uv_screen_size, texture_pool);
     Real lS = luminance(S), lR = luminance(R);
     if (lS + lR <= 0) {
         return 0;
     }
-    Real roughness = eval(
-        bsdf.roughness, vertex.uv, ray_footprint, texture_pool);
+    Real roughness = eval(bsdf.roughness, vertex.uv, vertex.uv_screen_size, texture_pool);
     // Clamp roughness to avoid numerical issues.
     roughness = std::clamp(roughness, Real(0.01), Real(1));
     // We use the reflectance to determine whether to choose specular sampling lobe or diffuse.
@@ -145,7 +142,6 @@ struct sample_bsdf_op {
 
     const Vector3 &dir_in;
     const PathVertex &vertex;
-    Real ray_footprint;
     const TexturePool &texture_pool;
     const Vector2 &rnd_param;
     const TransportDirection &dir;
@@ -167,9 +163,9 @@ std::optional<Vector3> sample_bsdf_op::operator()(const RoughPlastic &bsdf) cons
     }
     // We use the reflectance to choose between sampling the dielectric or diffuse layer.
     Spectrum S = eval(
-        bsdf.specular_reflectance, vertex.uv, ray_footprint, texture_pool);
+        bsdf.specular_reflectance, vertex.uv, vertex.uv_screen_size, texture_pool);
     Spectrum R = eval(
-        bsdf.diffuse_reflectance, vertex.uv, ray_footprint, texture_pool);
+        bsdf.diffuse_reflectance, vertex.uv, vertex.uv_screen_size, texture_pool);
     Real lS = luminance(S), lR = luminance(R);
     if (lS + lR <= 0) {
         return {};
@@ -189,7 +185,7 @@ std::optional<Vector3> sample_bsdf_op::operator()(const RoughPlastic &bsdf) cons
         Vector3 ellip_dir_in = to_local(vertex.shading_frame, dir_in);
 
         Real roughness = eval(
-            bsdf.roughness, vertex.uv, ray_footprint, texture_pool);
+            bsdf.roughness, vertex.uv, vertex.uv_screen_size, texture_pool);
         // Clamp roughness to avoid numerical issues.
         roughness = std::clamp(roughness, Real(0.01), Real(1));
 
@@ -260,14 +256,13 @@ struct get_roughness_op {
     Real operator()(const RoughPlastic &bsdf) const;
 
     const PathVertex &vertex;
-    Real ray_footprint;
     const TexturePool &texture_pool;
 };
 Real get_roughness_op::operator()(const Lambertian &bsdf) const {
     return Real(1);
 }
 Real get_roughness_op::operator()(const RoughPlastic &bsdf) const {
-    return eval(bsdf.roughness, vertex.uv, ray_footprint, texture_pool);
+    return eval(bsdf.roughness, vertex.uv, vertex.uv_screen_size, texture_pool);
 }
 ////////////////////////////////////////////////////////////////////////
 
@@ -288,38 +283,34 @@ Spectrum eval(const Material &material,
               const Vector3 &dir_light,
               const Vector3 &dir_view,
               const PathVertex &vertex,
-              Real ray_footprint, // for texture filtering
               const TexturePool &texture_pool) {
-    return std::visit(eval_op{dir_light, dir_view, vertex, ray_footprint, texture_pool}, material);
+    return std::visit(eval_op{dir_light, dir_view, vertex, texture_pool}, material);
 }
 
 std::optional<Vector3> sample_bsdf(const Material &material,
                                    const Vector3 &dir_in,
                                    const PathVertex &vertex,
-                                   Real ray_footprint, // for texture filtering
                                    const TexturePool &texture_pool,
                                    const Vector2 &rnd_param,
                                    TransportDirection dir) {
     return std::visit(sample_bsdf_op{
-        dir_in, vertex, ray_footprint, texture_pool, rnd_param, dir}, material);
+        dir_in, vertex, texture_pool, rnd_param, dir}, material);
 }
 
 Real pdf_sample_bsdf(const Material &material,
                      const Vector3 &dir_light,
                      const Vector3 &dir_view,
                      const PathVertex &vertex,
-                     Real ray_footprint, // for texture filtering
                      const TexturePool &texture_pool,
                      TransportDirection dir) {
     return std::visit(pdf_sample_bsdf_op{
-        dir_light, dir_view, vertex, ray_footprint, texture_pool, dir}, material);
+        dir_light, dir_view, vertex, texture_pool, dir}, material);
 }
 
 Real get_roughness(const Material &material,
                    const PathVertex &vertex,
-                   Real ray_footprint,
                    const TexturePool &texture_pool) {
-    return std::visit(get_roughness_op{vertex, ray_footprint, texture_pool}, material);
+    return std::visit(get_roughness_op{vertex, texture_pool}, material);
 }
 
 const TextureSpectrum &get_texture(const Material &material) {

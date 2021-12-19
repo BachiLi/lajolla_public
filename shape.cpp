@@ -292,6 +292,9 @@ ShadingInfo compute_shading_info_op::operator()(const Sphere &sphere) const {
     Vector3 dpdu{-sphere.radius * sin(vertex.st[0]) * sin(vertex.st[1]),
                   sphere.radius * cos(vertex.st[0]) * sin(vertex.st[1]),
                  Real(0)};
+    Vector3 dpdv{ sphere.radius * cos(vertex.st[0]) * cos(vertex.st[1]),
+                  sphere.radius * sin(vertex.st[0]) * cos(vertex.st[1]),
+                 -sphere.radius * sin(vertex.st[1])};
     // normalize for shading frame calculation
     Vector3 tangent = normalize(dpdu);
     Frame shading_frame(tangent,
@@ -299,7 +302,8 @@ ShadingInfo compute_shading_info_op::operator()(const Sphere &sphere) const {
                         vertex.geometry_normal);
     return ShadingInfo{vertex.st,
                        shading_frame,
-                       1 / sphere.radius /* mean curvature */};
+                       1 / sphere.radius, /* mean curvature */
+                       (length(dpdu) + length(dpdv)) / 2};
 }
 ShadingInfo compute_shading_info_op::operator()(const TriangleMesh &mesh) const {
     // Get UVs of the three vertices
@@ -345,16 +349,16 @@ ShadingInfo compute_shading_info_op::operator()(const TriangleMesh &mesh) const 
     Real dtdu = -duvds[1] / det;
     Real dsdv =  duvdt[0] / det;
     Real dtdv = -duvds[0] / det;
-    Vector3 dpdu;
+    Vector3 dpdu, dpdv;
     if (fabs(det) > 1e-8f) {
         // Now we just need to do the matrix multiplication
         Vector3 dpds = p2 - p0;
         Vector3 dpdt = p2 - p1;
         dpdu = dpds * dsdu + dpdt * dtdu;
-        // dpdv = dpds * dsdv + dpdt * dtdv;
+        dpdv = dpds * dsdv + dpdt * dtdv;
     } else {
         // degenerate uvs. Use an arbitrary coordinate system
-        dpdu = coordinate_system(vertex.geometry_normal).first;
+        std::tie(dpdu, dpdv) = coordinate_system(vertex.geometry_normal);
     }
 
     // normalize for shading frame calculation
@@ -388,7 +392,8 @@ ShadingInfo compute_shading_info_op::operator()(const TriangleMesh &mesh) const 
     Frame shading_frame(tangent,
                         cross(shading_normal, tangent),
                         shading_normal);
-    return ShadingInfo{uv, shading_frame, mean_curvature};
+    return ShadingInfo{uv, shading_frame, mean_curvature,
+                       max(length(dpdu), length(dpdv)) /* inv_uv_size */};
 }
 ///////////////////////////////////////////////////////////////////////////
 

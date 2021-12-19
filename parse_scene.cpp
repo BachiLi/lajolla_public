@@ -517,7 +517,7 @@ Shape parse_shape(pugi::xml_node node,
                 radius = std::stof(child.attribute("value").value());
             }
         }
-        shape = Sphere{-1 /*material_id*/, -1 /*area_light_id*/, center, radius};
+        shape = Sphere{{-1 /*material_id*/, -1 /*area_light_id*/}, center, radius};
     } else {
         Error(std::string("Unknown shape:") + type);
     }
@@ -556,7 +556,6 @@ Shape parse_shape(pugi::xml_node node,
 /// We don't load the images to memory at this stage. Only record their names.
 ParsedTexture parse_texture(pugi::xml_node node) {
     std::string type = node.attribute("type").value();
-    TextureType tex_type = TextureType::BITMAP;
     if (type == "bitmap") {
         std::string filename = "";
         Real uscale = 1;

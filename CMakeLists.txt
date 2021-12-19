@@ -9,6 +9,12 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 set(CMAKE_BUILD_TYPE RelWithDebInfo)
 
+if(MSVC)
+  add_compile_options(/Wall)
+else()
+  add_compile_options(-Wall)
+endif()
+
 find_package(Embree REQUIRED)
 include_directories(${EMBREE_INCLUDE_PATH})
 link_libraries(${EMBREE_LIBRARY})
@@ -26,6 +32,7 @@ set(SRCS camera.h
          microfacet.h
          miniz.h
          mipmap.h
+         parallel.h
          parse_obj.h
          parse_scene.h
          point_and_normal.h
@@ -50,6 +57,7 @@ set(SRCS camera.h
          main.cpp
          material.cpp
          miniz.c
+         parallel.cpp
          parse_obj.cpp
          parse_scene.cpp
          pugixml.cpp
