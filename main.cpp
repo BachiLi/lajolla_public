@@ -28,8 +28,8 @@ int main(int argc, char *argv[]) {
 
     for (const std::string &filename : filenames) {
         Scene scene = parse_scene(filename, embree_device);
-        std::shared_ptr<Image3> img = render(scene);
-        imwrite(scene.output_filename, *img);
+        Image3 img = render(scene);
+        imwrite(scene.output_filename, img);
     }
 
     parallel_cleanup();

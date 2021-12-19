@@ -6,10 +6,9 @@
 #include "scene.h"
 
 /// Render auxiliary buffers e.g., depth.
-std::shared_ptr<Image3> aux_render(const Scene &scene) {
+Image3 aux_render(const Scene &scene) {
     int w = scene.camera.width, h = scene.camera.height;
-    std::shared_ptr<Image3> img_ = std::make_shared<Image3>(w, h);
-    Image3 &img = *img_;
+    Image3 img(w, h);
 
     constexpr int tile_size = 16;
     int num_tiles_x = (w + tile_size - 1) / tile_size;
@@ -60,7 +59,7 @@ std::shared_ptr<Image3> aux_render(const Scene &scene) {
         }
     }, Vector2i(num_tiles_x, num_tiles_y));
 
-    return img_;
+    return img;
 }
 
 /// Unidirectional path tracing
@@ -355,10 +354,9 @@ Spectrum path_tracing(const Scene &scene,
     return radiance;
 }
 
-std::shared_ptr<Image3> path_render(const Scene &scene) {
+Image3 path_render(const Scene &scene) {
     int w = scene.camera.width, h = scene.camera.height;
-    std::shared_ptr<Image3> img_ = std::make_shared<Image3>(w, h);
-    Image3 &img = *img_;
+    Image3 img(w, h);
 
     constexpr int tile_size = 16;
     int num_tiles_x = (w + tile_size - 1) / tile_size;
@@ -382,10 +380,10 @@ std::shared_ptr<Image3> path_render(const Scene &scene) {
             }
         }
     }, Vector2i(num_tiles_x, num_tiles_y));
-    return img_;
+    return img;
 }
 
-std::shared_ptr<Image3> render(const Scene &scene) {
+Image3 render(const Scene &scene) {
     if (scene.options.integrator == Integrator::Depth ||
             scene.options.integrator == Integrator::MeanCurvature ||
             scene.options.integrator == Integrator::RayDifferential ||
@@ -395,6 +393,6 @@ std::shared_ptr<Image3> render(const Scene &scene) {
         return path_render(scene);
     } else {
         assert(false);
-        return std::shared_ptr<Image3>();
+        return Image3();
     }
 }
