@@ -1,6 +1,7 @@
 #pragma once
 
 #include "lajolla.h"
+#include "filter.h"
 #include "matrix.h"
 #include "vector.h"
 #include "ray.h"
@@ -10,11 +11,13 @@ struct Camera {
     Camera() {}
     Camera(const Matrix4x4 &cam_to_world,
            Real fov, // in degree
-           int width, int height);
+           int width, int height,
+           const Filter &filter);
 
     Matrix4x4 sample_to_cam, cam_to_sample;
     Matrix4x4 cam_to_world, world_to_cam;
     int width, height;
+    Filter filter;
 };
 
 /// Given screen position in [0, 1] x [0, 1],

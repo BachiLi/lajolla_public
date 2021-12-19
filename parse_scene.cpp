@@ -12,6 +12,7 @@ const Real c_default_fov = 45.0;
 const int c_default_res = 256;
 const std::string c_default_filename = "image.pfm";
 const std::string c_default_material_name = "___default_white";
+const Filter c_default_filter = Box{Real(1)};;
 
 struct ParsedSampler {
     int sample_count = 4;
@@ -240,10 +241,11 @@ RenderOptions parse_integrator(pugi::xml_node node) {
     return options;
 }
 
-std::tuple<int /* width */, int /* height */, std::string /* filename */>
+std::tuple<int /* width */, int /* height */, std::string /* filename */, Filter>
 parse_film(pugi::xml_node node) {
     int width = c_default_res, height = c_default_res;
     std::string filename = c_default_filename;
+    Filter filter = c_default_filter;
 
     for (auto child : node.children()) {
         std::string type = child.name();
@@ -257,12 +259,34 @@ parse_film(pugi::xml_node node) {
         }
         if (type == "rfilter") {
             std::string filter_type = child.attribute("type").value();
-            if (filter_type != "box") {
-                std::cerr << "Warning: the renderer currently only supports box filters." << std::endl;
+            if (filter_type == "box") {
+                Real filter_width = Real(1);
+                for (auto grand_child : child.children()) {
+                    if (std::string(grand_child.attribute("name").value()) == "width") {
+                        filter_width = std::stof(grand_child.attribute("value").value());
+                    }
+                }
+                filter = Box{filter_width};
+            } else if (filter_type == "tent") {
+                Real filter_width = Real(1);
+                for (auto grand_child : child.children()) {
+                    if (std::string(grand_child.attribute("name").value()) == "width") {
+                        filter_width = std::stof(grand_child.attribute("value").value());
+                    }
+                }
+                filter = Tent{filter_width};
+            } else if (filter_type == "gaussian") {
+                Real filter_stddev = Real(0.5);
+                for (auto grand_child : child.children()) {
+                    if (std::string(grand_child.attribute("name").value()) == "stddev") {
+                        filter_stddev = std::stof(grand_child.attribute("value").value());
+                    }
+                }
+                filter = Gaussian{filter_stddev};
             }
         }
     }
-    return std::make_tuple(width, height, filename);
+    return std::make_tuple(width, height, filename, filter);
 }
 
 std::tuple<Camera, std::string /* output filename */, ParsedSampler>
@@ -271,6 +295,7 @@ parse_sensor(pugi::xml_node node) {
     Matrix4x4 to_world = Matrix4x4::identity();
     int width = c_default_res, height = c_default_res;
     std::string filename = c_default_filename;
+    Filter filter = c_default_filter;
     FovAxis fov_axis = FovAxis::X;
     ParsedSampler sampler;
 
@@ -305,7 +330,7 @@ parse_sensor(pugi::xml_node node) {
 
     for (auto child : node.children()) {
         if (std::string(child.name()) == "film") {
-            std::tie(width, height, filename) = parse_film(child);
+            std::tie(width, height, filename, filter) = parse_film(child);
         } else if (std::string(child.name()) == "sampler") {
             std::string name = child.attribute("name").value();
             if (name != "independent") {
@@ -335,7 +360,7 @@ parse_sensor(pugi::xml_node node) {
         fov = degrees(2 * atan(width / 2));
     }
 
-    return std::make_tuple(Camera(to_world, fov, width, height), filename, sampler);
+    return std::make_tuple(Camera(to_world, fov, width, height, filter), filename, sampler);
 }
 
 std::tuple<std::string /* ID */, Material> parse_bsdf(
@@ -613,7 +638,11 @@ ParsedTexture parse_texture(pugi::xml_node node) {
 
 Scene parse_scene(pugi::xml_node node, const RTCDevice &embree_device) {
     RenderOptions options;
-    Camera camera(Matrix4x4::identity(), c_default_fov, c_default_res, c_default_res);
+    Camera camera(Matrix4x4::identity(),
+                  c_default_fov,
+                  c_default_res,
+                  c_default_res,
+                  c_default_filter);
     std::string filename = c_default_filename;
     std::vector<Material> materials;
     std::map<std::string /* name id */, int /* index id */> material_map;

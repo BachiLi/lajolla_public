@@ -20,6 +20,7 @@ include_directories(${EMBREE_INCLUDE_PATH})
 link_libraries(${EMBREE_LIBRARY})
 
 set(SRCS camera.h
+         filter.h
          flexception.h
          frame.h
          image.h
@@ -50,6 +51,7 @@ set(SRCS camera.h
          transform.h
          vector.h
          camera.cpp
+         filter.cpp
          image.cpp
          intersection.cpp
          light.cpp

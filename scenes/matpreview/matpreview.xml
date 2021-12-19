@@ -2,7 +2,7 @@
 
 <scene version="0.5.0">
 	<integrator type="path">
-		<integer name="maxDepth" value="2"/>
+		<integer name="maxDepth" value="3"/>
 	</integrator>
 
 	<shape type="serialized">
