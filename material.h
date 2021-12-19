@@ -27,6 +27,15 @@ struct RoughPlastic {
     Texture<Spectrum> specular_reflectance;
     Texture<Real> roughness;
 
+    // Note that the material is not transmissive.
+    // This is for the IOR between the dielectric layer and the diffuse layer.
+    Real eta; // internal IOR / externalIOR
+};
+
+struct RoughDielectric {
+    Texture<Spectrum> specular_reflectance;
+    Texture<Real> roughness;
+
     Real eta; // internal IOR / externalIOR
 };
 
@@ -49,6 +58,11 @@ Spectrum eval(const Material &material,
 enum class TransportDirection {
     TO_LIGHT,
     TO_VIEW
+};
+
+struct BSDFSampleRecord {
+    Vector3 dir_out;
+    Real eta; // The index of refraction ratio
 };
 
 /// Given incoming direction pointing outwards of the surface point,

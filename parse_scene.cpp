@@ -222,6 +222,8 @@ RenderOptions parse_integrator(pugi::xml_node node) {
             std::string name = child.attribute("name").value();
             if (name == "maxDepth") {
                 options.max_depth = std::stoi(child.attribute("value").value());
+            } else if (name == "rrDepth") {
+                options.rr_depth = std::stoi(child.attribute("value").value());
             }
         }
     } else if (type == "direct") {

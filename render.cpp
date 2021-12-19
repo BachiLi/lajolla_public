@@ -117,7 +117,9 @@ Spectrum path_tracing(const Scene &scene,
     }
 
     // We iteratively sum up path contributions from paths with different number of vertices
-    for (int num_vertices = 1; num_vertices <= scene.options.max_depth - 1; num_vertices++) {
+    // If max_depth == -1, we rely on Russian roulette for path termination.
+    int max_depth = scene.options.max_depth;
+    for (int num_vertices = 1; max_depth == -1 || num_vertices <= max_depth - 1; num_vertices++) {
         // We are at v_i, and all the path contribution on and before has been accounted for.
         // Now we need to somehow generate v_{i+1} to account for paths with more vertices.
         // In path tracing, we generate two vertices:
@@ -345,10 +347,19 @@ Spectrum path_tracing(const Scene &scene,
         }
 
         // Update rays/intersection/current_path_contrib/current_pdf
+        // Russian roulette heuristics
+        Real rr_prob = 1;
+        if (num_vertices + 1 >= scene.options.rr_depth) {
+            rr_prob = min(max(current_path_contrib / current_path_pdf), Real(0.95));
+            if (next_pcg32_real<Real>(rng) > rr_prob) {
+                // Terminate the path
+                break;
+            }
+        }
         ray = bsdf_ray;
         vertex = *bsdf_vertex;
         current_path_contrib = current_path_contrib * G * f;
-        current_path_pdf = current_path_pdf * p2;
+        current_path_pdf = current_path_pdf * p2 * rr_prob;
     }
 
     return radiance;

@@ -233,6 +233,11 @@ inline T average(const TVector3<T> &v) {
 }
 
 template <typename T>
+inline T max(const TVector3<T> &v) {
+    return max(max(v.x, v.y), v.z);
+}
+
+template <typename T>
 inline bool isnan(const TVector2<T> &v) {
     return isnan(v[0]) || isnan(v[1]);
 }

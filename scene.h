@@ -20,7 +20,8 @@ enum class Integrator {
 struct RenderOptions {
     Integrator integrator = Integrator::Path;
     int samples_per_pixel = 4;
-    int max_depth = 6;
+    int max_depth = -1;
+    int rr_depth = 5;
 };
 
 /// Bounding sphere
