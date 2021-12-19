@@ -9,9 +9,9 @@ struct sample_op {
 };
 
 // Implementations of the individual filters.
-#include "filter/box.inl"
-#include "filter/tent.inl"
-#include "filter/gaussian.inl"
+#include "filters/box.inl"
+#include "filters/tent.inl"
+#include "filters/gaussian.inl"
 
 Vector2 sample(const Filter &filter, const Vector2 &rnd_param) {
     return std::visit(sample_op{rnd_param}, filter);

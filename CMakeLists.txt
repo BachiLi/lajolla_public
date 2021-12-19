@@ -26,9 +26,9 @@ set(SRCS src/3rdparty/miniz.h
          src/3rdparty/pugixml.cpp
          src/3rdparty/stb_image.h
          src/3rdparty/tinyexr.h
-         src/filter/box.inl
-         src/filter/gaussian.inl
-         src/filter/tent.inl
+         src/filters/box.inl
+         src/filters/gaussian.inl
+         src/filters/tent.inl
          src/camera.h
          src/filter.h
          src/flexception.h
