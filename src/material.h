@@ -32,6 +32,11 @@ struct RoughPlastic {
     Real eta; // internal IOR / externalIOR
 };
 
+/// The roughdielectric BSDF implements a version of Walter et al.'s
+/// "Microfacet Models for Refraction through Rough Surfaces"
+/// The key idea is to define a microfacet model where the normals
+/// are centered at a "generalized half-vector" wi + wo * eta.
+/// This gives a glossy/specular transmissive BSDF.
 struct RoughDielectric {
     Texture<Spectrum> specular_reflectance;
     Texture<Spectrum> specular_transmittance;
