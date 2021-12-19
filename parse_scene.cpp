@@ -448,6 +448,71 @@ std::tuple<std::string /* ID */, Material> parse_bsdf(
         }
         return std::make_tuple(id, RoughPlastic{
             diffuse_reflectance, specular_reflectance, roughness, intIOR / extIOR});
+    } else if (type == "roughdielectric" || type == "dielectric") {
+        Texture<Spectrum> specular_reflectance = make_constant_spectrum_texture(fromRGB(Vector3{1, 1, 1}));
+        Texture<Spectrum> specular_transmittance = make_constant_spectrum_texture(fromRGB(Vector3{1, 1, 1}));
+        Texture<Real> roughness = make_constant_float_texture(Real(0.1));
+        if (type == "dielectric") {
+            // Approximate plastic materials with very small roughness
+            roughness = make_constant_float_texture(Real(0.01));
+        }
+        Real intIOR = 1.5046;
+        Real extIOR = 1.000277;
+        for (auto child : node.children()) {
+            std::string name = child.attribute("name").value();
+            if (name == "specularReflectance") {
+                specular_reflectance = parse_spectrum_texture(child, texture_map, texture_pool);
+            } else if (name == "specularTransmittance") {
+                specular_transmittance = parse_spectrum_texture(child, texture_map, texture_pool);
+            } else if (name == "alpha") {
+                std::string type = child.name();
+                if (type == "ref") {
+                    // referencing a texture
+                    std::string ref_id = child.attribute("id").value();
+                    auto t_it = texture_map.find(ref_id);
+                    if (t_it == texture_map.end()) {
+                        Error(std::string("Texture not found. ID = ") + ref_id);
+                    }
+                    const ParsedTexture t = t_it->second;
+                    Image1 alpha = imread1(t.filename);
+                    // Convert alpha to roughness.
+                    Image1 roughness_img(alpha.width, alpha.height);
+                    for (int i = 0; i < alpha.width * alpha.height; i++) {
+                        roughness_img.data[i] = sqrt(alpha.data[i]);
+                    }
+                    roughness = make_image_float_texture(
+                        ref_id, roughness_img, texture_pool, t.uscale, t.vscale);
+                } else if (type == "float") {
+                    Real alpha = std::stof(child.attribute("value").value());
+                    roughness = make_constant_float_texture(sqrt(alpha));
+                } else {
+                    Error(std::string("Unknown float texture type:") + type);
+                }
+            } else if (name == "roughness") {
+                std::string type = child.name();
+                if (type == "ref") {
+                    // referencing a texture
+                    std::string ref_id = child.attribute("id").value();
+                    auto t_it = texture_map.find(ref_id);
+                    if (t_it == texture_map.end()) {
+                        Error(std::string("Texture not found. ID = ") + ref_id);
+                    }
+                    const ParsedTexture t = t_it->second;
+                    roughness = make_image_float_texture(
+                        ref_id, t.filename, texture_pool, t.uscale, t.vscale);
+                } else if (type == "float") {
+                    roughness = make_constant_float_texture(std::stof(child.attribute("value").value()));
+                } else {
+                    Error(std::string("Unknown float texture type:") + type);
+                }
+            } else if (name == "intIOR") {
+                intIOR = std::stof(child.attribute("value").value()); 
+            } else if (name == "extIOR") {
+                extIOR = std::stof(child.attribute("value").value()); 
+            }
+        }
+        return std::make_tuple(id, RoughDielectric{
+            specular_reflectance, specular_transmittance, roughness, intIOR / extIOR});
     } else {
         Error(std::string("Unknown BSDF: ") + type);
     }

@@ -13,15 +13,15 @@
 			<translate z="0.01"/>
 		</transform>
 
-		<bsdf type="plastic">
+<!-- 		<bsdf type="plastic">
 			<srgb name="diffuseReflectance" value="#18455c"/>
 			<float name="intIOR" value="1.9"/>
-		</bsdf>
+		</bsdf> -->
 
-<!-- 		<bsdf type="roughdielectric">
+		<bsdf type="roughdielectric">
 			<float name="intIOR" value="1.33"/>
 			<float name="alpha" value="0.0001"/>
-		</bsdf> -->
+		</bsdf>
 	</shape>
 
 	<sensor type="perspective" id="Camera-camera">

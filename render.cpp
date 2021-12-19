@@ -107,6 +107,11 @@ Spectrum path_tracing(const Scene &scene,
     // computing this path v from v0 up to v_i,
     // so that we can compute the Monte Carlo estimates C/p. 
     Real current_path_pdf = Real(1);
+    // eta_scale stores the scale introduced by Snell-Descartes law to the BSDF (eta^2).
+    // We use the same Russian roulette strategy as Mitsuba/pbrt-v3
+    // and tracking eta_scale and removing it from the
+    // path contribution is crucial for many bounces of refraction.
+    Real eta_scale = Real(1);
 
     // We hit a light immediately. 
     // This path has only two vertices and has contribution
@@ -218,7 +223,7 @@ Spectrum path_tracing(const Scene &scene,
                 Spectrum f;
                 Vector3 dir_view = -ray.dir;
                 assert(vertex.material_id >= 0);
-                f = eval(mat, dir_light, dir_view, vertex, scene.texture_pool);
+                f = eval(mat, dir_view, dir_light, vertex, scene.texture_pool, false);
                 // L is stored in LightSampleRecord
                 Spectrum L = lr.radiance;
 
@@ -234,7 +239,7 @@ Spectrum path_tracing(const Scene &scene,
 
                 // The probability density for our hemispherical sampling to sample 
                 Real p2 = pdf_sample_bsdf(
-                    mat, dir_light, dir_view, vertex, scene.texture_pool);
+                    mat, dir_view, dir_light, vertex, scene.texture_pool, false);
                 // !!!! IMPORTANT !!!!
                 // In general, p1 and p2 now live in different spaces!!
                 // our BSDF API outputs a probability density in the solid angle measure
@@ -257,19 +262,28 @@ Spectrum path_tracing(const Scene &scene,
 
         // Let's do the hemispherical sampling next.
         Vector3 dir_view = -ray.dir;
-        Vector2 bsdf_rnd_param{next_pcg32_real<Real>(rng), next_pcg32_real<Real>(rng)};
-        std::optional<Vector3> dir_bsdf_ =
-            sample_bsdf(mat, dir_view, vertex, scene.texture_pool, bsdf_rnd_param);
-        if (!dir_bsdf_) {
+        Vector2 bsdf_rnd_param_uv{next_pcg32_real<Real>(rng), next_pcg32_real<Real>(rng)};
+        Real bsdf_rnd_param_w = next_pcg32_real<Real>(rng);
+        std::optional<BSDFSampleRecord> bsdf_sample_ =
+            sample_bsdf(mat,
+                        dir_view,
+                        vertex,
+                        scene.texture_pool,
+                        bsdf_rnd_param_uv,
+                        bsdf_rnd_param_w);
+        if (!bsdf_sample_) {
             // BSDF sampling failed. Abort the loop.
             break;
         }
-        Vector3 dir_bsdf = *dir_bsdf_;
-
-        // Update ray differentials
-        Real roughness = get_roughness(mat, vertex, scene.texture_pool);
-        // TODO: add refraction.
-        ray_diff.spread = reflect(ray_diff, vertex.mean_curvature, roughness);
+        const BSDFSampleRecord &bsdf_sample = *bsdf_sample_;
+        Vector3 dir_bsdf = bsdf_sample.dir_out;
+        // Update ray differentials & eta_scale
+        if (bsdf_sample.eta == 0) {
+            ray_diff.spread = reflect(ray_diff, vertex.mean_curvature, bsdf_sample.roughness);
+        } else {
+            ray_diff.spread = refract(ray_diff, vertex.mean_curvature, bsdf_sample.eta, bsdf_sample.roughness);
+            eta_scale /= (bsdf_sample.eta * bsdf_sample.eta);
+        }
 
         // Trace a ray towards bsdf_dir. Note that again we have
         // to have an "epsilon" tnear to prevent self intersection.
@@ -288,9 +302,8 @@ Spectrum path_tracing(const Scene &scene,
             G = 1;
         }
 
-        Spectrum f;
-        f = eval(mat, dir_bsdf, dir_view, vertex, scene.texture_pool);
-        Real p2 = pdf_sample_bsdf(mat, dir_bsdf, dir_view, vertex, scene.texture_pool);
+        Spectrum f = eval(mat, dir_view, dir_bsdf, vertex, scene.texture_pool);
+        Real p2 = pdf_sample_bsdf(mat, dir_view, dir_bsdf, vertex, scene.texture_pool);
         if (p2 <= 0) {
             // Numerical issue -- we generated some invalid rays.
             break;
@@ -350,7 +363,7 @@ Spectrum path_tracing(const Scene &scene,
         // Russian roulette heuristics
         Real rr_prob = 1;
         if (num_vertices + 1 >= scene.options.rr_depth) {
-            rr_prob = min(max(current_path_contrib / current_path_pdf), Real(0.95));
+            rr_prob = min(max((1 / eta_scale) * current_path_contrib / current_path_pdf), Real(0.95));
             if (next_pcg32_real<Real>(rng) > rr_prob) {
                 // Terminate the path
                 break;

@@ -25,23 +25,33 @@ inline Spectrum schlick_fresnel(const Spectrum &F0, Real cos_theta) {
         pow(max(1 - cos_theta, Real(0)), Real(5));
 }
 
-/// Code from https://seblagarde.wordpress.com/2013/04/29/memo-on-fresnel-equations/
-inline Real fresnel_dielectric(Real eta, Real cos_theta) {
-    Real sin_theta_2 = 1 - cos_theta * cos_theta;
-    Real scaled_sin_theta_2 = sin_theta_2 / (eta * eta);
-    if (scaled_sin_theta_2 >= 1) {
+/// Fresnel equation of a dielectric interface.
+/// https://seblagarde.wordpress.com/2013/04/29/memo-on-fresnel-equations/
+/// n_dot_i: abs(cos(incident angle))
+/// n_dot_t: abs(cos(transmission angle))
+/// eta: eta_transmission / eta_incident
+inline Real fresnel_dielectric(Real n_dot_i, Real n_dot_t, Real eta) {
+    assert(n_dot_i >= 0 && n_dot_t >= 0 && eta > 0);
+    Real rs = (n_dot_i - eta * n_dot_t) / (n_dot_i + eta * n_dot_t);
+    Real rp = (eta * n_dot_i - n_dot_t) / (eta * n_dot_i + n_dot_t);
+    Real F = (rs * rs + rp * rp) / 2;
+    return F;
+}
+
+/// https://seblagarde.wordpress.com/2013/04/29/memo-on-fresnel-equations/
+/// This is a specialized version for the code above, only using the incident angle.
+/// The transmission angle is derived from 
+/// n_dot_i: cos(incident angle) (can be negative)
+/// eta: eta_transmission / eta_incident
+inline Real fresnel_dielectric(Real n_dot_i, Real eta) {
+    assert(eta > 0);
+    Real n_dot_t_sq = 1 - (1 - n_dot_i * n_dot_i) / (eta * eta);
+    if (n_dot_t_sq < 0) {
         // total internal reflection
         return 1;
     }
-
-    Real t0 = sqrt(1 - scaled_sin_theta_2);
-    Real t1 = eta * t0;
-    Real t2 = eta * cos_theta;
-
-    Real rs = (cos_theta - t1) / (cos_theta + t1);
-    Real rp = (t0 - t2) / (t0 + t2);
-
-    return 0.5 * (rs * rs + rp * rp);
+    Real n_dot_t = sqrt(n_dot_t_sq);
+    return fresnel_dielectric(fabs(n_dot_i), n_dot_t, eta);
 }
 
 inline Real GTR2(Real n_dot_h, Real roughness) {
@@ -67,4 +77,41 @@ inline Real smith_masking(const Vector3 &v_local, Real roughness) {
     Vector3 v2 = v_local * v_local;
     Real Lambda = (-1 + sqrt(1 + (v2.x * a2 + v2.y * a2) / v2.z)) / 2;
     return 1 / (1 + Lambda);
+}
+
+/// See "Sampling the GGX Distribution of Visible Normals", Heitz, 2018.
+/// https://jcgt.org/published/0007/04/01/
+inline Vector3 sample_visible_normals(const Vector3 &local_dir_in, Real alpha, const Vector2 &rnd_param) {
+    // The incoming direction is in the "ellipsodial configuration" in Heitz's paper
+    if (local_dir_in.z < 0) {
+        // Ensure the input is on top of the surface.
+        return -sample_visible_normals(-local_dir_in, alpha, rnd_param);
+    }
+
+    // Transform the incoming direction to the "hemisphere configuration".
+    Vector3 hemi_dir_in = normalize(
+        Vector3{alpha * local_dir_in.x, alpha * local_dir_in.y, local_dir_in.z});
+
+    // Parameterization of the projected area of a hemisphere.
+    // First, sample a disk.
+    Real r = sqrt(rnd_param.x);
+    Real phi = 2 * c_PI * rnd_param.y;
+    Real t1 = r * cos(phi);
+    Real t2 = r * sin(phi);
+    // Vertically scale the position of a sample to account for the projection.
+    Real s = (1 + hemi_dir_in.z) / 2;
+    t2 = (1 - s) * sqrt(1 - t1 * t1) + s * t2;
+    // Point in the disk space
+    Vector3 disk_N{t1, t2, sqrt(max(Real(0), 1 - t1*t1 - t2*t2))};
+
+    // Reprojection onto hemisphere -- we get our sampled normal in hemisphere space.
+    // Frame hemi_frame(hemi_dir_in);
+    // Vector3 hemi_N = to_world(hemi_frame, disk_N);
+    Vector3 T1 = (hemi_dir_in.z < Real(0.99999)) ? 
+        normalize(cross(Vector3{0, 0, 1}, hemi_dir_in)) : Vector3{1, 0, 0};
+    Vector3 T2 = cross(hemi_dir_in, T1);
+    Vector3 hemi_N = normalize(disk_N.x * T1 + disk_N.y * T2 + disk_N.z * hemi_dir_in);
+
+    // Transforming the normal back to the ellipsoid configuration
+    return normalize(Vector3{alpha * hemi_N.x, alpha * hemi_N.y, max(Real(0), hemi_N.z)});
 }

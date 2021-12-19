@@ -34,6 +34,7 @@ struct RoughPlastic {
 
 struct RoughDielectric {
     Texture<Spectrum> specular_reflectance;
+    Texture<Spectrum> specular_transmittance;
     Texture<Real> roughness;
 
     Real eta; // internal IOR / externalIOR
@@ -41,17 +42,7 @@ struct RoughDielectric {
 
 // To add more materials, first create a struct for the material, then overload the () operators for all the
 // functors below.
-using Material = std::variant<Lambertian, RoughPlastic>;
-
-/// Given incoming direction and outgoing direction of lights,
-/// both pointing outwards of the surface point,
-/// outputs the BSDF times the cosine between outgoing direction
-/// and the shading normal, evaluated at a point.
-Spectrum eval(const Material &material,
-              const Vector3 &dir_light,
-              const Vector3 &dir_view,
-              const PathVertex &vertex,
-              const TexturePool &texture_pool);
+using Material = std::variant<Lambertian, RoughPlastic, RoughDielectric>;
 
 /// We allow non-reciprocal BRDFs, so it's important
 /// to distinguish which direction we are tracing the rays.
@@ -60,21 +51,39 @@ enum class TransportDirection {
     TO_VIEW
 };
 
+/// Given incoming direction and outgoing direction of lights,
+/// both pointing outwards of the surface point,
+/// outputs the BSDF times the cosine between outgoing direction
+/// and the shading normal, evaluated at a point.
+/// When the transport direction is towards the lights,
+/// dir_in is the view direction, and dir_out is the light direction.
+/// Vice versa.
+Spectrum eval(const Material &material,
+              const Vector3 &dir_in,
+              const Vector3 &dir_out,
+              const PathVertex &vertex,
+              const TexturePool &texture_pool,
+              TransportDirection dir = TransportDirection::TO_LIGHT);
+
 struct BSDFSampleRecord {
     Vector3 dir_out;
-    Real eta; // The index of refraction ratio
+    // The index of refraction ratio. Set to 0 if it's not a transmission event.
+    Real eta;
+    Real roughness; // Roughness of the selected BRDF layer ([0, 1]).
 };
 
 /// Given incoming direction pointing outwards of the surface point,
 /// samples an outgoing direction.
-/// If dir == TO_LIGHT, incoming direction is dir_view and 
-/// we're sampling for dir_light. Vice versa.
-std::optional<Vector3> sample_bsdf(const Material &material,
-                                   const Vector3 &dir_in,
-                                   const PathVertex &vertex,
-                                   const TexturePool &texture_pool,
-                                   const Vector2 &rnd_param,
-                                   TransportDirection dir = TransportDirection::TO_LIGHT);
+/// If dir == TO_LIGHT, incoming direction is the view direction and 
+/// we're sampling for the light direction. Vice versa.
+std::optional<BSDFSampleRecord> sample_bsdf(
+    const Material &material,
+    const Vector3 &dir_in,
+    const PathVertex &vertex,
+    const TexturePool &texture_pool,
+    const Vector2 &rnd_param_uv,
+    const Real &rnd_param_w,
+    TransportDirection dir = TransportDirection::TO_LIGHT);
 
 /// Given incoming direction and outgoing direction of lights,
 /// both pointing outwards of the surface point,
@@ -82,14 +91,10 @@ std::optional<Vector3> sample_bsdf(const Material &material,
 /// If dir == TO_LIGHT, incoming direction is dir_view and 
 /// we're sampling for dir_light. Vice versa.
 Real pdf_sample_bsdf(const Material &material,
-                     const Vector3 &dir_light,
-                     const Vector3 &dir_view,
+                     const Vector3 &dir_in,
+                     const Vector3 &dir_out,
                      const PathVertex &vertex,
                      const TexturePool &texture_pool,
                      TransportDirection dir = TransportDirection::TO_LIGHT);
-
-Real get_roughness(const Material &material,
-                   const PathVertex &vertex,
-                   const TexturePool &texture_pool);
 
 const TextureSpectrum &get_texture(const Material &material);
