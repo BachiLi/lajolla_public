@@ -22,19 +22,18 @@ Real light_power_op::operator()(const Envmap &light) const {
 
 ////////////////////////////////////////////////////////////////////////////////
 struct sample_point_on_light_op {
-    LightSampleRecord operator()(const DiffuseAreaLight &light) const;
-    LightSampleRecord operator()(const Envmap &light) const;
+    PointAndNormal operator()(const DiffuseAreaLight &light) const;
+    PointAndNormal operator()(const Envmap &light) const;
 
     const Vector2 &rnd_param_uv;
     const Real &rnd_param_w;
     const Scene &scene;
 };
-LightSampleRecord sample_point_on_light_op::operator()(const DiffuseAreaLight &light) const {
+PointAndNormal sample_point_on_light_op::operator()(const DiffuseAreaLight &light) const {
     const Shape &shape = scene.shapes[light.shape_id];
-    PointAndNormal point_and_normal = sample_point_on_shape(shape, rnd_param_uv, rnd_param_w);
-    return LightSampleRecord{point_and_normal, light.intensity};
+    return sample_point_on_shape(shape, rnd_param_uv, rnd_param_w);
 }
-LightSampleRecord sample_point_on_light_op::operator()(const Envmap &light) const {
+PointAndNormal sample_point_on_light_op::operator()(const Envmap &light) const {
     Vector2 uv = sample(light.sampling_dist, rnd_param_uv);
     // Convert uv to spherical coordinates
     Real azimuth = uv[0] * (2 * c_PI);
@@ -46,12 +45,7 @@ LightSampleRecord sample_point_on_light_op::operator()(const Envmap &light) cons
                       cos(elevation),
                       -cos(azimuth) * sin(elevation)};
     Vector3 world_dir = xform_vector(light.to_world, local_dir);
-    PointAndNormal pn{Vector3{0, 0, 0}, -world_dir};
-    // Here we set the footprint to 0 for envmap texture look up
-    // In practice we can actually do better:
-    // See "Real-time Shading with Filtered Importance Sampling" from Colbert et al.
-    Spectrum radiance = eval(light.values, uv, 0 /* view_footprint */, scene.texture_pool);
-    return LightSampleRecord{pn, radiance};
+    return PointAndNormal{Vector3{0, 0, 0}, -world_dir};
 }
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -179,10 +173,10 @@ Real light_power(const Light &light, const Scene &scene) {
     return std::visit(light_power_op{scene}, light);
 }
 
-LightSampleRecord sample_point_on_light(const Light &light,
-                                        const Vector2 &rnd_param_uv,
-                                        Real rnd_param_w,
-                                        const Scene &scene) {
+PointAndNormal sample_point_on_light(const Light &light,
+                                     const Vector2 &rnd_param_uv,
+                                     Real rnd_param_w,
+                                     const Scene &scene) {
     return std::visit(sample_point_on_light_op{rnd_param_uv, rnd_param_w, scene}, light);
 }
 

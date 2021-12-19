@@ -161,7 +161,7 @@ Spectrum path_tracing(const Scene &scene,
         Real shape_w = next_pcg32_real<Real>(rng);
         int light_id = sample_light(scene, light_w);
         const Light &light = scene.lights[light_id];
-        LightSampleRecord lr = sample_point_on_light(light, light_uv, shape_w, scene);
+        PointAndNormal point_on_light = sample_point_on_light(light, light_uv, shape_w, scene);
 
         // Next, we compute w1*C1/p1. We store C1/p1 in C1.
         Spectrum C1 = make_zero_spectrum();
@@ -169,7 +169,6 @@ Spectrum path_tracing(const Scene &scene,
         // Remember "current_path_contrib" already stores all the path contribution on and before v_i.
         // So we only need to compute G(v_{i}, v_{i+1}) * f(v_{i-1}, v_{i}, v_{i+1}) * L(v_{i}, v_{i+1})
         {
-            const PointAndNormal &point_on_light = lr.point_on_light;
             // Let's first deal with C1 = G * f * L.
             // Let's first compute G.
             Real G = 0;
@@ -224,8 +223,14 @@ Spectrum path_tracing(const Scene &scene,
                 Vector3 dir_view = -ray.dir;
                 assert(vertex.material_id >= 0);
                 f = eval(mat, dir_view, dir_light, vertex, scene.texture_pool);
-                // L is stored in LightSampleRecord
-                Spectrum L = lr.radiance;
+
+                // Evaluate the emission
+                // We set the footprint to zero since it is not fully clear how
+                // to set it in this case.
+                // One way is to use a roughness based heuristics, but we have multi-layered BRDFs.
+                // See "Real-time Shading with Filtered Importance Sampling" from Colbert et al.
+                // for the roughness based heuristics.
+                Spectrum L = emission(light, -dir_light, Real(0), point_on_light, scene);
 
                 // C1 is just a product of all of them!
                 C1 = G * f * L;
