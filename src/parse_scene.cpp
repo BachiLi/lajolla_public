@@ -1,8 +1,8 @@
 #include "parse_scene.h"
+#include "3rdparty/pugixml.hpp"
 #include "flexception.h"
 #include "load_serialized.h"
 #include "parse_obj.h"
-#include "pugixml.hpp"
 #include "transform.h"
 #include <cctype>
 #include <map>

@@ -1,10 +1,10 @@
 #include "image.h"
-#include "flexception.h"
 #define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
+#include "3rdparty/stb_image.h"
 #define TINYEXR_USE_MINIZ 1
 #define TINYEXR_IMPLEMENTATION
-#include "tinyexr.h"
+#include "3rdparty/tinyexr.h"
+#include "flexception.h"
 #include <algorithm>
 #include <fstream>
 

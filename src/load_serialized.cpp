@@ -1,6 +1,6 @@
 #include "load_serialized.h"
+#include "3rdparty/miniz.h"
 #include "flexception.h"
-#include "miniz.h"
 #include "transform.h"
 #include <fstream>
 #include <iostream>

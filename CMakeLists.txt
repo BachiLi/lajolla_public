@@ -19,7 +19,14 @@ find_package(Embree REQUIRED)
 include_directories(${EMBREE_INCLUDE_PATH})
 link_libraries(${EMBREE_LIBRARY})
 
-set(SRCS src/camera.h
+set(SRCS src/3rdparty/miniz.h
+         src/3rdparty/miniz.c
+         src/3rdparty/pugiconfig.hpp
+         src/3rdparty/pugixml.hpp
+         src/3rdparty/pugixml.cpp
+         src/3rdparty/stb_image.h
+         src/3rdparty/tinyexr.h
+         src/camera.h
          src/filter.h
          src/flexception.h
          src/frame.h
@@ -31,23 +38,18 @@ set(SRCS src/camera.h
          src/material.h
          src/matrix.h
          src/microfacet.h
-         src/miniz.h
          src/mipmap.h
          src/parallel.h
          src/parse_obj.h
          src/parse_scene.h
          src/point_and_normal.h
-         src/pugiconfig.hpp
-         src/pugixml.hpp
          src/ray.h
          src/render.h
          src/scene.h
          src/shape.h
          src/spectrum.h
-         src/stb_image.h
          src/table_dist.h
          src/texture.h
-         src/tinyexr.h
          src/transform.h
          src/vector.h
          src/camera.cpp
@@ -58,11 +60,9 @@ set(SRCS src/camera.h
          src/load_serialized.cpp
          src/main.cpp
          src/material.cpp
-         src/miniz.c
          src/parallel.cpp
          src/parse_obj.cpp
          src/parse_scene.cpp
-         src/pugixml.cpp
          src/render.cpp
          src/scene.cpp
          src/shape.cpp
