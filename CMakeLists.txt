@@ -29,6 +29,8 @@ set(SRCS src/3rdparty/miniz.h
          src/filters/box.inl
          src/filters/gaussian.inl
          src/filters/tent.inl
+         src/lights/diffuse_area_light.inl
+         src/lights/envmap.inl
          src/camera.h
          src/filter.h
          src/flexception.h
