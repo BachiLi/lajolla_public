@@ -2,6 +2,7 @@
 \usepackage{hyperref}
 \usepackage{listings}
 \usepackage{color}
+\usepackage{subfigure}
 
 \newcommand\TODO[1]{\textcolor{red}{TODO: #1}}
 
@@ -42,7 +43,10 @@ For most parts of this course, we will use a custom physically-based renderer ca
 
 Lajolla is a \emph{physically-based} renderer. It takes a 3D scene description (camera, lights, geometry, materials, etc) and input, and produces an image by simulating how photons emitted from the light sources scattered in the scene and eventually reach the camera. This is how modern visual effects, and many video games produce stunning and realistic images. Apart from movies and games, physically-based rendering is also used in augmented reality, architectural visualization, daylight simulation, product visualization, medical imaging, computer vision, autonomous driving and more. A startup \href{Luxion}{https://www.luxion.com/} from a UCSD faculty \href{Henrik Jensen}{http://graphics.ucsd.edu/~henrik/} is about building physically-based renderers and use them for many applications above.
 
-\section{Building lajolla}
+\section{Building and running lajolla}
+\begin{figure}
+
+\end{figure}
 
 Before we started, let's try to clone, build the code and run it. Lajolla does not require you to download any external libraries (hopefully). While we do rely on many 3rdparty libraries, we only use lightweight header-only ones that can be easily included and do not complicate the build systems. To clone the codebase, do
 
@@ -68,9 +72,36 @@ Once lajolla is built, you can try to render some images in the \lstinline{scene
 
 After the reading is done, you will see an image file \lstinline{image.exr} appeared in your working directory. EXRs are \emph{high-dynamic range images}\footnote{\url{https://en.wikipedia.org/wiki/High_dynamic_range}} and require a different image viewer. We recommend viewing it using HDRView\footnote{\url{https://github.com/wkjarosz/hdrview}} or Tev\footnote{\url{https://github.com/Tom94/tev}}.
 
+The scene format in lajolla follows the Mitsuba scene format, where you can read the documentation \href{here}{https://www.mitsuba-renderer.org/releases/current/documentation.pdf}. The scene files are human readable, so by just looking at those files should gives you a reasonable idea.
+
 \TODO{put images here!}
 
+\section{Design philosophy}
+
+Lajolla mostly follows the design of other existing physically-based renderers, such as \href{pbrt}{https://github.com/mmp/pbrt-v3/} or \href{Mitsuba}{http://www.mitsuba-renderer.org/}. It however follows a few different designs:
+
+\paragraph{Minimalism.} While already sophisticated, lajolla is much less feature complete compared to pbrt or Mitsuba. This is the main reason we are inventing our own renderer instead of adopting existing ones. This is mostly for educational purpose: if all the features are implemented, there won't be any homeworks. : )
+
+\paragraph{Clarity and simplicity over performance.} Lajolla does not try to become the fastest renderer in the world. The focus is on education. For example, by default lajolla uses double for most floating point computation and does not explicitly vectorize over any computation.
+
+\paragraph{Portability to GPU.} Lajolla does not run on GPUs. The goal of this course is to teach the foundation of modern physically-based rendering instead of all the implementation details. That being said, given that GPU rendering is going to be increasingly important even in the offline rendering world, we need to learn how to build a renderer that is more portable to GPUs. Most functions and data structures in lajolla should be directly usable in CUDA or OpenCL code, given small amount of modification. Lajolla avoids deeply nested hierarchical data structures and also avoids heap allocation in the inner loop as much as possible.
+
+\paragraph{Modern C++.} Lajolla uses modern C++ features extensively (fortunately, it does not use template metaprogramming extensively). This means it prefers value semantics over reference semantics:
+\begin{lstlisting}[language=C++]
+  std::tuple<int, int> foo(int x); // preferred
+  void bar(int x, int *y, int *z); // less preferred
+  std::optional<float> foo2(const float &x); // preferred
+  bool bar2(const float &x, float *out); // less preferred
+\end{lstlisting}
+We do not just \lstinline{auto} that often, since I am still not convinced that it would not hurt code readability.
+
+\paragraph{Variant-based polymorphism.} Perhaps the biggest different on the surface between lajolla and most other (CPU-based) renderers is how it implements polymorphism. In rendering, the same rendering code would need to handle different materials, lights, cameras, and etc. Most renderers adopt a heavily object-oriented design with classes and inheritance. While this is an acceptable approach, the hierarchical vtable pointers make the whole scene data structure very difficult to convert to GPU. I also personally just do not think OOP is a good idea\footnote{see "Object-Oriented Programming is Bad" from Brain Will \url{https://www.youtube.com/watch?v=QM1iUe6IofM}}. To support polymorphism, we use a modern C++ feature \lstinline{std::variant}. It is essentially a \emph{tagged union} (or a \emph{sum type} if you are functional guru): a C union with a member indicating which type it is. Read more about it \href{here}{https://www.cppstories.com/2020/04/variant-virtual-polymorphism.html/}. Another renderer \href{visionaray}{https://github.com/szellmann/visionaray} also adopts a similar approach.
+
+Below we will take a whirlwind tour over the basics of physically-based rendering and how they are implemented in lajolla.
+
 \section{Rendering equation}
+
+How does lajolla, or many other modern physically-based renderer compute the color for each pixel? They do this by \emph{integrating} all lights that goes through a pixel. Note that a pixel is not a infinitesimal point, not is it a little square~\cite{Smith1995}. 
 
 \subsection{Importance sampling}
 
