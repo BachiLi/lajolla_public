@@ -1,0 +1,103 @@
+\documentclass{article}
+\usepackage{hyperref}
+\usepackage{listings}
+\usepackage{color}
+
+\newcommand\TODO[1]{\textcolor{red}{TODO: #1}}
+
+\newcommand\header[2]{
+    \begin{center}
+        {\large
+        UCSD CSE 272 Assignment #1: \\
+        \vspace{0.3cm}
+        \Large
+        #2}
+    \end{center}
+}
+
+\definecolor{dkgreen}{rgb}{0,0.6,0}
+\definecolor{gray}{rgb}{0.5,0.5,0.5}
+\definecolor{mauve}{rgb}{0.58,0,0.82}
+\lstset{frame=tb,
+        aboveskip=3mm,
+        belowskip=3mm,
+        showstringspaces=false,
+        columns=flexible,
+        basicstyle={\small\ttfamily},
+        numbers=none,
+        numberstyle=\tiny\color{gray},
+        keywordstyle=\color{blue},
+        commentstyle=\color{dkgreen},
+        stringstyle=\color{mauve},
+        breaklines=true,
+        breakatwhitespace=true,
+        tabsize=2
+}
+
+\begin{document}
+
+\header{0}{Introduction to the \textbf{lajolla} Renderer}
+
+For most parts of this course, we will use a custom physically-based renderer called \textbf{lajolla}.\footnote{Many renderers are named over a location. For example, Weta Digital's renderer \emph{Manuka}'s name comes from the Manuka street in front of Weta digital's main site. Pixar's rendering algorithm Reyes comes from Point Reyes in California.} This document presents the design of the lajolla renderer. Your first homework is to read through this document, and build and run the renderer, and look at the renderer's code. This homework is not graded. However, since lajolla is still at its early stage, we expect it to have a few bugs. If you find or fix any bugs in lajolla throughout the course, you will get extra points!
+
+Lajolla is a \emph{physically-based} renderer. It takes a 3D scene description (camera, lights, geometry, materials, etc) and input, and produces an image by simulating how photons emitted from the light sources scattered in the scene and eventually reach the camera. This is how modern visual effects, and many video games produce stunning and realistic images. Apart from movies and games, physically-based rendering is also used in augmented reality, architectural visualization, daylight simulation, product visualization, medical imaging, computer vision, autonomous driving and more. A startup \href{Luxion}{https://www.luxion.com/} from a UCSD faculty \href{Henrik Jensen}{http://graphics.ucsd.edu/~henrik/} is about building physically-based renderers and use them for many applications above.
+
+\section{Building lajolla}
+
+Before we started, let's try to clone, build the code and run it. Lajolla does not require you to download any external libraries (hopefully). While we do rely on many 3rdparty libraries, we only use lightweight header-only ones that can be easily included and do not complicate the build systems. To clone the codebase, do
+
+\begin{lstlisting}[language=bash]
+  git clone https://github.com/BachiLi/lajolla_public
+\end{lstlisting}
+
+We use \href{CMake}{https://cmake.org/} as our build system. To build, on a Unix-like system, do the following from the \lstinline{lajolla_public} directory:
+
+\begin{lstlisting}[language=bash]
+  mkdir build
+  cd build
+  cmake ..
+  make -j
+\end{lstlisting}
+
+On Windows, latest visual studio supports directly using CMake as project files.\footnote{\url{https://docs.microsoft.com/en-us/cpp/build/cmake-projects-in-visual-studio?view=msvc-170}} Alternatively, you can use CMake's graphical user interface downloaded from CMake's website. However, we have received reports that lajolla can crash on Windows machines. You might want to consider using Windows Subsystems for Linux to use a Unix-like systems for building and running lajolla (or you can help us fixing issues on Windows and get extra points!). 
+
+Once lajolla is built, you can try to render some images in the \lstinline{scenes} directory. Try
+\begin{lstlisting}[language=bash]
+  ./lajolla ../scenes/cbox/cbox.xml
+\end{lstlisting}
+
+After the reading is done, you will see an image file \lstinline{image.exr} appeared in your working directory. EXRs are \emph{high-dynamic range images}\footnote{\url{https://en.wikipedia.org/wiki/High_dynamic_range}} and require a different image viewer. We recommend viewing it using HDRView\footnote{\url{https://github.com/wkjarosz/hdrview}} or Tev\footnote{\url{https://github.com/Tom94/tev}}.
+
+\TODO{put images here!}
+
+\section{Rendering equation}
+
+\subsection{Importance sampling}
+
+\subsection{Multiple importance sampling}
+
+\section{Camera}
+
+\subsection{Pixel filter}
+
+\section{Materials}
+
+\subsection{Textures and filtering}
+
+\section{Lights}
+
+\section{Utilities}
+
+\subsection{Vectors}
+
+\subsection{Matrices}
+
+\subsection{Frame}
+
+\subsection{Color}
+
+\subsection{Parallelization}
+
+\subsection{Random number generation}
+
+\end{document}
