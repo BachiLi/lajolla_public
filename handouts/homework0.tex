@@ -3,6 +3,10 @@
 \usepackage{listings}
 \usepackage{color}
 \usepackage{subfigure}
+\usepackage{geometry}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\geometry{margin=1in}
 
 \newcommand\TODO[1]{\textcolor{red}{TODO: #1}}
 
@@ -41,11 +45,14 @@
 
 For most parts of this course, we will use a custom physically-based renderer called \textbf{lajolla}.\footnote{Many renderers are named over a location. For example, Weta Digital's renderer \emph{Manuka}'s name comes from the Manuka street in front of Weta digital's main site. Pixar's rendering algorithm Reyes comes from Point Reyes in California.} This document presents the design of the lajolla renderer. Your first homework is to read through this document, and build and run the renderer, and look at the renderer's code. This homework is not graded. However, since lajolla is still at its early stage, we expect it to have a few bugs. If you find or fix any bugs in lajolla throughout the course, you will get extra points!
 
-Lajolla is a \emph{physically-based} renderer. It takes a 3D scene description (camera, lights, geometry, materials, etc) and input, and produces an image by simulating how photons emitted from the light sources scattered in the scene and eventually reach the camera. This is how modern visual effects, and many video games produce stunning and realistic images. Apart from movies and games, physically-based rendering is also used in augmented reality, architectural visualization, daylight simulation, product visualization, medical imaging, computer vision, autonomous driving and more. A startup \href{Luxion}{https://www.luxion.com/} from a UCSD faculty \href{Henrik Jensen}{http://graphics.ucsd.edu/~henrik/} is about building physically-based renderers and use them for many applications above.
+Lajolla is a \emph{physically-based} renderer. It takes a 3D scene description (camera, lights, geometry, materials, etc) and input, and produces an image by simulating how photons emitted from the light sources scattered in the scene and eventually reach the camera. This is how modern visual effects, and many video games produce stunning and realistic images. Apart from movies and games, physically-based rendering is also used in augmented reality, architectural visualization, daylight simulation, product visualization, medical imaging, computer vision, autonomous driving and more. A startup \href{https://www.luxion.com/}{Luxion} from a UCSD faculty \href{http://graphics.ucsd.edu/~henrik/}{Henrik Jensen} is about building physically-based renderers and use them for many applications above.
 
 \section{Building and running lajolla}
-\begin{figure}
-
+\begin{figure}[h]
+    \includegraphics[width=0.25\linewidth]{imgs/cbox.png}
+    \includegraphics[width=0.25\linewidth]{imgs/sponza.png}
+    \includegraphics[width=0.25\linewidth]{imgs/veach_mis.png}
+    \caption{Images you can render using lajolla.}
 \end{figure}
 
 Before we started, let's try to clone, build the code and run it. Lajolla does not require you to download any external libraries (hopefully). While we do rely on many 3rdparty libraries, we only use lightweight header-only ones that can be easily included and do not complicate the build systems. To clone the codebase, do
@@ -54,7 +61,7 @@ Before we started, let's try to clone, build the code and run it. Lajolla does n
   git clone https://github.com/BachiLi/lajolla_public
 \end{lstlisting}
 
-We use \href{CMake}{https://cmake.org/} as our build system. To build, on a Unix-like system, do the following from the \lstinline{lajolla_public} directory:
+We use \href{https://cmake.org/}{CMake} as our build system. To build, on a Unix-like system, do the following from the \lstinline{lajolla_public} directory:
 
 \begin{lstlisting}[language=bash]
   mkdir build
@@ -72,13 +79,13 @@ Once lajolla is built, you can try to render some images in the \lstinline{scene
 
 After the reading is done, you will see an image file \lstinline{image.exr} appeared in your working directory. EXRs are \emph{high-dynamic range images}\footnote{\url{https://en.wikipedia.org/wiki/High_dynamic_range}} and require a different image viewer. We recommend viewing it using HDRView\footnote{\url{https://github.com/wkjarosz/hdrview}} or Tev\footnote{\url{https://github.com/Tom94/tev}}.
 
-The scene format in lajolla follows the Mitsuba scene format, where you can read the documentation \href{here}{https://www.mitsuba-renderer.org/releases/current/documentation.pdf}. The scene files are human readable, so by just looking at those files should gives you a reasonable idea.
+The scene format in lajolla follows the Mitsuba scene format, where you can read the documentation \href{https://www.mitsuba-renderer.org/releases/current/documentation.pdf}{here}. The scene files are human readable, so by just looking at those files should gives you a reasonable idea.
 
 \TODO{put images here!}
 
 \section{Design philosophy}
 
-Lajolla mostly follows the design of other existing physically-based renderers, such as \href{pbrt}{https://github.com/mmp/pbrt-v3/} or \href{Mitsuba}{http://www.mitsuba-renderer.org/}. It however follows a few different designs:
+Lajolla mostly follows the design of other existing physically-based renderers, such as \href{https://github.com/mmp/pbrt-v3/}{pbrt} or \href{http://www.mitsuba-renderer.org/}{Mitsuba}. It however follows a few different designs:
 
 \paragraph{Minimalism.} While already sophisticated, lajolla is much less feature complete compared to pbrt or Mitsuba. This is the main reason we are inventing our own renderer instead of adopting existing ones. This is mostly for educational purpose: if all the features are implemented, there won't be any homeworks. : )
 
@@ -95,13 +102,55 @@ Lajolla mostly follows the design of other existing physically-based renderers, 
 \end{lstlisting}
 We do not just \lstinline{auto} that often, since I am still not convinced that it would not hurt code readability.
 
-\paragraph{Variant-based polymorphism.} Perhaps the biggest different on the surface between lajolla and most other (CPU-based) renderers is how it implements polymorphism. In rendering, the same rendering code would need to handle different materials, lights, cameras, and etc. Most renderers adopt a heavily object-oriented design with classes and inheritance. While this is an acceptable approach, the hierarchical vtable pointers make the whole scene data structure very difficult to convert to GPU. I also personally just do not think OOP is a good idea\footnote{see "Object-Oriented Programming is Bad" from Brain Will \url{https://www.youtube.com/watch?v=QM1iUe6IofM}}. To support polymorphism, we use a modern C++ feature \lstinline{std::variant}. It is essentially a \emph{tagged union} (or a \emph{sum type} if you are functional guru): a C union with a member indicating which type it is. Read more about it \href{here}{https://www.cppstories.com/2020/04/variant-virtual-polymorphism.html/}. Another renderer \href{visionaray}{https://github.com/szellmann/visionaray} also adopts a similar approach.
+\paragraph{Variant-based polymorphism.} Perhaps the biggest different on the surface between lajolla and most other (CPU-based) renderers is how it implements polymorphism. In rendering, the same rendering code would need to handle different materials, lights, cameras, and etc. Most renderers adopt a heavily object-oriented design with classes and inheritance. While this is an acceptable approach, the hierarchical vtable pointers make the whole scene data structure very difficult to convert to GPU. I also personally just do not think OOP is a good idea\footnote{see "Object-Oriented Programming is Bad" from Brain Will \url{https://www.youtube.com/watch?v=QM1iUe6IofM}}. To support polymorphism, we use a modern C++ feature \lstinline{std::variant}. It is essentially a \emph{tagged union} (or a \emph{sum type} if you are functional guru): a C union with a member indicating which type it is. Read more about it \href{https://www.cppstories.com/2020/04/variant-virtual-polymorphism.html/}{here}. Another renderer \href{visionaray}{https://github.com/szellmann/visionaray} also adopts a similar approach.
 
 Below we will take a whirlwind tour over the basics of physically-based rendering and how they are implemented in lajolla.
 
-\section{Rendering equation}
+\section{Rendering equation(s)}
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.4\linewidth]{imgs/pixel_filter.pdf}
+    \includegraphics[width=0.4\linewidth]{imgs/antialiasing.pdf}
+    \caption{To reconstruct the continuous scene from the discrete pixel samples, the color of a pixel is reconstructed by integrating over a \emph{pixel filter}.}
+    \label{fig:pixel_filter}
+\end{figure}
 
-How does lajolla, or many other modern physically-based renderer compute the color for each pixel? They do this by \emph{integrating} all lights that goes through a pixel. Note that a pixel is not a infinitesimal point, not is it a little square~\cite{Smith1995}. 
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.4\linewidth]{imgs/camera.pdf}
+    \caption{Camera configuration and pixel filtering.}
+    \label{fig:camera}
+\end{figure}
+
+How does lajolla, or many other modern physically-based renderer compute the color for each pixel? They do this by \emph{integrating} all lights that goes through a pixel. Note that a pixel is not a infinitesimal point, not is it a little square~\cite{Smith:1995:PLS}. \textbf{A pixel is a reconstruction filter over an image function at a certain locatio} (Figure~\ref{fig:pixel_filter}). Mathematically, a pixel $I_{x, y}$'s color is written as an filtering integral:
+\begin{equation}
+    I_{x, y} = \iint_{D} k(x', y') L(\mathbf{p}, \mathbf{d}(x + x', y + y')) \mathrm{d}x\mathrm{d}y,
+\end{equation}
+where $k$ is the \emph{filter kernel}, $D$ is the \emph{support} of the filter kernel (the pixel location where its value is non-zero), and $L(\mathbf{p}, \mathbf{d})$ is the radiance at point $\mathbf{p}$, received from direction $\mathbf{d}$ where the direction is pointing outwards from $\mathbf{p}$. In our case, $\mathbf{p}$ is the position of the camera, and $\mathbf{d}$ is the direction between the camera position and the points on the film (Figure~\ref{fig:camera}).
+
+Now we have three questions: 1) what is the filter kernel $k$? 2) what is the radiance $L$?, and 3) how do we evaluate this integral on a computer? For 1), we will discuss a bit more in Section~\ref{sec:pixel_filter}, but for now you can think of it as something like a 2D Gaussian. For 3), these integrals typically do not have closed-form solutions,\footnote{There are rendering algorithms that based on closed-form solutions of these integrals. Radiosity~\cite{Schroder:1993:OFF} is one of them. Also check out the excellent paper from Heitz et al.~\cite{Heitz:2016:RPS}} so we need to \emph{discretize} these integrals:
+\begin{equation}
+    \int_{D} F(x) dx \approx \frac{1}{N} \sum_{i=1}^{N} F(x_i),
+    \label{eq:discretization}
+\end{equation}
+where $x_i$ are samples in uniform measures drawn from the domain $D$. When $x_i$ are random samples, this is called \emph{Monte Carlo} integration.\footnote{Monte Carlo integration was first invented for numerical simulation of nuclear weapons. Nicholas Metropolis, a member of the Manhatton Project, suggested the name to the simulation guy Stanislaw Ulam since Ulam's uncle likes to go to Monte Carlo for gambling.} However, $x_i$ do not need to be random. It can be determinisic samples that just somewhat uniformly cover the domain. When $x_i$ are deterministic, this approximation is often called \emph{quadrature} or \emph{cubature}. There is another class of deterministic integration methods called \emph{Quasi Monte Carlo} methods, which is based on the idea of carefully placing samples to make sure they are not far away from each other. We will cover these in the class if time permits.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.4\linewidth]{imgs/pathtracing.pdf}
+    \caption{The illustration of the rendering equation.}
+    \label{fig:pathtracing}
+\end{figure}
+
+We are still left with Q2: what is the radiance $L$? In this class, we are mostly dealing with objects that are larger than the wavelength of lights. So under Newtonian optics, the radiance is simply the radiance $L_i$ at the object we see:
+\begin{equation}
+    L(\mathbf{p}, \mathbf{d}) = L_i(\mathbf{p}', -\mathbf{d}),
+\end{equation}
+where $\mathbf{p}'$ is the point the direction $\mathbf{d}$ intersect with the scene. Then -- what is $L_i$? An object is lit by a light source. However, as photons scatter between objects, a photon can first hit object A before it hits object B. Therefore we need to recursively consider all objects in the scene:
+\begin{equation}
+    L_i(\mathbf{p}, \mathbf{d}) = L_e(\mathbf{p}, \mathbf{d}) + \int_{\Omega} f(\mathbf{p}, \mathbf{d}, \mathbf{d}') L_i(\mathbf{p}', -\mathbf{d}') \mathrm{d} \mathbf{d}_{\bot}',
+\end{equation}
+where $L_e$ is the \emph{emission} at $\mathbf{p}$ towards direction $\mathbf{d}$, $\Omega$ is a spherical domain around point $\mathbf{p}$, $f$ is the reflectance of the object at point $p$ from direction $\mathbf{d}'$ to $\mathbf{d}$, and $\mathbf{p}'$ is the point intersected by the ray $(\mathbf{p}, \mathbf{d}')$. $f$ is often called the Bidirectional Scattering Distribution Function (BSDF) -- when the material is transmissive, it's called the Bidirectional Transmission Distribution Function (BTDF), and when it is reflective, it's called the Bidirectional Reflectance Distribution Function (BRDF) (I know, it's confusing). See Figure~\ref{fig:pathtracing} for an illustration.
 
 \subsection{Importance sampling}
 
@@ -110,12 +159,15 @@ How does lajolla, or many other modern physically-based renderer compute the col
 \section{Camera}
 
 \subsection{Pixel filter}
+\label{sec:pixel_filter}
 
 \section{Materials}
 
 \subsection{Textures and filtering}
 
 \section{Lights}
+
+\section{Geometry}
 
 \section{Utilities}
 
@@ -130,5 +182,8 @@ How does lajolla, or many other modern physically-based renderer compute the col
 \subsection{Parallelization}
 
 \subsection{Random number generation}
+
+\bibliographystyle{plain} % We choose the "plain" reference style
+\bibliography{refs} % Entries are in the refs.bib file
 
 \end{document}
