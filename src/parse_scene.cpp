@@ -213,6 +213,30 @@ Texture<Spectrum> parse_spectrum_texture(
     }
 }
 
+Spectrum parse_color(pugi::xml_node node) {
+    std::string type = node.name();
+    if (type == "spectrum") {
+        std::vector<std::pair<Real, Real>> spec =
+            parse_spectrum(node.attribute("value").value());
+        if (spec.size() > 1) {
+            Vector3 xyz = integrate_XYZ(spec);
+            return fromRGB(XYZ_to_RGB(xyz));
+        } else if (spec.size() == 1) {
+            return fromRGB(Vector3{1, 1, 1});
+        } else {
+            return fromRGB(Vector3{0, 0, 0});
+        }
+    } else if (type == "rgb") {
+        return fromRGB(parse_vector3(node.attribute("value").value()));
+    } else if (type == "srgb") {
+        Vector3 srgb = parse_srgb(node.attribute("value").value());
+        return fromRGB(sRGB_to_RGB(srgb));
+    } else {
+        Error(std::string("Unknown color type:") + type);
+        return make_zero_spectrum();
+    }
+}
+
 RenderOptions parse_integrator(pugi::xml_node node) {
     RenderOptions options;
     std::string type = node.attribute("type").value();
@@ -534,7 +558,7 @@ Shape parse_shape(pugi::xml_node node,
             if (!id.empty()) {
                 auto it = material_map.find(id.value());
                 if (it == material_map.end()) {
-                    Error("ref not found");
+                    Error(std::string("Ref ") + id.value() + std::string(" not found"));
                 }
                 material_id = it->second;
                 break;
@@ -683,7 +707,9 @@ ParsedTexture parse_texture(pugi::xml_node node) {
         for (auto child : node.children()) {
             std::string name = child.attribute("name").value();
             if (name == "color0") {
-
+                color0 = parse_color(child);
+            } else if (name == "color1") {
+                color1 = parse_color(child);
             } else if (name == "uvscale") {
                 uscale = vscale = std::stof(child.attribute("value").value());
             } else if (name == "uscale") {

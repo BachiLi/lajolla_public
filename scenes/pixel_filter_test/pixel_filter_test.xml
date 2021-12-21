@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<scene version="0.4.0">
+	<integrator type="path">
+		<integer name="maxDepth" value="2"/>
+	</integrator>
+
+	<sensor type="perspective">
+		<float name="focusDistance" value="1000"/>
+		<transform name="toWorld">
+			<lookAt origin="0, 2, -4" target="0, 0, 1" up="0, 1, 0"/>
+		</transform>
+		<float name="fov" value="45"/>
+
+		<sampler type="ldsampler">
+			<integer name="sampleCount" value="1024"/>
+		</sampler>
+
+		<film type="hdrfilm">
+			<integer name="width" value="640"/>
+			<integer name="height" value="480"/>
+
+			<!-- <rfilter type="box"/> -->
+			<!-- <rfilter type="tent"/> -->
+			<rfilter type="gaussian">
+				<float name="stddev" value="0.75"/>
+			</rfilter>
+		</film>
+	</sensor>
+
+	<bsdf type="diffuse" id="white">
+		<rgb name="reflectance" value="0.5, 0.5, 0.5"/>
+	</bsdf>
+
+	<texture type="checkerboard" id="checker_tex">
+		<rgb name="color0" value="1.0"/>
+		<rgb name="color1" value="0.0"/>
+		<float name="uscale" value="1000.0"/>
+		<float name="vscale" value="1000.0"/>
+		<float name="uoffset" value="0.0"/>
+		<float name="voffset" value="0.0"/>
+	</texture>
+
+	<bsdf type="diffuse" id="checker">
+		<ref name="reflectance" id="checker_tex"/>
+	</bsdf>
+
+	<shape type="obj">
+		<string name="filename" value="light.obj"/>
+
+		<ref id="white"/>
+
+		<emitter type="area">
+			<rgb name="radiance" value="10000, 10000, 10000"/>
+		</emitter>
+	</shape>
+
+	<shape type="obj">
+		<string name="filename" value="floor.obj"/>
+
+		<ref id="checker"/>
+	</shape>
+</scene>
