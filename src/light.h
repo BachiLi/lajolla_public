@@ -24,6 +24,7 @@ struct Envmap {
     Texture<Spectrum> values;
     Matrix4x4 to_world, to_local;
 
+    // For sampling a point on the envmap
     TableDist2D sampling_dist;
 };
 

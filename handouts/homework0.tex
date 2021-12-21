@@ -611,6 +611,74 @@ I recommend Matt Pharr's article \href{The Implementation of a Scalable Texture 
 That was a lot: handling textures correctly is difficult and there is actually more! We will cover some of them in the classes.
 
 \section{Lights}
+We have not yet explained how we model the emission $L_e$ in the rendering equation. There are currently two kinds of lights in lajolla: a constant area light, and an \emph{environment map}.
+\begin{lstlisting}[language=c++]
+/// An area light attached on a shape to make it emit lights.
+struct DiffuseAreaLight {
+    int shape_id;
+    Vector3 intensity;
+};
+
+/// An environment map (Envmap) is an infinitely far area light source
+/// that covers the whole bounding spherical domain of the scene.
+/// A texture is used to represent light coming from each direction.
+struct Envmap {
+    Texture<Spectrum> values;
+    Matrix4x4 to_world, to_local;
+
+    // For sampling a point on the envmap
+    TableDist2D sampling_dist;
+};
+\end{lstlisting}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.6\linewidth]{imgs/envmap.pdf}
+    \caption{An environment map is an infinitely far away area light the maps each point on a sphere to a directional light source. (Sorry for the abstract drawing. Hopefully you get the idea.)}
+    \label{fig:envmap}
+\end{figure}
+
+A diffuse area light should be straightforward: it is attached to a geometry, and emits lights uniformly at all direction. An environment map is usually represented as an image, and emits light on an sphere that is infinitely large (Figure~\ref{fig:envmap}).
+
+All lights in lajolla needs to implement the following functions:
+\begin{lstlisting}[language=c++]
+// To add more lights, first create a struct for the light, add it to the variant type below,
+// then implement all the relevant function below with the Light type.
+using Light = std::variant<DiffuseAreaLight, Envmap>;
+
+/// Computes the total power the light emit to all positions and directions.
+/// Useful for sampling.
+Real light_power(const Light &light, const Scene &scene);
+
+/// Given some random numbers, sample a point on the light source.
+/// If the point is on a surface, returns both the point & normal on it.
+/// If the point is infinitely far away (e.g., on an environment map),
+/// we store the direction that points towards the origin in PointAndNormal.normal.
+/// rnd_param_w is usually used for choosing a discrete element e.g., choosing a triangle in a mesh light.
+/// rnd_param_uv is usually used for picking a point on that element.
+PointAndNormal sample_point_on_light(const Light &light, 
+                                     const Vector2 &rnd_param_uv,
+                                     Real rnd_param_w,
+                                     const Scene &scene);
+
+/// Given a point on the light source, compute the sampling density for the function above.
+Real pdf_point_on_light(const Light &light, const PointAndNormal &point_on_light, const Scene &scene);
+
+/// Given a viewing direction pointing outwards from the light, and a point on the light,
+/// compute the emission of the light. We also need the "footprint" of the ray
+/// for texture filtering. For finite position, view_footprint stores (approximatedly) du/dx
+/// and for infinite direction (e.g., envmap), view_footprint stores the approximated ddir/dx.
+Spectrum emission(const Light &light,
+                  const Vector3 &view_dir,
+                  Real view_footprint,
+                  const PointAndNormal &point_on_light,
+                  const Scene &scene);
+
+/// Some lights require storing sampling data structures inside. This function initialize them.
+void init_sampling_dist(Light &light, const Scene &scene);
+\end{lstlisting}
+
+Hopefully the comments are self-explanatory (let us know if they are not). I recommend you read the source code of these lights to have a better understanding of what is happening.
 
 \section{Geometry}
 
