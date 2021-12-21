@@ -202,6 +202,8 @@ Eric Veach made a breakthrough in physically-based rendering by figuring out how
 \frac{|\frac{\mathrm{d}T_2}{\mathrm{d}x}(x(z_i))|}{|\frac{\mathrm{d}T_1}{\mathrm{d}x}(x(z_i))| + |\frac{\mathrm{d}T_2}{\mathrm{d}x}(x(z_i))|}
 \frac{g(x(z_i))}{|\frac{\mathrm{d}T_2}{\mathrm{d}x}(x(z_i))|}.
 \end{equation}
+Note that there are four different Jacobians here: $|\frac{\mathrm{d}T_1}{\mathrm{d}x}(x(y_i))|$, $|\frac{\mathrm{d}T_2}{\mathrm{d}x}(x(y_i))|$, $|\frac{\mathrm{d}T_1}{\mathrm{d}x}(x(z_i))|$, and $|\frac{\mathrm{d}T_2}{\mathrm{d}x}(x(z_i))|$.
+
 Alternatively, Veach also proposed another weight called the \emph{power heuristics} that put even more emphasis on strategies with high Jacobian values:
 \begin{equation}
 \frac{1}{N} \sum
@@ -241,8 +243,55 @@ This path integral enables a more principled way to think about rendering algori
 
 \section{Camera}
 
+Lajolla implements a fairly standard pinhole perspective camera:
+\begin{lstlisting}[language=c++]
+struct Camera {
+    Camera() {}
+    Camera(const Matrix4x4 &cam_to_world,
+           Real fov, // in degree
+           int width, int height,
+           const Filter &filter);
+
+    Matrix4x4 sample_to_cam, cam_to_sample;
+    Matrix4x4 cam_to_world, world_to_cam;
+    int width, height;
+    Filter filter;
+};
+\end{lstlisting}
+The matrices transforms a 2D pixel location $(x, y)$ to a ray direction $\omega$. The \lstinline{sample_primary} function implements the functionality for sampling a ray given a screen position.
+\begin{lstlisting}[language=c++]
+/// Given screen position in [0, 1] x [0, 1], generate a camera ray.
+Ray sample_primary(const Camera &camera,
+                   const Vector2 &screen_pos);
+\end{lstlisting}
+
 \subsection{Pixel filter}
 \label{sec:pixel_filter}
+A crucial component of the camera is the \emph{pixel filter}, which corresponds to the $k$ kernel above. As we have emphasized: \textbf{a pixel is not a little square}. It is a reconstruction from a discrete sampling of a continuous underlying signal. The choice of the reconstruction filter/kernel can have significant impact on the quality of the reconstruction. A naive box filter can suffer from servere \emph{aliasing} effects, since it's Fourier transform is a sinc function that can have negative weights in frequency domain and high-frequency energy. Lajolla currently supports three different filters:
+
+\TODO{Show comparisons.}
+
+\begin{lstlisting}[language=c++]
+struct Box {
+    Real width;
+};
+struct Tent {
+    Real width;
+};
+struct Gaussian {
+    Real stddev;
+};
+using Filter = std::variant<Box, Tent, Gaussian>;
+\end{lstlisting}
+
+Lajolla implements pixel filtering in a slightly different way compared to other open source renderes such as Mitsuba or pbrt. Many common open source renderers implement pixel filtering using a "splatting" approach: they sample a point from a pixel, and then splat the contribution to all nearby pixels overlapped with the filter support. This approach works fine, but has a few disadvantages:
+\begin{itemize}
+    \item This introduces race conditions between different pixels, and require atomic operations.
+    \item This introduces correlation between pixels and hurts denoising.
+    \item The splatting approach is biased and creates artifacts at low sampling rates.
+    \item For filters with infinite supports (e.g., Gaussian), this requires a discontinuous cutoff radius (otherwise it would be too slow).
+\end{itemize}
+For these reasons, many modern production renderers have started to employ a different and simpler strategy. For each pixel, we solve for the pixel filter integral by directly importance sample that filter, and we *do not* share samples among pixels. This allows us to avoid all three problems above. This approach was described by Shirley et al. in 1991~\cite{Shirley:1991:RTF} and was discussed more recently by Ernst et al.~\cite{Ernst:2006:FIS}.
 
 \section{Materials}
 
@@ -265,6 +314,8 @@ This path integral enables a more principled way to think about rendering algori
 \subsection{Parallelization}
 
 \subsection{Random number generation}
+
+\subsection{Russian roulette}
 
 \bibliographystyle{plain} % We choose the "plain" reference style
 \bibliography{refs} % Entries are in the refs.bib file

@@ -28,15 +28,15 @@
 // a pixel filter always normalize to 1.
 
 struct Box {
-	Real width;
+    Real width;
 };
 
 struct Tent {
-	Real width;
+    Real width;
 };
 
 struct Gaussian {
-	Real stddev;
+    Real stddev;
 };
 
 // Exercise: implement "Generation of Stratified Samples for B-Spline Pixel Filtering"
