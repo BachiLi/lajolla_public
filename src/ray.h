@@ -54,11 +54,13 @@ inline Real reflect(const RayDifferential &r,
 /// The Renderman reference https://graphics.pixar.com/library/RendermanTog2018/paper.pdf
 /// did not specify how they propagate ray differentials through the refraction.
 /// We simply guess a formula here: when eta == 1, the spread & radius should not change.
+/// High eta makes ray more concentrated and reduces the spread, and vice versa.
+/// so we simply divide everything by eta.
 inline Real refract(const RayDifferential &r,
                     Real mean_curvature,
                     Real eta,
                     Real roughness) {
-    Real spec_spread = eta * r.spread + 2 * (eta - 1) * (eta - 1) * mean_curvature * r.radius;
+    Real spec_spread = (r.spread + 2 * mean_curvature * r.radius) / eta;
     Real diff_spread = Real(0.2);
     return fmax(spec_spread * (1 - roughness) + diff_spread * roughness, Real(0));
 }

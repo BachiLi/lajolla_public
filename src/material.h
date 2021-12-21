@@ -78,7 +78,10 @@ struct BSDFSampleRecord {
 };
 
 /// Given incoming direction pointing outwards of the surface point,
-/// samples an outgoing direction.
+/// samples an outgoing direction. Also returns the index of refraction
+/// and the roughness of the selected BSDF layer for path tracer's use.
+/// Return an invalid value if the sampling
+/// failed (e.g., if the incoming direction is invalid).
 /// If dir == TO_LIGHT, incoming direction is the view direction and 
 /// we're sampling for the light direction. Vice versa.
 std::optional<BSDFSampleRecord> sample_bsdf(
@@ -102,4 +105,6 @@ Real pdf_sample_bsdf(const Material &material,
                      const TexturePool &texture_pool,
                      TransportDirection dir = TransportDirection::TO_LIGHT);
 
+/// Return a texture from the material for debugging.
+/// If the material contains multiple textures, return an arbitrary one.
 const TextureSpectrum &get_texture(const Material &material);

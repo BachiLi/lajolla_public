@@ -1,7 +1,21 @@
 @string{CG_SIGGRAPH = "Comput. Graph. (Proc. SIGGRAPH)"}
 @string{SIGGRAPH93_01 = "SIGGRAPH"}
+@string{TOG = "ACM Trans. Graph."}
 @string{TOG_SIGGRAPH = "ACM Trans. Graph. (Proc. SIGGRAPH)"}
 @string{GI = "Graphics Interface"}
+@string{RT_EGWR = "Rendering Techniques (Proc. EGWR)"}
+@string{RT_EGSR = "Rendering Techniques (Proc. EGSR)"}
+
+@article{Cook:1982:RMC,
+    author = {Cook, R. L. and Torrance, K. E.},
+    title = {A Reflectance Model for Computer Graphics},
+    journal = TOG,
+    volume = {1},
+    number = {1},
+    year = {1982},
+    pages = {7--24},
+    numpages = {18}
+} 
 
 @article{Kajiya:1986:RE,
     author = {Kajiya, James T.},
@@ -47,6 +61,31 @@
     pages = {419--428}
 }
 
+@inproceedings{Igehy:1999:TRD,
+    author = {Igehy, Homan},
+    title = {Tracing Ray Differentials},
+    booktitle = SIGGRAPH93_01,
+    year = {1999},
+    pages = {179--186},
+    organization = {ACM Press/Addison-Wesley Publishing Co.}
+}
+
+@inproceedings{Suykens:2001:PDA,
+    author = {Frank Suykens and Yves D. Willems},
+    title = {Path Differentials and Applications},
+    booktitle = RT_EGWR,
+    pages = {257--268},
+    year = {2001}
+}
+
+@article{Walter:2007:MMR,
+    title = {Microfacet models for refraction through rough surfaces},
+    author = {Walter, Bruce and Marschner, Stephen R and Li, Hongsong and Torrance, Kenneth E},
+    journal = RT_EGSR,
+    pages = {195--206},
+    year = {2007}
+}
+
 @inproceedings{Ernst:2006:FIS,
     title = {Filter importance sampling},
     author = {Ernst, Manfred and Stamminger, Marc and Greiner, Gunther},
@@ -64,4 +103,23 @@
     pages = {41:1--41:8},
     year = {2016},
     publisher = {ACM}
+}
+
+@article{Belcour:2017:ACG,
+    author = {Belcour, Laurent and Yan, Ling-Qi and Ramamoorthi, Ravi and Nowrouzezahrai, Derek},
+    title = {Antialiasing Complex Global Illumination Effects in Path-Space},
+    journal = TOG,
+    volume = {36},
+    number = {1},
+    year = {2017},
+    publisher = {ACM}
+}
+
+@article{Christensen:2018:RAP,
+    title = {{RenderMan}: An advanced path-tracing architecture for movie rendering},
+    author = {Christensen, Per and Fong, Julian and Shade, Jonathan and Wooten, Wayne and Schubert, Brenden and Kensler, Andrew and Friedman, Stephen and Kilpatrick, Charlie and Ramshaw, Cliff and Bannister, Marc and others},
+    journal = TOG,
+    volume = {37},
+    number = {3},
+    year = {2018}
 }

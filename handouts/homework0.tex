@@ -92,6 +92,8 @@ Lajolla mostly follows the design of other existing physically-based renderers, 
 
 \paragraph{Clarity and simplicity over performance.} Lajolla does not try to become the fastest renderer in the world. The focus is on education. For example, by default lajolla uses double for most floating point computation and does not explicitly vectorize over any computation.
 
+\paragraph{No singular light sources or materials.} Lajolla does not support point light sources or purely specular materials. These components introduce many corner cases of a renderer and require special handling, making the renderer maintenance more complicated. We approximate them using small light sources or very sharp glossy materials.
+
 \paragraph{Portability to GPU.} Lajolla does not run on GPUs. The goal of this course is to teach the foundation of modern physically-based rendering instead of all the implementation details. That being said, given that GPU rendering is going to be increasingly important even in the offline rendering world, we need to learn how to build a renderer that is more portable to GPUs. Most functions and data structures in lajolla should be directly usable in CUDA or OpenCL code, given small amount of modification. Lajolla avoids deeply nested hierarchical data structures and also avoids heap allocation in the inner loop as much as possible.
 
 \paragraph{Modern C++.} Lajolla uses modern C++ features extensively (fortunately, it does not use template metaprogramming extensively). This means it prefers value semantics over reference semantics:
@@ -318,8 +320,295 @@ Lajolla implements pixel filtering in a slightly different way compared to other
 For these reasons, many modern production renderers have started to employ a different and simpler strategy. For each pixel, we solve for the pixel filter integral by directly importance sample that filter, and we *do not* share samples among pixels. This allows us to avoid all three problems above. This approach was described by Shirley et al. in 1991~\cite{Shirley:1991:RTF} and was discussed more recently by Ernst et al.~\cite{Ernst:2006:FIS}.
 
 \section{Materials}
+\begin{figure}
+    \centering
+    \begin{subfigure}[t]{0.32\linewidth}
+        \centering
+        \begin{minipage}[t]{\linewidth}
+            \includegraphics[width=\linewidth]{imgs/lambertian_render.png}
+            \includegraphics[width=\linewidth]{imgs/lambertian.pdf}
+        \end{minipage}
+        \caption{Lambertian}
+        \label{fig:lambertian}
+    \end{subfigure}
+    \begin{subfigure}[t]{0.32\linewidth}
+        \centering
+        \begin{minipage}[t]{\linewidth}
+            \includegraphics[width=\linewidth]{imgs/roughplastic_render.png}
+            \includegraphics[width=\linewidth]{imgs/roughplastic.pdf}
+        \end{minipage}
+        \caption{rough plastic}
+        \label{fig:rough_plastic}
+    \end{subfigure}
+    \begin{subfigure}[t]{0.32\linewidth}
+        \centering
+        \begin{minipage}[t]{\linewidth}
+            \includegraphics[width=\linewidth]{imgs/roughdielectric_render.png}
+            \includegraphics[width=\linewidth]{imgs/roughdielectric.pdf}
+        \end{minipage}
+        \caption{rough dielectric}
+        \label{fig:rough_dielectric}
+    \end{subfigure}
+    \caption{Three materials lajolla supports currently. Lambertian is a diffusive material that reflects light uniformly. Rough plastic is a two-layer material with a dielectric coating at the top, and a diffusive material at the bottom. The Fresnel equation $F$ determines how much lights are reflected, and how much are refracted into the diffusive material. If light is reflected at the dielectric layer, a distribution centered at the mirror reflection angle determined by the microfacet theory~\cite{Cook:1982:RMC} is used. If light is reflected through the dielectric layer, a Lambertian response is used, attenuated by the Fresnel reflection. Finally, the rough dielectric material is similar to the dielectric layer of rough plastic, but it refracts light by an amount predicted by Fresnel equation.}
+    \label{fig:materials}
+\end{figure}
+
+Recall that in the rendering equation, we need the BSDF $f$ for describing how objects reflect or refract lights. Designing and capturing BSDFs is a large field of study, and we will cover some of them in this course. Lajolla currently supports three different materials/BSDFs (and you will implement one more in the next homework!):
+\begin{lstlisting}[language=c++]
+struct Lambertian {
+    Texture<Spectrum> reflectance;
+};
+
+struct RoughPlastic {
+    Texture<Spectrum> diffuse_reflectance;
+    Texture<Spectrum> specular_reflectance;
+    Texture<Real> roughness;
+
+    // Note that the material is not transmissive.
+    // This is for the IOR between the dielectric layer and the diffuse layer.
+    Real eta; // internal IOR / externalIOR
+};
+
+struct RoughDielectric {
+    Texture<Spectrum> specular_reflectance;
+    Texture<Spectrum> specular_transmittance;
+    Texture<Real> roughness;
+
+    Real eta; // internal IOR / externalIOR
+};
+\end{lstlisting}
+
+See Figure~\ref{fig:materials} for explanation of the three materials. While we will cover them in the course, I highly recommend Cook and Torrance's seminal paper~\cite{Cook:1982:RMC} for a primer of the microfacet-based BSDFs. You should also read Walter's paper on extending Cook and Torrance's model to handle refraction~\cite{Walter:2007:MMR}.
+
+\paragraph{Material interfaces.} Every material in lajolla needs to implement the following functions:
+\begin{lstlisting}[language=c++]
+/// Given incoming direction and outgoing direction of lights,
+/// both pointing outwards of the surface point,
+/// outputs the BSDF times the cosine between outgoing direction
+/// and the shading normal, evaluated at a point.
+/// When the transport direction is towards the lights,
+/// dir_in is the view direction, and dir_out is the light direction.
+/// Vice versa.
+Spectrum eval(const Material &material,
+              const Vector3 &dir_in,
+              const Vector3 &dir_out,
+              const PathVertex &vertex,
+              const TexturePool &texture_pool,
+              TransportDirection dir = TransportDirection::TO_LIGHT);
+
+struct BSDFSampleRecord {
+    Vector3 dir_out;
+    // The index of refraction ratio. Set to 0 if it's not a transmission event.
+    Real eta;
+    Real roughness; // Roughness of the selected BRDF layer ([0, 1]).
+};
+
+/// Given incoming direction pointing outwards of the surface point,
+/// samples an outgoing direction. Also returns the index of refraction
+/// and the roughness of the selected BSDF layer for path tracer's use.
+/// failed (e.g., if the incoming direction is invalid).
+/// If dir == TO_LIGHT, incoming direction is the view direction and 
+/// we're sampling for the light direction. Vice versa.
+std::optional<BSDFSampleRecord> sample_bsdf(
+    const Material &material,
+    const Vector3 &dir_in,
+    const PathVertex &vertex,
+    const TexturePool &texture_pool,
+    const Vector2 &rnd_param_uv,
+    const Real &rnd_param_w,
+    TransportDirection dir = TransportDirection::TO_LIGHT);
+
+/// Given incoming direction and outgoing direction of lights,
+/// both pointing outwards of the surface point,
+/// outputs the probability density of sampling.
+/// If dir == TO_LIGHT, incoming direction is dir_view and 
+/// we're sampling for dir_light. Vice versa.
+Real pdf_sample_bsdf(const Material &material,
+                     const Vector3 &dir_in,
+                     const Vector3 &dir_out,
+                     const PathVertex &vertex,
+                     const TexturePool &texture_pool,
+                     TransportDirection dir = TransportDirection::TO_LIGHT);
+
+/// Return a texture from the material for debugging.
+/// If the material contains multiple textures, return an arbitrary one.
+const TextureSpectrum &get_texture(const Material &material);
+\end{lstlisting}
+
+The comments should be self-explanatory. If they are not, let us know. Note that in lajolla, the BSDF functions also contain the cosine term $|\mathbf{n}_{\mathbf{p}} \cdot \omega'|$: this makes the overall code simpler. \textbf{For the homeworks, you do not need to worry about \lstinline{TransportDirection}: you can assume they are always pointing towards the lights.} This is for convienence for implementing a bidirectional path tracer.
 
 \subsection{Textures and filtering}
+Almost all values of a material should be spatially varying. Textures are a way to describe these spatially varying materials using a 2D function: given a 2D coordinates $(u, v)$, a texture maps it to a value $T$ (can be a color or just a real number). There are three kinds of textures in lajolla currently:
+
+\begin{lstlisting}[language=c++]
+template <typename T>
+struct ConstantTexture {
+    T value;
+};
+
+template <typename T>
+struct ImageTexture {
+    int texture_id;
+    Real uscale, vscale;
+    Real uoffset, voffset;
+};
+
+template <typename T>
+struct CheckerboardTexture {
+    T color0, color1;
+    Real uscale, vscale;
+    Real uoffset, voffset;
+};
+
+template <typename T>
+using Texture = std::variant<ConstantTexture<T>, ImageTexture<T>, CheckerboardTexture<T>>;
+using Texture1 = Texture<Real>;
+using TextureSpectrum = Texture<Spectrum>;
+
+/// Evaluate the texture at location uv.
+/// Footprint should be approximatedly min(du/dx, du/dy, dv/dx, dv/dy) for texture filtering.
+template <typename T>
+T eval(const Texture<T> &texture, const Vector2 &uv, Real footprint, const TexturePool &pool);
+\end{lstlisting}
+
+In lajolla, all surfaces must come with a 2D $(u, v)$ parametrization. We use this 2D $uv$ vector $(\in [0, 1]^2)$ for accessing the textures. A constant texture uses a constant value for all $uv$. An image texture loads an image from file and uses it for representing the texture. A checkerboard texture is a procedural texture that outputs a checkerboard pattern (see Figure~\ref{fig:pixel_filter_comp} for example).
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.4\linewidth]{imgs/texture_filtering.pdf}
+    \caption{The pixel footprint will propagate to texture access, requiring us to access a large region of the texture. The size of the ellipse on the texture is determined by the derivative $\frac{\mathrm{d}u}{\mathrm{d}x}, \frac{\mathrm{d}u}{\mathrm{d}y}, \frac{\mathrm{d}v}{\mathrm{d}x},$ and $\frac{\mathrm{d}v}{\mathrm{d}y}$.}
+    \label{fig:texture_filtering}
+\end{figure}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.3\linewidth]{imgs/ray_differential.pdf}
+    \caption{We use a simplified and conservative ray differential adopted by RenderMan: a radius and a spread is maintain for each ray for determining the texture footprint.}
+    \label{fig:ray_differential}
+\end{figure}
+
+\paragraph{Filtering and ray differentials.} Similar to the pixel filter, it is crucial that we filter the texture as well to avoid aliasing. When accessing a texture, we want to know the relative size between the filter on uv and the pixel filter (Figure~\ref{fig:texture_filtering}). This relative size is determined by the derivatives between $uv$ and $xy$. Note that we need to access textures for many bounces of lights, and it is difficult to estimate the texture footprint over many bounces. A common used method for determining texture footprint is the \emph{ray differentials}~\cite{Igehy:1999:TRD}, however it only works for purely specular materials. \emph{Path differentials}~\cite{Suykens:2001:PDA} is an extension of ray differential for glossy materials, however it is extremely expensive to compute. A slightly more principled way based on local Fourier analysis called covariance tracing~\cite{Belcour:2017:ACG} can propagate the Fourier spectrum of the pixel filter using a Gaussian approximation, but 1) it requires us to have knowledge of the Fourier spectrum of the BSDF, and 2) it is still an approximation because it ignores visibility. In general, if we ignore visibility, all existing methods would predict an infinite filter size if a light path goes through a diffuse bounce. However this is clearly incorrect, since object boundaries and visibility would limit the texture filter size. Existing approach has to place a manually determined maximum filter size to prevent infinite filter size.
+
+Since all existing methods are heuristics and there is not really a satisfactory solution for multiple bounces (which means there are research to be done here!), we will use a very simple and conservative heuristics, inspired by the implementation in modern RenderMan~\cite{Christensen:2018:RAP} and an experimental branch of pbrt.\footnote{See \href{THE IMPLEMENTATION OF A SCALABLE TEXTURE CACHE}{https://www.pbrt.org/texcache.pdf} from Matt Pharr} We maintain two numbers for a ray differential: the \emph{radius} of a ray and a \emph{spread} of a ray (Figure~\ref{fig:ray_differential}) -- now that the ray becomes a \emph{ray cone} and the size of the cone can be used for determining the texture footprint. These values are approximatedly the derivative of the ray origin and ray direction with respect to the pixel coordinates.
+\begin{lstlisting}[language=c++]
+struct RayDifferential {
+    // Radius is approximatedly (length(dp/dx) + length(dp/dy)) / 2
+    // Spread is approximatedly (length(dd/dx) + length(dd/dy)) / 2
+    // p is ray position, d is ray direction.
+    Real radius = 0, spread = 0; // The units are pixels.
+};
+\end{lstlisting}
+
+To initiailize a ray differential, we set it to $1/4$ the size of a pixel:
+\begin{lstlisting}[language=c++]
+inline RayDifferential init_ray_differential(int w, int h) {
+    return RayDifferential{Real(0), Real(0.25) / max(w, h)};
+}
+\end{lstlisting}
+
+To propagate a ray differential over a distance, we update the radius of the ray using its spread
+\begin{lstlisting}[language=c++]
+/// Update the radius (dp/dx) of a ray differential by propagating it over a distance.
+inline Real transfer(const RayDifferential &r, Real dist) {
+    return r.radius + r.spread * dist;
+}
+r.radius = transfer(r, dist);
+\end{lstlisting}
+
+To model a scattering event, we blend between the spread of a pure specular event and a spread of a diffuse event.
+For a pure specular event, the amount of spread is determined by the curvature of a surface.
+For the diffuse event, we manually set a cone size.
+\begin{lstlisting}[language=c++]
+/// Update the spread (dd/dx) of a ray differential by scattering over a reflective surface.
+inline Real reflect(const RayDifferential &r,
+                    Real mean_curvature,
+                    Real roughness) {
+    Real spec_spread = r.spread + 2 * mean_curvature * r.radius;
+    Real diff_spread = Real(0.2);
+    return fmax(spec_spread * (1 - roughness) + diff_spread * roughness, Real(0));
+}
+\end{lstlisting}
+
+For a refraction, we need to additionally take the index of refraction into account. According to Snell-Descartes law, the ray spread would change by the ratio of index of refraction. If the ratio is large, rays will be more concentrated, and vice versa. So we just divide the spread with that ratio.
+\begin{lstlisting}[language=c++]
+/// Update the spread (dd/dx) of a ray differential by scattering over a reflective surface.
+inline Real reflect(const RayDifferential &r,
+                    Real mean_curvature,
+                    Real roughness) {
+    Real spec_spread = (r.spread + 2 * mean_curvature * r.radius) / eta;
+    Real diff_spread = Real(0.2);
+    return fmax(spec_spread * (1 - roughness) + diff_spread * roughness, Real(0));
+}
+\end{lstlisting}
+Note that these are all approximation and heuristics. Read the references above to see other alternatives as well.
+
+Once we have the footprint of a ray radius (approximately $\frac{dp}{dx}$), we can convert it to the UV space using the derivative $\frac{du}{dp}$, which we can compute from the geometry quantities. This uv space footprint is then passed to the texture as the \lstinline{footprint} argument. We then want to filter the texture using a filter with support of \lstinline{footprint}. Looping over all texels inside the footprint is too slow. Therefore we precompute an \emph{image pyramid} of the texture for representing signals at different frequencies. This image pyramid is called the Mipmap. We can then reconstruct a value of a texture with a certain footprint, by linearly interpolating levels between a mipmap.
+
+\begin{lstlisting}[language=c++]
+template <typename T>
+struct Mipmap {
+    std::vector<Image<T>> images;
+};
+
+/// Bilinear lookup of a mipmap at location (uv) with an integer level
+template <typename T>
+inline T lookup(const Mipmap<T> &mipmap, Real x, Real y, int level);
+
+/// Trilinear look of of a mipmap at (u, v, level)
+template <typename T>
+inline T lookup(const Mipmap<T> &mipmap, Real u, Real v, Real level) {
+    if (level <= 0) {
+        return lookup(mipmap, u, v, 0);
+    } else if (level < Real(mipmap.images.size() - 1)) {
+        int flevel = std::clamp((int)floor(level), 0, (int)mipmap.images.size() - 1);
+        int clevel = std::clamp(flevel + 1, 0, (int)mipmap.images.size() - 1);
+        Real level_off = level - flevel;
+        return lookup(mipmap, u, v, flevel) * (1 - level_off) +
+               lookup(mipmap, u, v, clevel) *      level_off;
+    } else {
+        return lookup(mipmap, u, v, int(mipmap.images.size() - 1));
+    }
+}
+\end{lstlisting}
+
+To determine the mipmap level, we just take a base 2 log of the footprint.
+\begin{lstlisting}[language=c++]
+template <typename T>
+T eval_texture_op<T>::operator()(const ImageTexture<T> &t) const {
+    const Mipmap<T> &img = get_img(t, pool);
+    Vector2 local_uv{modulo(uv[0] * t.uscale + t.uoffset, Real(1)),
+                     modulo(uv[1] * t.vscale + t.voffset, Real(1))};
+    Real scaled_footprint = max(get_width(img), get_height(img)) * max(t.uscale, t.vscale) * footprint;
+    Real level = log2(max(scaled_footprint, Real(1e-8f)));
+    return lookup(img, local_uv[0], local_uv[1], level);
+}
+\end{lstlisting}
+
+\paragraph{Texture Pool.} Modern production renderers do not actually load all textures to the memory when parsing
+the scene (since that would be up to terabytes of data). They only store the ID or the name of a texture, and load the texture whenever necessary. While a full texture caching system is too complicated and should be in lajolla, at least we can make a similar interface :p. Notice that our image texture only stores a texture ID instead of an image. You'll need to access the image using a \lstinline{TexturePool}.
+\begin{lstlisting}[language=c++]
+/// Can be replaced by a more advanced texture caching system,
+/// where we only load images from files when necessary.
+/// See OpenImageIO for example https://github.com/OpenImageIO/oiio
+struct TexturePool {
+    std::map<std::string, int> image1s_map;
+    std::map<std::string, int> image3s_map;
+
+    std::vector<Mipmap1> image1s;
+    std::vector<Mipmap3> image3s;
+};
+
+inline int insert_image1(TexturePool &pool, const std::string &texture_name, const fs::path &filename);
+inline int insert_image1(TexturePool &pool, const std::string &texture_name, const Image1 &img);
+inline int insert_image3(TexturePool &pool, const std::string &texture_name, const fs::path &filename);
+inline int insert_image3(TexturePool &pool, const std::string &texture_name, const Image3 &img);
+inline const Mipmap1 &get_img1(const TexturePool &pool, int texture_id);
+inline const Mipmap3 &get_img3(const TexturePool &pool, int texture_id);
+\end{lstlisting}
+
+I recommend Matt Pharr's article \href{The Implementation of a Scalable Texture Cache}{https://www.pbrt.org/texcache.pdf} if you want to learn more about texture caches.
+
+That was a lot: handling textures correctly is difficult and there is actually more! We will cover some of them in the classes.
 
 \section{Lights}
 

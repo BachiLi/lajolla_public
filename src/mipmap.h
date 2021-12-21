@@ -47,40 +47,42 @@ inline Mipmap<T> make_mipmap(const Image<T> &img) {
     return mipmap;
 }
 
+/// Bilinear lookup of a mipmap at location (uv) with an integer level
 template <typename T>
-inline T lookup(const Mipmap<T> &mipmap, Real x, Real y, int level) {
+inline T lookup(const Mipmap<T> &mipmap, Real u, Real v, int level) {
     assert(level >= 0 && level < (int)mipmap.images.size());
     // Bilinear interpolation
-    x *= mipmap.images[level].width;
-    y *= mipmap.images[level].height;
-    int xfi = modulo(int(x), mipmap.images[level].width);
-    int yfi = modulo(int(y), mipmap.images[level].height);
-    int xci = modulo(xfi + 1, mipmap.images[level].width);
-    int yci = modulo(yfi + 1, mipmap.images[level].height);
-    Real x_off = x - xfi;
-    Real y_off = y - yfi;
-    T vff = mipmap.images[level](xfi, yfi);
-    T vfc = mipmap.images[level](xfi, yci);
-    T vcf = mipmap.images[level](xci, yfi);
-    T vcc = mipmap.images[level](xci, yci);
-    return vff * (1 - x_off) * (1 - y_off) +
-           vfc * (1 - x_off) * y_off +
-           vcf *      x_off  * (1 - y_off) +
-           vcc *      x_off  *      y_off;
+    u *= mipmap.images[level].width;
+    v *= mipmap.images[level].height;
+    int ufi = modulo(int(u), mipmap.images[level].width);
+    int vfi = modulo(int(v), mipmap.images[level].height);
+    int uci = modulo(ufi + 1, mipmap.images[level].width);
+    int vci = modulo(vfi + 1, mipmap.images[level].height);
+    Real u_off = u - ufi;
+    Real v_off = v - vfi;
+    T val_ff = mipmap.images[level](ufi, vfi);
+    T val_fc = mipmap.images[level](ufi, vci);
+    T val_cf = mipmap.images[level](uci, vfi);
+    T val_cc = mipmap.images[level](uci, vci);
+    return val_ff * (1 - u_off) * (1 - v_off) +
+           val_fc * (1 - u_off) *      v_off +
+           val_cf *      u_off  * (1 - v_off) +
+           val_cc *      u_off  *      v_off;
 }
 
+/// Trilinear look of of a mipmap at (u, v, level)
 template <typename T>
-inline T lookup(const Mipmap<T> &mipmap, Real x, Real y, Real level) {
+inline T lookup(const Mipmap<T> &mipmap, Real u, Real v, Real level) {
     if (level <= 0) {
-        return lookup(mipmap, x, y, 0);
+        return lookup(mipmap, u, v, 0);
     } else if (level < Real(mipmap.images.size() - 1)) {
         int flevel = std::clamp((int)floor(level), 0, (int)mipmap.images.size() - 1);
         int clevel = std::clamp(flevel + 1, 0, (int)mipmap.images.size() - 1);
         Real level_off = level - flevel;
-        return lookup(mipmap, x, y, flevel) * (1 - level_off) +
-               lookup(mipmap, x, y, clevel) *      level_off;
+        return lookup(mipmap, u, v, flevel) * (1 - level_off) +
+               lookup(mipmap, u, v, clevel) *      level_off;
     } else {
-        return lookup(mipmap, x, y, int(mipmap.images.size() - 1));
+        return lookup(mipmap, u, v, int(mipmap.images.size() - 1));
     }
 }
 

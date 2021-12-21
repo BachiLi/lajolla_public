@@ -146,6 +146,8 @@ T eval_texture_op<T>::operator()(const CheckerboardTexture<T> &t) const {
     }
 }
 
+/// Evaluate the texture at location uv.
+/// Footprint should be approximatedly min(du/dx, du/dy, dv/dx, dv/dy) for texture filtering.
 template <typename T>
 T eval(const Texture<T> &texture, const Vector2 &uv, Real footprint, const TexturePool &pool) {
     return std::visit(eval_texture_op<T>{uv, footprint, pool}, texture);
