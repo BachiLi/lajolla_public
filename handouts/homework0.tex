@@ -81,7 +81,7 @@ Once lajolla is built, you can try to render some images in the \lstinline{scene
   ./lajolla ../scenes/cbox/cbox.xml
 \end{lstlisting}
 
-After the reading is done, you will see an image file \lstinline{image.exr} appeared in your working directory. EXRs are \emph{high-dynamic range images}\footnote{\url{https://en.wikipedia.org/wiki/High_dynamic_range}} and require a different image viewer. We recommend viewing it using HDRView\footnote{\url{https://github.com/wkjarosz/hdrview}} or Tev\footnote{\url{https://github.com/Tom94/tev}}. You should be able to see images like the ones in Figure~\ref{fig:gallery} (maybe noiser, since the default settings for these scenes use a smaller number of light simulation samples compared to the ones in the figure).
+After the reading is done, you will see an image file \lstinline{image.exr} appeared in your working directory. EXRs are \href{https://en.wikipedia.org/wiki/High_dynamic_range}{\emph{high-dynamic range images}} and require a different image viewer. We recommend viewing it using \href{https://github.com/wkjarosz/hdrview}{HDRView} or \href{https://github.com/Tom94/tev}{Tev}. You should be able to see images like the ones in Figure~\ref{fig:gallery} (maybe noiser, since the default settings for these scenes use a smaller number of light simulation samples compared to the ones in the figure).
 
 The scene format in lajolla follows the Mitsuba scene format, where you can read the documentation \href{https://www.mitsuba-renderer.org/releases/current/documentation.pdf}{here}. The scene files are human readable, so by just looking at those files should gives you a reasonable idea.
 
@@ -106,7 +106,7 @@ Lajolla mostly follows the design of other existing physically-based renderers, 
 \end{lstlisting}
 We do not declare \lstinline{auto} that often, since I am still not convinced that it would not hurt code readability.
 
-\paragraph{Variant-based polymorphism.} Perhaps the biggest different on the surface between lajolla and most other (CPU-based) renderers is how it implements polymorphism. In rendering, the same rendering code would need to handle different materials, lights, cameras, and etc. Most renderers adopt a heavily object-oriented design with classes and inheritance. While this is an acceptable approach, the hierarchical vtable pointers make the whole scene data structure very difficult to convert to GPU. I also personally just do not think OOP is a good idea\footnote{see "Object-Oriented Programming is Bad" from Brain Will \url{https://www.youtube.com/watch?v=QM1iUe6IofM}}. To support polymorphism, we use a modern C++ feature \lstinline{std::variant}. It is essentially a \emph{tagged union} (or a \emph{sum type} if you are functional guru): a C union with a member indicating which type it is. Read more about it \href{https://www.cppstories.com/2020/04/variant-virtual-polymorphism.html/}{here}. Another renderer \href{visionaray}{https://github.com/szellmann/visionaray} also adopts a similar approach.
+\paragraph{Variant-based polymorphism.} Perhaps the biggest different on the surface between lajolla and most other (CPU-based) renderers is how it implements polymorphism. In rendering, the same rendering code would need to handle different materials, lights, cameras, and etc. Most renderers adopt a heavily object-oriented design with classes and inheritance. While this is an acceptable approach, the hierarchical vtable pointers make the whole scene data structure very difficult to convert to GPU. I also personally just do not think OOP is a good idea\footnote{see \href{https://www.youtube.com/watch?v=QM1iUe6IofM}{``Object-Oriented Programming is Bad''} from Brain Will}. To support polymorphism, we use a modern C++ feature \lstinline{std::variant}. It is essentially a \emph{tagged union} (or a \emph{sum type} if you are functional guru): a C union with a member indicating which type it is. Read more about it \href{https://www.cppstories.com/2020/04/variant-virtual-polymorphism.html/}{here}. Another renderer \href{visionaray}{https://github.com/szellmann/visionaray} also adopts a similar approach.
 
 Below we will take a whirlwind tour over the basics of physically-based rendering and how they are implemented in lajolla.
 
@@ -319,6 +319,60 @@ Lajolla implements pixel filtering in a slightly different way compared to other
     \item For filters with infinite supports (e.g., Gaussian), this requires a discontinuous cutoff radius (otherwise it would be too slow).
 \end{itemize}
 For these reasons, many modern production renderers have started to employ a different and simpler strategy. For each pixel, we solve for the pixel filter integral by directly importance sample that filter, and we *do not* share samples among pixels. This allows us to avoid all three problems above. This approach was described by Shirley et al. in 1991~\cite{Shirley:1991:RTF} and was discussed more recently by Ernst et al.~\cite{Ernst:2006:FIS}.
+
+\begin{lstlisting}[language=c++]
+Vector2 sample(const Filter &filter, const Vector2 &rnd_param);
+
+Vector2 sample_op::operator()(const Box &filter) const {
+    // Warp [0, 1]^2 to [-width/2, width/2]^2
+    return (Real(2) * rnd_param - Real(1)) * (filter.width / 2);
+}
+
+Vector2 sample_op::operator()(const Tent &filter) const {
+    // See comments in code for more explanation.
+    Real x = rnd_param[0] < 0.5 ? 
+        filter.width * sqrt(max(2 * rnd_param[0], Real(0))) - filter.width / 2 :
+        (filter.width / 2) - filter.width * sqrt(max(2 - 2 * rnd_param[0], Real(0)));
+    Real y = rnd_param[0] < 0.5 ? 
+        filter.width * sqrt(max(2 * rnd_param[1], Real(0))) - filter.width / 2 :
+        (filter.width / 2) - filter.width * sqrt(max(2 - 2 * rnd_param[1], Real(0)));
+    return Vector2{x, y};
+}
+
+Vector2 sample_op::operator()(const Gaussian &filter) const {
+    // Box Muller transform
+    // https://en.wikipedia.org/wiki/Box%E2%80%93Muller_transform
+    Real r = filter.stddev * sqrt(-2 * log(max(rnd_param[0], 1e-8)));
+    return Vector2{r * cos(2 * c_PI * rnd_param[1]),
+                   r * sin(2 * c_PI * rnd_param[1])};
+}
+
+Ray sample_primary(const Camera &camera,
+                   const Vector2 &screen_pos) {
+    // screen_pos' domain is [0, 1]^2
+    Vector2 pixel_pos{screen_pos.x * camera.width, screen_pos.y * camera.height};
+
+    // Importance sample from the pixel filter (see filter.h for more explanation).
+    // We first extract the subpixel offset.
+    Real dx = pixel_pos.x - floor(pixel_pos.x);
+    Real dy = pixel_pos.y - floor(pixel_pos.y);
+    // dx/dy are uniform variables in [0, 1],
+    // so let's remap them using importance sampling.
+    Vector2 offset = sample(camera.filter, Vector2{dx, dy});
+    // Filters are placed at pixel centers.
+    Vector2 remapped_pos{
+      (floor(pixel_pos.x) + Real(0.5) + offset.x) / camera.width,
+      (floor(pixel_pos.y) + Real(0.5) + offset.y) / camera.height};
+
+    Vector3 pt = xform_point(camera.sample_to_cam,
+        Vector3(remapped_pos[0], remapped_pos[1], Real(0)));
+    Vector3 dir = normalize(pt);
+    return Ray{xform_point(camera.cam_to_world, Vector3{0, 0, 0}),
+               // the last normalize might not be necessary
+               normalize(xform_vector(camera.cam_to_world, dir)),
+               Real(0), infinity<Real>()};
+}
+\end{lstlisting}
 
 \section{Materials}
 \begin{figure}
