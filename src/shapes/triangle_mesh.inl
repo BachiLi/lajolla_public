@@ -1,5 +1,6 @@
 uint32_t register_embree_op::operator()(const TriangleMesh &mesh) const {
     RTCGeometry rtc_geom = rtcNewGeometry(device, RTC_GEOMETRY_TYPE_TRIANGLE);
+    // A geomID is the ID associated with the shape inside Embree.
     uint32_t geomID = rtcAttachGeometry(scene, rtc_geom);
     Vector4f *positions = (Vector4f*)rtcSetNewGeometryBuffer(
         rtc_geom, RTC_BUFFER_TYPE_VERTEX, 0, RTC_FORMAT_FLOAT3,

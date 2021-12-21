@@ -8,6 +8,7 @@
 \usepackage{caption}
 \usepackage{subcaption}
 \geometry{margin=1in}
+\pdfminorversion=6
 
 \newcommand\TODO[1]{\textcolor{red}{TODO: #1}}
 
@@ -629,6 +630,8 @@ struct Envmap {
     // For sampling a point on the envmap
     TableDist2D sampling_dist;
 };
+
+using Light = std::variant<DiffuseAreaLight, Envmap>;
 \end{lstlisting}
 
 \begin{figure}
@@ -638,14 +641,10 @@ struct Envmap {
     \label{fig:envmap}
 \end{figure}
 
-A diffuse area light should be straightforward: it is attached to a geometry, and emits lights uniformly at all direction. An environment map is usually represented as an image, and emits light on an sphere that is infinitely large (Figure~\ref{fig:envmap}).
+A diffuse area light should be straightforward: it is attached to a geometry, and emits lights uniformly at all direction. An environment map is usually represented as an image, and emits light on an sphere that is infinitely large (Figure~\ref{fig:envmap}). These two light sources are the most common kind in production. Some renderers implement area lights with spatial-directionally varying properties, but the emission profile of light sources are more scarce compared to BSDF (which is already scarce) -- more research needed!
 
 All lights in lajolla needs to implement the following functions:
 \begin{lstlisting}[language=c++]
-// To add more lights, first create a struct for the light, add it to the variant type below,
-// then implement all the relevant function below with the Light type.
-using Light = std::variant<DiffuseAreaLight, Envmap>;
-
 /// Computes the total power the light emit to all positions and directions.
 /// Useful for sampling.
 Real light_power(const Light &light, const Scene &scene);
@@ -681,6 +680,108 @@ void init_sampling_dist(Light &light, const Scene &scene);
 Hopefully the comments are self-explanatory (let us know if they are not). I recommend you read the source code of these lights to have a better understanding of what is happening.
 
 \section{Geometry}
+A renderer also needs representation of surfaces in the scene. Lajolla supports two kinds of geometry (or \lstinline{Shape}):
+
+\begin{lstlisting}
+struct Sphere : public ShapeBase {
+    Vector3 position;
+    Real radius;
+};
+
+struct TriangleMesh : public ShapeBase {
+    std::vector<Vector3> positions;
+    std::vector<Vector3i> indices;
+    std::vector<Vector3> normals;
+    std::vector<Vector2> uvs;
+    /// Below are used only when the mesh is associated with an area light
+    Real total_area;
+    /// For sampling a triangle based on its area
+    TableDist1D triangle_sampler;
+};
+
+using Shape = std::variant<Sphere, TriangleMesh>;
+\end{lstlisting}
+
+Lajolla uses \href{Embree}{https://www.embree.org/} as its ray casting engine. So a shape would need to register itself to the Embree API:
+\begin{lstlisting}[language=c++]
+/// Add the shape to an Embree scene.
+uint32_t register_embree(const Shape &shape, const RTCDevice &device, const RTCScene &scene);
+\end{lstlisting}
+
+Embree has native support for a triangle mesh, so registering a triangle mesh to Embree is simple:
+\begin{lstlisting}[language=c++]
+uint32_t register_embree_op::operator()(const TriangleMesh &mesh) const {
+    RTCGeometry rtc_geom = rtcNewGeometry(device, RTC_GEOMETRY_TYPE_TRIANGLE);
+    // A geomID is the ID associated with the shape inside Embree.
+    uint32_t geomID = rtcAttachGeometry(scene, rtc_geom);
+    Vector4f *positions = (Vector4f*)rtcSetNewGeometryBuffer(
+        rtc_geom, RTC_BUFFER_TYPE_VERTEX, 0, RTC_FORMAT_FLOAT3,
+        sizeof(Vector4f), mesh.positions.size());
+    Vector3i *triangles = (Vector3i*)rtcSetNewGeometryBuffer(
+        rtc_geom, RTC_BUFFER_TYPE_INDEX, 0, RTC_FORMAT_UINT3,
+        sizeof(Vector3i), mesh.indices.size());
+    for (int i = 0; i < (int)mesh.positions.size(); i++) {
+        Vector3 position = mesh.positions[i];
+        positions[i] = Vector4f{(float)position[0], (float)position[1], (float)position[2], 0.f};
+    }
+    for (int i = 0; i < (int)mesh.indices.size(); i++) {
+        triangles[i] = mesh.indices[i];
+    }
+    rtcSetGeometryVertexAttributeCount(rtc_geom, 1);
+    rtcCommitGeometry(rtc_geom);
+    rtcReleaseGeometry(rtc_geom);
+    return geomID;
+}
+\end{lstlisting}
+
+Registering a sphere is more complicated, since we will need to implement our own ray-sphere intersection routines:
+\begin{lstlisting}[language=c++]
+void sphere_bounds_func(const struct RTCBoundsFunctionArguments* args);
+void sphere_intersect_func(const RTCIntersectFunctionNArguments* args);
+void sphere_occluded_func(const RTCOccludedFunctionNArguments* args);
+
+uint32_t register_embree_op::operator()(const Sphere &sphere) const {
+    RTCGeometry rtc_geom = rtcNewGeometry(device, RTC_GEOMETRY_TYPE_USER);
+    uint32_t geomID = rtcAttachGeometry(scene, rtc_geom);
+    rtcSetGeometryUserPrimitiveCount(rtc_geom, 1);
+    rtcSetGeometryUserData(rtc_geom, (void *)&sphere);
+    rtcSetGeometryBoundsFunction(rtc_geom, sphere_bounds_func, nullptr);
+    rtcSetGeometryIntersectFunction(rtc_geom, sphere_intersect_func);
+    rtcSetGeometryOccludedFunction(rtc_geom, sphere_occluded_func);
+    rtcCommitGeometry(rtc_geom);
+    rtcReleaseGeometry(rtc_geom);
+    return geomID;
+}
+\end{lstlisting}
+
+Apart from the Embree registration, we also need to compute relevant information for shading and texture filtering.
+\begin{lstlisting}[language=c++]
+struct ShadingInfo {
+    Vector2 uv; // UV coordinates for texture mapping
+    Frame shading_frame; // the coordinate basis for shading
+    Real mean_curvature; // 0.5 * (dot(dN/du, shading_frame.x) + dot(dN/dv, shading_frame.y))
+    // Stores min(length(dp/du), length(dp/dv)), for ray differentials.
+    Real inv_uv_size;
+};
+
+ShadingInfo compute_shading_info(const Shape &shape, const PathVertex &vertex);
+\end{lstlisting}
+All of these quantities can be computed using elementary differential geometry. You should read the source code if you are interested.
+
+Finally, a shape also needs to implement some other sampling routines for area light sampling:
+\begin{lstlisting}[language=c++]
+/// Sample a point on the surface
+PointAndNormal sample_point_on_shape(const Shape &shape, const Vector2 &uv, Real w);
+
+/// Probability density of the operation above
+Real pdf_point_on_shape(const Shape &shape);
+
+/// Useful for sampling.
+Real surface_area(const Shape &shape);
+
+/// Some shapes require storing sampling data structures inside. This function initialize them.
+void init_sampling_dist(Shape &shape);
+\end{lstlisting}
 
 \section{Utilities}
 

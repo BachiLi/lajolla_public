@@ -14,7 +14,7 @@ struct PathVertex;
 struct ShadingInfo {
     Vector2 uv; // UV coordinates for texture mapping
     Frame shading_frame; // the coordinate basis for shading
-    Real mean_curvature; // -0.5 * (dN/du + dN/dv)
+    Real mean_curvature; // 0.5 * (dN/du + dN/dv)
     // Stores min(length(dp/du), length(dp/dv)), for ray differentials.
     Real inv_uv_size;
 };
@@ -41,6 +41,7 @@ struct TriangleMesh : public ShapeBase {
     std::vector<Vector2> uvs;
     /// Below are used only when the mesh is associated with an area light
     Real total_area;
+    /// For sampling a triangle based on its area
     TableDist1D triangle_sampler;
 };
 
