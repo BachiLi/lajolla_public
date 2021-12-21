@@ -2,10 +2,11 @@
 \usepackage{hyperref}
 \usepackage{listings}
 \usepackage{color}
-\usepackage{subfigure}
 \usepackage{geometry}
 \usepackage{graphicx}
 \usepackage{amsmath}
+\usepackage{caption}
+\usepackage{subcaption}
 \geometry{margin=1in}
 
 \newcommand\TODO[1]{\textcolor{red}{TODO: #1}}
@@ -100,7 +101,7 @@ Lajolla mostly follows the design of other existing physically-based renderers, 
   std::optional<float> foo2(const float &x); // preferred
   bool bar2(const float &x, float *out); // less preferred
 \end{lstlisting}
-We do not just \lstinline{auto} that often, since I am still not convinced that it would not hurt code readability.
+We do not declare \lstinline{auto} that often, since I am still not convinced that it would not hurt code readability.
 
 \paragraph{Variant-based polymorphism.} Perhaps the biggest different on the surface between lajolla and most other (CPU-based) renderers is how it implements polymorphism. In rendering, the same rendering code would need to handle different materials, lights, cameras, and etc. Most renderers adopt a heavily object-oriented design with classes and inheritance. While this is an acceptable approach, the hierarchical vtable pointers make the whole scene data structure very difficult to convert to GPU. I also personally just do not think OOP is a good idea\footnote{see "Object-Oriented Programming is Bad" from Brain Will \url{https://www.youtube.com/watch?v=QM1iUe6IofM}}. To support polymorphism, we use a modern C++ feature \lstinline{std::variant}. It is essentially a \emph{tagged union} (or a \emph{sum type} if you are functional guru): a C union with a member indicating which type it is. Read more about it \href{https://www.cppstories.com/2020/04/variant-virtual-polymorphism.html/}{here}. Another renderer \href{visionaray}{https://github.com/szellmann/visionaray} also adopts a similar approach.
 
@@ -267,9 +268,32 @@ Ray sample_primary(const Camera &camera,
 
 \subsection{Pixel filter}
 \label{sec:pixel_filter}
-A crucial component of the camera is the \emph{pixel filter}, which corresponds to the $k$ kernel above. As we have emphasized: \textbf{a pixel is not a little square}. It is a reconstruction from a discrete sampling of a continuous underlying signal. The choice of the reconstruction filter/kernel can have significant impact on the quality of the reconstruction. A naive box filter can suffer from servere \emph{aliasing} effects, since it's Fourier transform is a sinc function that can have negative weights in frequency domain and high-frequency energy. Lajolla currently supports three different filters:
 
-\TODO{Show comparisons.}
+\begin{figure}
+    \centering
+    \begin{subfigure}[t]{0.32\linewidth}
+        \centering
+        \includegraphics[width=\textwidth]{imgs/box.png}
+        \caption{box}
+        \label{fig:box_filter}
+    \end{subfigure}
+    \begin{subfigure}[t]{0.32\linewidth}
+        \centering
+        \includegraphics[width=\textwidth]{imgs/tent.png}
+        \caption{tent}
+        \label{fig:tent_filter}
+    \end{subfigure}
+    \begin{subfigure}[t]{0.32\linewidth}
+        \centering
+        \includegraphics[width=\textwidth]{imgs/gaussian.png}
+        \caption{Gaussian ($\sigma = 0.75$)}
+        \label{fig:gaussian_filter}
+    \end{subfigure}
+    \caption{A poor pixel filter can lead to the \emph{aliasing} artifact: high-frequency signals ``leak'' into the reconstruction and we see patterns that should not exist (zoom in and observe the top part of the images). Blurring the signal resolves this issue: the design of a good pixel filter trades between aliasing, blurriness, and ringing (oversharpening).\protect\footnotemark}
+    \label{fig:pixel_filter_comp}
+\end{figure}
+
+A crucial component of the camera is the \emph{pixel filter}, which corresponds to the $k$ kernel above. As we have emphasized: \textbf{a pixel is not a little square}. It is a reconstruction from a discrete sampling of a continuous underlying signal. The choice of the reconstruction filter/kernel can have significant impact on the quality of the reconstruction. A naive box filter can suffer from servere \emph{aliasing} effects, since it's Fourier transform is a sinc function that can have negative weights in frequency domain and high-frequency energy. Lajolla currently supports three different filters (Figure~\ref{fig:pixel_filter_comp} \footnotetext{In this particular case, a proper texture prefiltering should give a better result, but checkerboard texture filtering has not been implemented in lajolla.}):
 
 \begin{lstlisting}[language=c++]
 struct Box {
