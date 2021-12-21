@@ -49,10 +49,12 @@ Lajolla is a \emph{physically-based} renderer. It takes a 3D scene description (
 
 \section{Building and running lajolla}
 \begin{figure}[h]
-    \includegraphics[width=0.25\linewidth]{imgs/cbox.png}
-    \includegraphics[width=0.25\linewidth]{imgs/sponza.png}
-    \includegraphics[width=0.25\linewidth]{imgs/veach_mis.png}
+    \includegraphics[width=0.24\linewidth]{imgs/cbox.png}
+    \includegraphics[width=0.24\linewidth]{imgs/sponza.png}
+    \includegraphics[width=0.24\linewidth]{imgs/veach_mis.png}
+    \includegraphics[width=0.24\linewidth]{imgs/matpreview.png}
     \caption{Images you can render using lajolla.}
+    \label{fig:gallery}
 \end{figure}
 
 Before we started, let's try to clone, build the code and run it. Lajolla does not require you to download any external libraries (hopefully). While we do rely on many 3rdparty libraries, we only use lightweight header-only ones that can be easily included and do not complicate the build systems. To clone the codebase, do
@@ -77,11 +79,9 @@ Once lajolla is built, you can try to render some images in the \lstinline{scene
   ./lajolla ../scenes/cbox/cbox.xml
 \end{lstlisting}
 
-After the reading is done, you will see an image file \lstinline{image.exr} appeared in your working directory. EXRs are \emph{high-dynamic range images}\footnote{\url{https://en.wikipedia.org/wiki/High_dynamic_range}} and require a different image viewer. We recommend viewing it using HDRView\footnote{\url{https://github.com/wkjarosz/hdrview}} or Tev\footnote{\url{https://github.com/Tom94/tev}}.
+After the reading is done, you will see an image file \lstinline{image.exr} appeared in your working directory. EXRs are \emph{high-dynamic range images}\footnote{\url{https://en.wikipedia.org/wiki/High_dynamic_range}} and require a different image viewer. We recommend viewing it using HDRView\footnote{\url{https://github.com/wkjarosz/hdrview}} or Tev\footnote{\url{https://github.com/Tom94/tev}}. You should be able to see images like the ones in Figure~\ref{fig:gallery} (maybe noiser, since the default settings for these scenes use a smaller number of light simulation samples compared to the ones in the figure).
 
 The scene format in lajolla follows the Mitsuba scene format, where you can read the documentation \href{https://www.mitsuba-renderer.org/releases/current/documentation.pdf}{here}. The scene files are human readable, so by just looking at those files should gives you a reasonable idea.
-
-\TODO{put images here!}
 
 \section{Design philosophy}
 
@@ -125,10 +125,11 @@ Below we will take a whirlwind tour over the basics of physically-based renderin
 How does lajolla, or many other modern physically-based renderer compute the color for each pixel? They do this by \emph{integrating} all lights that goes through a pixel. Note that a pixel is not a infinitesimal point, not is it a little square~\cite{Smith:1995:PLS}. \textbf{A pixel is a reconstruction filter over an image function at a certain locatio} (Figure~\ref{fig:pixel_filter}). Mathematically, a pixel $I_{x, y}$'s color is written as an filtering integral:
 \begin{equation}
     I_{x, y} = \iint_{D} k(x', y') L(\mathbf{p}, \mathbf{d}(x + x', y + y')) \mathrm{d}x\mathrm{d}y,
+    \label{eq:pixel_filter}
 \end{equation}
 where $k$ is the \emph{filter kernel}, $D$ is the \emph{support} of the filter kernel (the pixel location where its value is non-zero), and $L(\mathbf{p}, \mathbf{d})$ is the radiance at point $\mathbf{p}$, received from direction $\mathbf{d}$ where the direction is pointing outwards from $\mathbf{p}$. In our case, $\mathbf{p}$ is the position of the camera, and $\mathbf{d}$ is the direction between the camera position and the points on the film (Figure~\ref{fig:camera}).
 
-Now we have three questions: 1) what is the filter kernel $k$? 2) what is the radiance $L$?, and 3) how do we evaluate this integral on a computer? For 1), we will discuss a bit more in Section~\ref{sec:pixel_filter}, but for now you can think of it as something like a 2D Gaussian. For 3), these integrals typically do not have closed-form solutions,\footnote{There are rendering algorithms that based on closed-form solutions of these integrals. Radiosity~\cite{Schroder:1993:OFF} is one of them. Also check out the excellent paper from Heitz et al.~\cite{Heitz:2016:RPS}} so we need to \emph{discretize} these integrals:
+Now we have three questions: 1) what is the filter kernel $k$? 2) what is the radiance $L$?, and 3) how do we evaluate this integral on a computer? For 1), we will discuss a bit more in Section~\ref{sec:pixel_filter}, but for now you can think of it as something like a 2D Gaussian. For 3), these integrals typically do not have closed-form solutions,\footnote{There are rendering algorithms that based on closed-form solutions of these integrals. Some radiosity algorithms~\cite{Schroder:1993:OFF} make use of closed-form solutions, for example. Also check out the excellent paper from Heitz et al.~\cite{Heitz:2016:RPS}} so we need to \emph{discretize} these integrals:
 \begin{equation}
     \int_{D} F(x) dx \approx \frac{1}{N} \sum_{i=1}^{N} F(x_i),
     \label{eq:discretization}
@@ -148,9 +149,34 @@ We are still left with Q2: what is the radiance $L$? In this class, we are mostl
 \end{equation}
 where $\mathbf{p}'$ is the point the direction $\mathbf{d}$ intersect with the scene. Then -- what is $L_i$? An object is lit by a light source. However, as photons scatter between objects, a photon can first hit object A before it hits object B. Therefore we need to recursively consider all objects in the scene:
 \begin{equation}
-    L_i(\mathbf{p}, \mathbf{d}) = L_e(\mathbf{p}, \mathbf{d}) + \int_{\Omega} f(\mathbf{p}, \mathbf{d}, \mathbf{d}') L_i(\mathbf{p}', -\mathbf{d}') \mathrm{d} \mathbf{d}_{\bot}',
+    L_i(\mathbf{p}, \mathbf{d}) = L_e(\mathbf{p}, \mathbf{d}) + \int_{\Omega} f(\mathbf{p}, \mathbf{d}, \mathbf{d}') |\mathbf{n}_{\mathbf{p}} \cdot \mathbf{d}'| L_i(\mathbf{p}', -\mathbf{d}') \mathrm{d} \mathbf{d},
+    \label{eq:rendering_equation}
 \end{equation}
-where $L_e$ is the \emph{emission} at $\mathbf{p}$ towards direction $\mathbf{d}$, $\Omega$ is a spherical domain around point $\mathbf{p}$, $f$ is the reflectance of the object at point $p$ from direction $\mathbf{d}'$ to $\mathbf{d}$, and $\mathbf{p}'$ is the point intersected by the ray $(\mathbf{p}, \mathbf{d}')$. $f$ is often called the Bidirectional Scattering Distribution Function (BSDF) -- when the material is transmissive, it's called the Bidirectional Transmission Distribution Function (BTDF), and when it is reflective, it's called the Bidirectional Reflectance Distribution Function (BRDF) (I know, it's confusing). See Figure~\ref{fig:pathtracing} for an illustration.
+where $L_e$ is the \emph{emission} at $\mathbf{p}$ towards direction $\mathbf{d}$, $\Omega$ is a spherical domain around point $\mathbf{p}$, $f$ is the reflectance of the object at point $p$ from direction $\mathbf{d}'$ to $\mathbf{d}$, $\mathbf{p}'$ is the point intersected by the ray $(\mathbf{p}, \mathbf{d}')$, and $n_{p}$. $f$ is often called the Bidirectional Scattering Distribution Function (BSDF) -- when the material is transmissive, it's called the Bidirectional Transmission Distribution Function (BTDF), and when it is reflective, it's called the Bidirectional Reflectance Distribution Function (BRDF) (I know, it's confusing). See Figure~\ref{fig:pathtracing} for an illustration. The measure $\mathrm{d} \mathbf{d}_{\bot}'$ is the \emph{solid angle}: the infinitesimal area on a unit sphere. Equation~\ref{eq:rendering_equation} is often called the \emph{rendering equation}~\cite{Kajiya:1986:RE}.
+
+This recursive integral, combined with the integral discretization (Equation~\ref{eq:discretization}), gives us an rendering algorithm. We start from a pixel $(x, y)$, and sample a pixel offset $(x', y')$ to estimate the pixel filter integral (Equation~\ref{eq:pixel_filter}). Next, to estimate $L_i$, we sample a direction $\mathrm{d}'$, hit point $\mathbf{p}'$, multiply by $f$, and add $L_e$ whenever we hit a light source. In lajolla, the \lstinline{path_tracing} function in \lstinline{path_tracing.h} implements (a more sophisticated version) of this. We will talk about the bells and whistles of the path tracing function below.
+
+\paragraph{The path-space.} The rendering equation above is a recursive equation, and while recursion is cool, it's often easier to analyze and understand its structure if we can flatten it to a more iterative form. By expanding the recursion, we see the following pattern
+\begin{equation}
+    L_i = L_e + f * L_e + f * f * L_e + \dots.
+\end{equation}
+We notice that we are essentially tracing \emph{light paths} with different number of vertices. For light paths with two vertices: one at the camera position and one at a light source, we only need to compute $L_e$. For light paths with three vertices, we need to account for one scattering event and multiply $f$. If we define a light path with a sequence of directions: $\mathbf{D} = (\mathbf{d}_0, \mathbf{d}_1, \mathbf{d}_2, \dots)$, then we can define a \emph{path contribution function} $f_d$ to compute the contribution of that single light path. From above, we can see that
+\begin{equation}
+    f_d(\mathbf{D}) = k(\mathbf{d}_0(x', y')) f(\mathbf{p}_1, \mathbf{d}_0, \mathbf{d}_1) f(\mathbf{p}_2, \mathbf{d}_1, \mathbf{d}_2) \dots L_e(\mathbf{p}_N, \mathbf{d}_N).
+\end{equation}
+(I might have get some signs wrong but no worries.)
+
+We can then rewrite the rendering integral as
+\begin{equation}
+    I_{x, y} = \int f_d(\mathbf{D}) \mathrm{d} D(\mathbf{d}),
+\end{equation}
+where the measure $D(\mathbf{d})$ is the product of solid angle of the path directions $\mathbf{d}_i$.
+
+A path can also be written in many different forms. A very convienent form is to define the path as a sequence of positions, as opposed of directions: $\mathbf{P} = (\mathbf{p}_0, \mathbf{p}_1, \mathbf{p}_2, \dots)$. While these two forms are equivalent, this is performing a \emph{change of variable} in calculus, and this changes the integrand we are integrating. The new path contribution function $f_p(\mathbf{P})$ is:
+\begin{equation}
+    f_p(\mathbf{P}) = k(\mathbf{d}_0(x', y')) G(\mathbf{p}_0, \mathbf{p}_1) f(\mathbf{p}_1, \mathbf{d}_0, \mathbf{d}_1)G(\mathbf{p}_1, \mathbf{p}_2) f(\mathbf{p}_2, \mathbf{d}_1, \mathbf{d}_2) \dots G(\mathbf{p}_{N-1}, \mathbf{p}_{N}) L_e(\mathbf{p}_N, \mathbf{d}_N).
+\end{equation}
+
 
 \subsection{Importance sampling}
 
