@@ -7,6 +7,18 @@
 
 // From https://github.com/mmp/pbrt-v3/blob/master/src/core/parallel.cpp
 
+class Barrier {
+  public:
+    Barrier(int count) : count(count) { assert(count > 0); }
+    ~Barrier() { assert(count == 0); }
+    void Wait();
+
+  private:
+    std::mutex mutex;
+    std::condition_variable cv;
+    int count;
+};
+
 static std::vector<std::thread> threads;
 static bool shutdownThreads = false;
 struct ParallelForLoop;

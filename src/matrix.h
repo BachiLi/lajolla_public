@@ -2,6 +2,7 @@
 
 #include "vector.h"
 
+/// Row-major matrix
 template <typename T>
 struct TMatrix4x4 {
     TMatrix4x4() {

@@ -10,20 +10,20 @@
 /// https://backend.orbit.dtu.dk/ws/portalfiles/portal/126824972/onb_frisvad_jgt2012_v2.pdf
 inline std::pair<Vector3, Vector3> coordinate_system(const Vector3 &n) {
     if (n[2] < Real(-1 + 1e-6)) {
-    	return std::make_pair(Vector3{0, -1, 0},
+        return std::make_pair(Vector3{0, -1, 0},
                               Vector3{-1, 0, 0});
     } else {
         Real a = 1 / (1 + n[2]);
         Real b = -n[0] * n[1] * a;
         return std::make_pair(Vector3{1 - n[0] * n[0] * a, b, -n[0]},
-        					  Vector3{b, 1 - n[1] * n[1] * a, -n[1]});
+                              Vector3{b, 1 - n[1] * n[1] * a, -n[1]});
     }
 }
 
 /// A "Frame" is a coordinate basis that consists of three orthogonal vectors.
 /// This is useful for sampling points on a hemisphere or defining anisotropic BSDFs.
 struct Frame {
-	Frame() {}
+    Frame() {}
 
     Frame(const Vector3 &x, const Vector3 &y, const Vector3 &n)
         : x(x), y(y), n(n) {}
