@@ -52,6 +52,7 @@ set(SRCS src/3rdparty/miniz.h
          src/parallel.h
          src/parse_obj.h
          src/parse_scene.h
+         src/path_tracing.h
          src/point_and_normal.h
          src/ray.h
          src/render.h
