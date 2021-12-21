@@ -108,7 +108,8 @@ Real pdf_sample_bsdf_op::operator()(const RoughDielectric &bsdf) const {
     } else {
         Real h_dot_out = dot(half_vector, dir_out);
         Real sqrt_denom = h_dot_in + eta * h_dot_out;
-        return (1 - F) * D * G * eta * eta * fabs(h_dot_out) / (sqrt_denom * sqrt_denom);
+        Real dh_dout = eta * eta * h_dot_out / (sqrt_denom * sqrt_denom);
+        return (1 - F) * D * G * fabs(dh_dout * h_dot_in / n_dot_in);
     }
 }
 

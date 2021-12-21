@@ -100,14 +100,12 @@ Spectrum path_tracing(const Scene &scene,
     // "sample_primary" importance samples both W and G,
     // and we assume it always has weight 1.
 
-    // current path contrib stores the path contribution from 
-    // v0 up to v_{i} (the BSDF f(v_{i-1}, v_i, v_{i+1}) is not included), 
-    // where i is where the PathVertex "vertex" lies on.
-    Spectrum current_path_contrib = fromRGB(Vector3{1, 1, 1});
-    // current_path_pdf stores the probability density of 
-    // computing this path v from v0 up to v_i,
+    // current_path_throughput stores the ratio between
+    // 1) the path contribution from v0 up to v_{i} (the BSDF f(v_{i-1}, v_i, v_{i+1}) is not included), 
+    // where i is where the PathVertex "vertex" lies on, and
+    // 2) the probability density for computing the path v from v0 up to v_i,
     // so that we can compute the Monte Carlo estimates C/p. 
-    Real current_path_pdf = Real(1);
+    Spectrum current_path_throughput = fromRGB(Vector3{1, 1, 1});
     // eta_scale stores the scale introduced by Snell-Descartes law to the BSDF (eta^2).
     // We use the same Russian roulette strategy as Mitsuba/pbrt-v3
     // and tracking eta_scale and removing it from the
@@ -118,7 +116,7 @@ Spectrum path_tracing(const Scene &scene,
     // This path has only two vertices and has contribution
     // C = W(v0, v1) * G(v0, v1) * L(v0, v1)
     if (is_light(scene.shapes[vertex.shape_id])) {
-        radiance += (current_path_contrib / current_path_pdf) *
+        radiance += current_path_throughput *
             emission(vertex, -ray.dir, scene);
     }
 
@@ -149,7 +147,7 @@ Spectrum path_tracing(const Scene &scene,
         // We will set k=2 as suggested by Eric Veach.
 
         // Finally, we set our "next vertex" in the loop to the v_{i+1} generated
-        // by the second sampling, and update current_path_contrib & current_pdf using
+        // by the second sampling, and update current_path_throughput using
         // our hemisphere sampling.
 
         // Let's implement this!
@@ -167,7 +165,7 @@ Spectrum path_tracing(const Scene &scene,
         // Next, we compute w1*C1/p1. We store C1/p1 in C1.
         Spectrum C1 = make_zero_spectrum();
         Real w1 = 0;
-        // Remember "current_path_contrib" already stores all the path contribution on and before v_i.
+        // Remember "current_path_throughput" already stores all the path contribution on and before v_i.
         // So we only need to compute G(v_{i}, v_{i+1}) * f(v_{i-1}, v_{i}, v_{i+1}) * L(v_{i}, v_{i+1})
         {
             // Let's first deal with C1 = G * f * L.
@@ -264,7 +262,7 @@ Spectrum path_tracing(const Scene &scene,
                 C1 /= p1;
             }
         }
-        radiance += (current_path_contrib / current_path_pdf) * C1 * w1;
+        radiance += current_path_throughput * C1 * w1;
 
         // Let's do the hemispherical sampling next.
         Vector3 dir_view = -ray.dir;
@@ -296,9 +294,9 @@ Spectrum path_tracing(const Scene &scene,
         Ray bsdf_ray{vertex.position, dir_bsdf, c_isect_epsilon, infinity<Real>()};
         std::optional<PathVertex> bsdf_vertex = intersect(scene, bsdf_ray);
 
-        // To update current_path_contrib & current_path_pdf,
-        // we need to multiply G(v_{i}, v_{i+1}) * f(v_{i-1}, v_{i}, v_{i+1}) to current_path_contrib
-        // and the pdf for getting v_{i+1} using hemisphere sampling.
+        // To update current_path_throughput
+        // we need to multiply G(v_{i}, v_{i+1}) * f(v_{i-1}, v_{i}, v_{i+1}) to it
+        // and divide it with the pdf for getting v_{i+1} using hemisphere sampling.
         Real G;
         if (bsdf_vertex) {
             G = fabs(dot(dir_bsdf, bsdf_vertex->geometry_normal)) /
@@ -339,7 +337,7 @@ Spectrum path_tracing(const Scene &scene,
             Real w2 = (p2*p2) / (p1*p1 + p2*p2);
 
             C2 /= p2;
-            radiance += (current_path_contrib / current_path_pdf) * C2 * w2;
+            radiance += current_path_throughput * C2 * w2;
         } else if (!bsdf_vertex && has_envmap(scene)) {
             // G & f are already computed.
             const Light &light = get_envmap(scene);
@@ -357,7 +355,7 @@ Spectrum path_tracing(const Scene &scene,
             Real w2 = (p2*p2) / (p1*p1 + p2*p2);
 
             C2 /= p2;
-            radiance += (current_path_contrib / current_path_pdf) * C2 * w2;
+            radiance += current_path_throughput * C2 * w2;
         }
 
         if (!bsdf_vertex) {
@@ -365,22 +363,21 @@ Spectrum path_tracing(const Scene &scene,
             break;
         }
 
-        // Update rays/intersection/current_path_contrib/current_pdf
+        // Update rays/intersection/current_path_throughput/current_pdf
         // Russian roulette heuristics
         Real rr_prob = 1;
         if (num_vertices + 1 >= scene.options.rr_depth) {
-            rr_prob = min(max((1 / eta_scale) * current_path_contrib / current_path_pdf), Real(0.95));
+            rr_prob = min(max((1 / eta_scale) * current_path_throughput), Real(0.95));
             if (next_pcg32_real<Real>(rng) > rr_prob) {
                 // Terminate the path
                 break;
             }
         }
+
         ray = bsdf_ray;
         vertex = *bsdf_vertex;
-        current_path_contrib = current_path_contrib * G * f;
-        current_path_pdf = current_path_pdf * p2 * rr_prob;
+        current_path_throughput = current_path_throughput * (G * f) / (p2 * rr_prob);
     }
-
     return radiance;
 }
 
