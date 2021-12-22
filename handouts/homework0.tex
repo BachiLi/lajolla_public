@@ -225,21 +225,21 @@ lajolla uses the power heuristics for combining different strategies.
 \begin{equation}
     L_i = L_e + f * L_e + f * f * L_e + \dots.
 \end{equation}
-We notice that we are essentially tracing \emph{light paths} with different number of vertices. For light paths with two vertices: one at the camera position and one at a light source, we only need to compute $L_e$. For light paths with three vertices, we need to account for one scattering event and multiply $f$. If we define a light path with a sequence of directions: $\mathbf{D} = ((x', y'), \mathbf{d}_1, \mathbf{d}_2, \dots)$, then we can define a \emph{path contribution function} $f_d$ to compute the contribution of that single light path. From above, we can see that
+We notice that we are essentially tracing \emph{light paths} with different number of vertices. For light paths with two vertices: one at the camera position and one at a light source, we only need to compute $L_e$. For light paths with three vertices, we need to account for one scattering event and multiply $f$. If we define a light path with a sequence of directions: $\mathbf{D} = ((x', y'), \mathbf{\omega}_1, \mathbf{\omega}_2, \dots)$, then we can define a \emph{path contribution function} $f_d$ to compute the contribution of that single light path. From above, we can see that
 \begin{equation}
-    f_d(\mathbf{D}) = k(x', y') f(\mathbf{p}_1, \mathbf{d}_0(x', y'), \mathbf{d}_1) f(\mathbf{p}_2, \mathbf{d}_1, \mathbf{d}_2) \dots L_e(\mathbf{p}_N, \mathbf{d}_N).
+    f_d(\mathbf{D}) = k(x', y') f(\mathbf{p}_1, \mathbf{\omega}_0(x', y'), \mathbf{\omega}_1) f(\mathbf{p}_2, \mathbf{\omega}_1, \mathbf{\omega}_2) \dots L_e(\mathbf{p}_N, \mathbf{d}_N).
 \end{equation}
 (I might have get some signs wrong but don't worry about it.)
 
 We can then rewrite the rendering integral as
 \begin{equation}
-    I_{x, y} = \int f_d(\mathbf{D}) \mathrm{d} D(\mathbf{d}),
+    I_{x, y} = \int f_d(\mathbf{D}) \mathrm{d} D(\mathbf{\omega}),
 \end{equation}
-where the measure $D(\mathbf{d})$ is the product of solid angle of the path directions $\mathbf{d}_i$.
+where the measure $D(\mathbf{\omega})$ is the product of solid angle of the path directions $\mathbf{\omega}_i$.
 
 A path can also be written in many different forms. A very convienent form is to define the path as a sequence of positions, as opposed of directions: $\mathbf{P} = (\mathbf{p}_0, \mathbf{p}_1, \mathbf{p}_2, \dots)$. While these two forms are equivalent, this again is a change of variable. The new path contribution function $f_p(\mathbf{P})$ is:
 \begin{equation}
-    f_p(\mathbf{P}) = k((x', y')(\mathbf{p}_0, \mathbf{p_1})) G_0(\mathbf{p}_0, \mathbf{p}_1) f(\mathbf{p}_1, \mathbf{d}_0, \mathbf{d}_1)G(\mathbf{p}_1, \mathbf{p}_2) f(\mathbf{p}_2, \mathbf{d}_1, \mathbf{d}_2) \dots G(\mathbf{p}_{N-1}, \mathbf{p}_{N}) L_e(\mathbf{p}_N, \mathbf{d}_N),
+    f_p(\mathbf{P}) = k((x', y')(\mathbf{p}_0, \mathbf{p_1})) G_0(\mathbf{p}_0, \mathbf{p}_1) f(\mathbf{p}_1, \mathbf{\omega}_0, \mathbf{\omega}_1)G(\mathbf{p}_1, \mathbf{p}_2) f(\mathbf{p}_2, \mathbf{\omega}_1, \mathbf{\omega}_2) \dots G(\mathbf{p}_{N-1}, \mathbf{p}_{N}) L_e(\mathbf{p}_N, \mathbf{\omega}_N),
 \end{equation}
 where $G$ is again the geometry term that accounts for the Jacobian. The first geometry term $G_0$ is slightly more complicated as it is the Jacobian between $\mathbf{p}_1$ and pixel integral variables $x', y'$. We don't need it here yet, so don't worry about it.
 
