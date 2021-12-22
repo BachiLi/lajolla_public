@@ -45,6 +45,13 @@ struct RoughDielectric {
     Real eta; // internal IOR / externalIOR
 };
 
+/// For problem set 1: the diffuse and subsurface component of the Disney BRDF.
+struct DisneyDiffuse {
+    Texture<Spectrum> base_color;
+    Texture<Real> roughness;
+    Texture<Real> subsurface;
+};
+
 // To add more materials, first create a struct for the material, then overload the () operators for all the
 // functors below.
 using Material = std::variant<Lambertian, RoughPlastic, RoughDielectric>;
