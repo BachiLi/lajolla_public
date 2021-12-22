@@ -547,6 +547,8 @@ std::tuple<std::string /* ID */, Material> parse_bsdf(
                 subsurface = parse_float_texture(child, texture_map, texture_pool);
             }
         }
+        return std::make_tuple(id, DisneyDiffuse{
+            base_color, roughness, subsurface});
     } else {
         Error(std::string("Unknown BSDF: ") + type);
     }
