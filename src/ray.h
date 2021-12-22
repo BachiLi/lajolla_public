@@ -25,8 +25,8 @@ struct Ray {
 /// Here we use an even simpler heuristics: we linearly blend
 /// between the specular spread and a constant based on roughness.
 struct RayDifferential {
-    // Radius is approximatedly (length(dp/dx) + length(dp/dy)) / 2
-    // Spread is approximatedly (length(dd/dx) + length(dd/dy)) / 2
+    // Radius is approximately (length(dp/dx) + length(dp/dy)) / 2
+    // Spread is approximately (length(dd/dx) + length(dd/dy)) / 2
     // p is ray position, d is ray direction.
     Real radius = 0, spread = 0; // The units are pixels.
 };

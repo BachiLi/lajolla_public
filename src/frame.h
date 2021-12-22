@@ -20,7 +20,7 @@ inline std::pair<Vector3, Vector3> coordinate_system(const Vector3 &n) {
     }
 }
 
-/// A "Frame" is a coordinate basis that consists of three orthogonal vectors.
+/// A "Frame" is a coordinate basis that consists of three orthogonal unit vectors.
 /// This is useful for sampling points on a hemisphere or defining anisotropic BSDFs.
 struct Frame {
     Frame() {}

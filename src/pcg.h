@@ -7,9 +7,9 @@
 // to more advanced RNG e.g., Merserner Twister.
 // Highly recommend Melissa O'Neill's talk about PCG https://www.youtube.com/watch?v=45Oet5qjlms
 
-// A crucial feature of PCG is to allow for multiple "streams":
-// given a seed, we can initialize many different streams of RNGs
-// that have different independent random numbers
+// A crucial feature of PCG is that it allows multiple "streams": 
+// given a seed, we can initialize many different streams of RNGs 
+// that have different independent random numbers.
 
 struct pcg32_state {
     uint64_t state;

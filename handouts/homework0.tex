@@ -45,9 +45,9 @@
 
 \header{0}{Introduction to the \textbf{lajolla} Renderer}
 
-For most parts of this course, we will use a custom physically-based renderer called \textbf{lajolla}.\footnote{Many renderers are named over a location. For example, Weta Digital's renderer \emph{Manuka}'s name comes from the Manuka street in front of Weta digital's main site. Pixar's rendering algorithm Reyes comes from Point Reyes in California.} This document presents the design of the lajolla renderer. Your first homework is to read through this document, and build and run the renderer, and look at the renderer's code. This homework is not graded. However, since lajolla is still at its early stage, we expect it to have a few bugs. If you find or fix any bugs in lajolla throughout the course, you will get extra points!
+For most parts of this course, we will use a custom physically-based renderer called \textbf{lajolla}.\footnote{Many renderers are named over a location. For example, Weta Digital's renderer \emph{Manuka}'s name comes from the Manuka street in front of Weta digital's main site. Pixar's rendering algorithm Reyes comes from Point Reyes in California.} This document presents the design of the lajolla renderer. Your first homework is to read through this document, and build and run the renderer, and look at the renderer's code. This homework will not no graded. However, since lajolla is still at its early stage, we expect it to have a few bugs. If you find or fix any bugs in lajolla throughout the course, you will get extra points!
 
-Lajolla is a \emph{physically-based} renderer. It takes a 3D scene description (camera, lights, geometry, materials, etc) and input, and produces an image by simulating how photons emitted from the light sources scattered in the scene and eventually reach the camera. This is how modern visual effects, and many video games produce stunning and realistic images. Apart from movies and games, physically-based rendering is also used in augmented reality, architectural visualization, daylight simulation, product visualization, medical imaging, computer vision, autonomous driving and more. A startup \href{https://www.luxion.com/}{Luxion} from a UCSD faculty \href{http://graphics.ucsd.edu/~henrik/}{Henrik Jensen} is about building physically-based renderers and use them for many applications above.
+Lajolla is a \emph{physically-based} renderer. It takes a 3D scene description (camera, lights, geometry, materials, etc.) and input, and produces an image by simulating how photons emitted from the light sources scattered in the scene and eventually reach the camera. This is how modern visual effects, and many video games produce stunning and realistic images. Apart from movies and games, physically-based rendering is also used in augmented reality, architectural visualization, daylight simulation, product visualization, medical imaging, computer vision, autonomous driving, and more. A startup \href{https://www.luxion.com/}{Luxion} from a UCSD faculty \href{http://graphics.ucsd.edu/~henrik/}{Henrik Jensen} is about building physically-based renderers and using them for many applications above.
 
 \section{Building and running lajolla}
 \begin{figure}[h]
@@ -59,8 +59,7 @@ Lajolla is a \emph{physically-based} renderer. It takes a 3D scene description (
     \label{fig:gallery}
 \end{figure}
 
-Before we started, let's try to clone, build the code and run it. Lajolla does not require you to download any external libraries (hopefully). While we do rely on many 3rdparty libraries, we only use lightweight header-only ones that can be easily included and do not complicate the build systems. To clone the codebase, do
-
+Before we start, let's try to clone, build the code and run it. Lajolla does not require you to download any external libraries (hopefully). While we do rely on many 3rdparty libraries, we only use lightweight header-only ones that can be easily included and do not complicate the build systems. To clone the codebase, do
 \begin{lstlisting}[language=bash]
   git clone https://github.com/BachiLi/lajolla_public
 \end{lstlisting}
@@ -74,7 +73,7 @@ We use \href{https://cmake.org/}{CMake} as our build system. To build, on a Unix
   make -j
 \end{lstlisting}
 
-On Windows, latest visual studio supports directly using CMake as project files.\footnote{\url{https://docs.microsoft.com/en-us/cpp/build/cmake-projects-in-visual-studio?view=msvc-170}} Alternatively, you can use CMake's graphical user interface downloaded from CMake's website. However, we have received reports that lajolla can crash on Windows machines. You might want to consider using Windows Subsystems for Linux to use a Unix-like systems for building and running lajolla (or you can help us fixing issues on Windows and get extra points!). 
+On Windows, latest visual studios support directly using CMake as project files.\footnote{\url{https://docs.microsoft.com/en-us/cpp/build/cmake-projects-in-visual-studio?view=msvc-170}} Alternatively, you can use CMake's graphical user interface downloaded from CMake's website. However, we have received reports that lajolla can crash on Windows machines. You might want to consider using Windows Subsystems for Linux to use a Unix-like system for building and running lajolla (or you can help us fix issues on Windows and get extra points!). 
 
 Once lajolla is built, you can try to render some images in the \lstinline{scenes} directory. Try
 \begin{lstlisting}[language=bash]
@@ -83,19 +82,19 @@ Once lajolla is built, you can try to render some images in the \lstinline{scene
 
 After the reading is done, you will see an image file \lstinline{image.exr} appeared in your working directory. EXRs are \href{https://en.wikipedia.org/wiki/High_dynamic_range}{\emph{high-dynamic range images}} and require a different image viewer. We recommend viewing it using \href{https://github.com/wkjarosz/hdrview}{HDRView} or \href{https://github.com/Tom94/tev}{Tev}. You should be able to see images like the ones in Figure~\ref{fig:gallery} (maybe noiser, since the default settings for these scenes use a smaller number of light simulation samples compared to the ones in the figure).
 
-The scene format in lajolla follows the Mitsuba scene format, where you can read the documentation \href{https://www.mitsuba-renderer.org/releases/current/documentation.pdf}{here}. The scene files are human readable, so by just looking at those files should gives you a reasonable idea.
+The scene format in lajolla follows the Mitsuba scene format, where you can read the documentation \href{https://www.mitsuba-renderer.org/releases/current/documentation.pdf}{here}. The scene files are human-readable, so just looking at those files should give you a reasonable idea.
 
 \section{Design philosophy}
 
 Lajolla mostly follows the design of other existing physically-based renderers, such as \href{https://github.com/mmp/pbrt-v3/}{pbrt} or \href{http://www.mitsuba-renderer.org/}{Mitsuba}. It however follows a few different designs:
 
-\paragraph{Minimalism.} While already sophisticated, lajolla is much less feature complete compared to pbrt or Mitsuba. This is the main reason we are inventing our own renderer instead of adopting existing ones. This is mostly for educational purpose: if all the features are implemented, there won't be any homeworks. : )
+\paragraph{Minimalism.} While already sophisticated, lajolla is much less feature-complete compared to pbrt or Mitsuba. This is the main reason we are inventing our own renderer instead of adopting existing ones. This is mostly for educational purposes: if all the features are implemented, there won't be any homework. : )
 
-\paragraph{Clarity and simplicity over performance.} Lajolla does not try to become the fastest renderer in the world. The focus is on education. For example, by default lajolla uses double for most floating point computation and does not explicitly vectorize over any computation.
+\paragraph{Clarity and simplicity over performance.} Lajolla does not try to become the fastest renderer in the world. The focus is on education. For example, by default lajolla uses double for most floating-point computation and does not explicitly vectorize over any computation.
 
 \paragraph{No singular light sources or materials.} Lajolla does not support point light sources or purely specular materials. These components introduce many corner cases of a renderer and require special handling, making the renderer maintenance more complicated. We approximate them using small light sources or very sharp glossy materials.
 
-\paragraph{Portability to GPU.} Lajolla does not run on GPUs. The goal of this course is to teach the foundation of modern physically-based rendering instead of all the implementation details. That being said, given that GPU rendering is going to be increasingly important even in the offline rendering world, we need to learn how to build a renderer that is more portable to GPUs. Most functions and data structures in lajolla should be directly usable in CUDA or OpenCL code, given small amount of modification. Lajolla avoids deeply nested hierarchical data structures and also avoids heap allocation in the inner loop as much as possible.
+\paragraph{Portability to GPU.} Lajolla does not run on GPUs. The goal of this course is to teach the foundation of modern physically-based rendering instead of all the implementation details. That being said, given that GPU rendering is going to be increasingly important even in the offline rendering world, we need to learn how to build a renderer that is more portable to GPUs. Most functions and data structures in lajolla should be directly usable in CUDA or OpenCL code, given a small amount of modification. Lajolla avoids deeply nested hierarchical data structures and also avoids heap allocation in the inner loop as much as possible.
 
 \paragraph{Modern C++.} Lajolla uses modern C++ features extensively (fortunately, it does not use template metaprogramming extensively). This means it prefers value semantics over reference semantics:
 \begin{lstlisting}[language=C++]
@@ -106,7 +105,7 @@ Lajolla mostly follows the design of other existing physically-based renderers, 
 \end{lstlisting}
 We do not declare \lstinline{auto} that often, since I am still not convinced that it would not hurt code readability.
 
-\paragraph{Variant-based polymorphism.} Perhaps the biggest different on the surface between lajolla and most other (CPU-based) renderers is how it implements polymorphism. In rendering, the same rendering code would need to handle different materials, lights, cameras, and etc. Most renderers adopt a heavily object-oriented design with classes and inheritance. While this is an acceptable approach, the hierarchical vtable pointers make the whole scene data structure very difficult to convert to GPU. I also personally just do not think OOP is a good idea\footnote{see \href{https://www.youtube.com/watch?v=QM1iUe6IofM}{``Object-Oriented Programming is Bad''} from Brain Will}. To support polymorphism, we use a modern C++ feature \lstinline{std::variant}. It is essentially a \emph{tagged union} (or a \emph{sum type} if you are functional guru): a C union with a member indicating which type it is. Read more about it \href{https://www.cppstories.com/2020/04/variant-virtual-polymorphism.html/}{here}. Another renderer \href{visionaray}{https://github.com/szellmann/visionaray} also adopts a similar approach.
+\paragraph{Variant-based polymorphism.} Perhaps the biggest difference on the surface between lajolla and most other (CPU-based) renderers is how it implements polymorphism. In rendering, the same rendering code would need to handle different materials, lights, cameras, and etc. Most renderers adopt a heavily object-oriented design with classes and inheritance. While this is an acceptable approach, the hierarchical vtable pointers make the whole scene data structure very difficult to convert to GPU. I also personally just do not think OOP is a good idea\footnote{see \href{https://www.youtube.com/watch?v=QM1iUe6IofM}{``Object-Oriented Programming is Bad''} from Brain Will}. To support polymorphism, we use a modern C++ feature \lstinline{std::variant}. It is essentially a \emph{tagged union} (or a \emph{sum type} if you are functional guru): a C union with a member indicating which type it is. Read more about it \href{https://www.cppstories.com/2020/04/variant-virtual-polymorphism.html/}{here}. Another renderer \href{visionaray}{https://github.com/szellmann/visionaray} also adopts a similar approach.
 
 Below we will take a whirlwind tour over the basics of physically-based rendering and how they are implemented in lajolla.
 
@@ -115,7 +114,7 @@ Below we will take a whirlwind tour over the basics of physically-based renderin
     \centering
     \includegraphics[width=0.4\linewidth]{imgs/pixel_filter.pdf}
     \includegraphics[width=0.4\linewidth]{imgs/antialiasing.pdf}
-    \caption{To reconstruct the continuous scene from the discrete pixel samples, the color of a pixel is reconstructed by integrating over a \emph{pixel filter}.}
+    \caption{To reconstruct the continuous scene from the discrete pixel samples, the color of a pixel is computed by integrating over a \emph{pixel filter}.}
     \label{fig:pixel_filter}
 \end{figure}
 
@@ -126,19 +125,19 @@ Below we will take a whirlwind tour over the basics of physically-based renderin
     \label{fig:camera}
 \end{figure}
 
-How does lajolla, or many other modern physically-based renderer compute the color for each pixel? They do this by \emph{integrating} all lights that goes through a pixel. Note that a pixel is not a infinitesimal point, not is it a little square~\cite{Smith:1995:PLS}. \textbf{A pixel is a reconstruction filter over an image function at a certain locatio} (Figure~\ref{fig:pixel_filter}). Mathematically, a pixel $I_{x, y}$'s color is written as an filtering integral:
+How does lajolla, or many other modern physically-based renderer compute the color for each pixel? They do this by \emph{integrating} all lights that go through a pixel. Note that a pixel is not an infinitesimal point, nor is it a little square~\cite{Smith:1995:PLS}. \textbf{A pixel is a reconstruction filter over an image function at a certain location} (Figure~\ref{fig:pixel_filter}). Mathematically, a pixel $I_{x, y}$'s color is written as a filtering integral:
 \begin{equation}
     I_{x, y} = \iint_{D} k(x', y') L(\mathbf{p}, \mathbf{\omega}(x + x', y + y')) \mathrm{d}x\mathrm{d}y,
     \label{eq:pixel_filter}
 \end{equation}
 where $k$ is the \emph{filter kernel}, $D$ is the \emph{support} of the filter kernel (the pixel location where its value is non-zero), and $L(\mathbf{p}, \mathbf{\omega})$ is the radiance at point $\mathbf{p}$, received from direction $\mathbf{\omega}$ where the direction is pointing outwards from $\mathbf{p}$. In our case, $\mathbf{p}$ is the position of the camera, and $\mathbf{\omega}$ is the direction between the camera position and the points on the film (Figure~\ref{fig:camera}).
 
-Now we have three questions: 1) what is the filter kernel $k$? 2) what is the radiance $L$?, and 3) how do we evaluate this integral on a computer? For 1), we will discuss a bit more in Section~\ref{sec:pixel_filter}, but for now you can think of it as something like a 2D Gaussian. For 3), these integrals typically do not have closed-form solutions,\footnote{There are rendering algorithms that based on closed-form solutions of these integrals. Some radiosity algorithms~\cite{Schroder:1993:OFF} make use of closed-form solutions, for example. Also check out the excellent paper from Heitz et al.~\cite{Heitz:2016:RPS}} so we need to \emph{discretize} these integrals:
+Now we have three questions: 1) what is the filter kernel $k$? 2) what is the radiance $L$?, and 3) how do we evaluate this integral on a computer? For 1), we will discuss a bit more in Section~\ref{sec:pixel_filter}, but for now you can think of it as something like a 2D Gaussian. For 3), these integrals typically do not have closed-form solutions,\footnote{There are rendering algorithms that are based on closed-form solutions of these integrals. Some radiosity algorithms~\cite{Schroder:1993:OFF} make use of closed-form solutions, for example. Also check out the excellent paper from Heitz et al.~\cite{Heitz:2016:RPS}} so we need to \emph{discretize} these integrals:
 \begin{equation}
     \int_{D} F(x) dx \approx \frac{1}{N} \sum_{i=1}^{N} F(x_i),
     \label{eq:discretization}
 \end{equation}
-where $x_i$ are samples in uniform measures drawn from the domain $D$. When $x_i$ are random samples, this is called \emph{Monte Carlo} integration.\footnote{Monte Carlo integration was first invented for numerical simulation of nuclear weapons. Nicholas Metropolis, a member of the Manhatton Project, suggested the name to the simulation guy Stanislaw Ulam since Ulam's uncle likes to go to Monte Carlo for gambling.} However, $x_i$ do not need to be random. It can be determinisic samples that just somewhat uniformly cover the domain. When $x_i$ are deterministic, this approximation is often called \emph{quadrature} or \emph{cubature}. There is another class of deterministic integration methods called \emph{Quasi Monte Carlo} methods, which is based on the idea of carefully placing samples to make sure they are not far away from each other. We will cover these in the class if time permits.
+where $x_i$ are samples in uniform measures drawn from the domain $D$. When $x_i$ are random samples, this is called \emph{Monte Carlo} integration.\footnote{Monte Carlo integration was first invented for numerical simulation of nuclear weapons. Nicholas Metropolis, a member of the Manhattan Project, suggested the name to the simulation guy Stanislaw Ulam since Ulam's uncle likes to go to Monte Carlo for gambling.} However, $x_i$ does not need to be random. It can be deterministic samples that just somewhat uniformly cover the domain. When $x_i$ are deterministic, this approximation is often called \emph{quadrature} or \emph{cubature}. There is another class of deterministic integration methods called \emph{Quasi Monte Carlo} methods, which is based on the idea of carefully placing samples to make sure they are not far away from each other. We will cover these in the class if time permits.
 
 \begin{figure}[h]
     \centering
@@ -151,7 +150,7 @@ We are still left with Q2: what is the radiance $L$? In this class, we are mostl
 \begin{equation}
     L(\mathbf{p}, \mathbf{\omega}) = L_i(\mathbf{p}', -\mathbf{\omega}),
 \end{equation}
-where $\mathbf{p}'$ is the point the direction $\mathbf{d}$ intersect with the scene. Then -- what is $L_i$? An object is lit by a light source. However, as photons scatter between objects, a photon can first hit object A before it hits object B. Therefore we need to recursively consider all objects in the scene:
+where $\mathbf{p}'$ is the point the direction $\mathbf{\omega}$ intersect with the scene. Then -- what is $L_i$? An object is lit by a light source. However, as photons scatter between objects, a photon can first hit object A before it hits object B. Therefore, we need to recursively consider all objects in the scene:
 \begin{equation}
     L_i(\mathbf{p}, \mathbf{\omega}) = L_e(\mathbf{p}, \mathbf{\omega}) + \int_{\Omega} f(\mathbf{p}, \mathbf{\omega}, \mathbf{\omega}') |\mathbf{n}_{\mathbf{p}} \cdot \mathbf{\omega}'| L_i(\mathbf{p}', -\mathbf{\omega}') \mathrm{d} \mathbf{\omega},
     \label{eq:rendering_equation}
@@ -165,11 +164,11 @@ The naive algorithm above is correct, but can be inefficient. Consider a special
 \begin{equation}
     L_i(\mathbf{p}, \mathbf{d}) = L_e(\mathbf{p}, \mathbf{\omega}) + \int_{\Omega} f(\mathbf{p}, \mathbf{\omega}, \mathbf{\omega}') |\mathbf{n}_{\mathbf{p}} \cdot \mathbf{\omega}'| L_e(\mathbf{p}', -\mathbf{\omega}') \mathrm{d} \mathbf{\omega}.
 \end{equation}
-The only difference is that instead of $L_i$ in the integral that recursively integrate over all the other surfaces, we only consider the light source contribution $L_e$. Remember that we approximate the integral using a discrete sum. Suppose we randomly sample a direction on a sphere:
+The only difference is that instead of $L_i$ in the integral that recursively integrates over all the other surfaces, we only consider the light source contribution $L_e$. Remember that we approximate the integral using a discrete sum. Suppose we randomly sample a direction on a sphere:
 \begin{equation}
   \int_{\Omega} f(\mathbf{p}, \mathbf{\omega}, \mathbf{\omega}') |\mathbf{n}_{\mathbf{p}} \cdot \mathbf{\omega}'| L_e(\mathbf{p}', -\mathbf{\omega}') \mathrm{d} \mathbf{\omega} \approx \frac{1}{N} \frac{1}{\frac{1}{4 \pi}} \sum_{i}^{N} f(\mathbf{p}, \mathbf{\omega}, \mathbf{\omega}_i') |\mathbf{n}_{\mathbf{p}} \cdot \mathbf{\omega}'| L_e(\mathbf{p}', -\mathbf{\omega}_i').
 \end{equation}
-The $\frac{1}{\frac{1}{4\pi}}$ factor accounts for the uniform measure on an unit sphere. The variance of this sum can be really high if $N$ is not large enough: firstly, not every surface in the scene emits light, so only a small fraction of samples would have non-zero $L_e$. Secondly, our sampling does not take the BSDF $f$ into consideration: $f$ can have high variation between different samples.
+The $\frac{1}{\frac{1}{4\pi}}$ factor accounts for the uniform measure on a unit sphere. The variance of this sum can be really high if $N$ is not large enough: firstly, not every surface in the scene emits light, so only a small fraction of samples would have non-zero $L_e$. Secondly, our sampling does not take the BSDF $f$ into consideration: $f$ can have high variation between different samples.
 
 Fortunately, there is a way to make this sampling more efficient. The key is to apply a change of variable to our integral. Let's focus on the emission $L_e$ first. Instead of blindly sampling a direction on the sphere, we can directly pick a point on the light source, then choose a direction towards that point. So instead of integrating over the direction $\mathbf{\omega}$, we apply a change of variable to instead integrate over the points $\mathbf{p}$ that emit lights:
 \begin{equation}
@@ -196,9 +195,9 @@ If we have multiple change of variables we want to apply (e.g., sampling from li
 \frac{1}{2} \frac{g(x(z_i))}{|\frac{\mathrm{d}T_2}{\mathrm{d}x}(x(z_i))|}.
 \end{equation}
 
-This is, however, not a great idea. If one of our sampling transformation has high variance, even if the other one achieves zero variance, this resulting estimator would still have very high variance.
+This is, however, not a great idea. If one of our sampling transformations has high variance, even if the other one achieves zero variance, this resulting estimator would still have a very high variance.
 
-Eric Veach made a breakthrough in physically-based rendering by figuring out how we combine different estimators~\cite{Veach:1995:OCS}. The idea is to apply higher weight for the \emph{better} estimator. How do we know which estimator is better? We look at the Jacobian $|\frac{\mathrm{d}T}{\mathrm{d}x}(x)|$, or equivalently the probability density: if the Jacobian is high, that means that our sampling strategy has high sampling density around $x_i$ -- which means it's more efficient around that area. We can weight the samples using the corresponding Jacobian:
+Eric Veach made a breakthrough in physically-based rendering by figuring out how we combine different estimators~\cite{Veach:1995:OCS}. The idea is to apply higher weight for the \emph{better} estimator. How do we know which estimator is better? We look at the Jacobian $|\frac{\mathrm{d}T}{\mathrm{d}x}(x)|$, or equivalently the probability density: if the Jacobian is high, that means that our sampling strategy has high sampling density around $x_i$ -- which means it's more efficient around that area. We can weigh the samples using the corresponding Jacobian:
 \begin{equation}
 \frac{1}{N} \sum
 \frac{|\frac{\mathrm{d}T_1}{\mathrm{d}x}(x(y_i))|}{|\frac{\mathrm{d}T_1}{\mathrm{d}x}(x(y_i))| + |\frac{\mathrm{d}T_2}{\mathrm{d}x}(x(y_i))|}
@@ -217,7 +216,7 @@ Alternatively, Veach also proposed another weight called the \emph{power heurist
 \frac{g(x(z_i))}{|\frac{\mathrm{d}T_2}{\mathrm{d}x}(x(z_i))|}.
 \end{equation}
 
-Veach made more justification of the method in his paper (which I highly recommend you to read!). However note that these are ultimately ``heuristics'', and they can be suboptimal in certain cases. Finding better multiple importance sampling weights is an active research area.
+Veach made more justification of the method in his paper (which I highly recommend you to read!). However, note that these are ultimately ``heuristics'', and they can be suboptimal in certain cases. Finding better multiple importance sampling weights is an active research area.
 
 lajolla uses the power heuristics for combining different strategies.
 
@@ -225,7 +224,7 @@ lajolla uses the power heuristics for combining different strategies.
 \begin{equation}
     L_i = L_e + f * L_e + f * f * L_e + \dots.
 \end{equation}
-We notice that we are essentially tracing \emph{light paths} with different number of vertices. For light paths with two vertices: one at the camera position and one at a light source, we only need to compute $L_e$. For light paths with three vertices, we need to account for one scattering event and multiply $f$. If we define a light path with a sequence of directions: $\mathbf{D} = ((x', y'), \mathbf{\omega}_1, \mathbf{\omega}_2, \dots)$, then we can define a \emph{path contribution function} $f_d$ to compute the contribution of that single light path. From above, we can see that
+We notice that we are essentially tracing \emph{light paths} with a different number of vertices. For light paths with two vertices: one at the camera position and one at a light source, we only need to compute $L_e$. For light paths with three vertices, we need to account for one scattering event and multiply $f$. If we define a light path with a sequence of directions: $\mathbf{D} = ((x', y'), \mathbf{\omega}_1, \mathbf{\omega}_2, \dots)$, then we can define a \emph{path contribution function} $f_d$ to compute the contribution of that single light path. From above, we can see that
 \begin{equation}
     f_d(\mathbf{D}) = k(x', y') f(\mathbf{p}_1, \mathbf{\omega}_0(x', y'), \mathbf{\omega}_1) f(\mathbf{p}_2, \mathbf{\omega}_1, \mathbf{\omega}_2) \dots L_e(\mathbf{p}_N, \mathbf{d}_N).
 \end{equation}
@@ -237,7 +236,7 @@ We can then rewrite the rendering integral as
 \end{equation}
 where the measure $D(\mathbf{\omega})$ is the product of solid angle of the path directions $\mathbf{\omega}_i$.
 
-A path can also be written in many different forms. A very convienent form is to define the path as a sequence of positions, as opposed of directions: $\mathbf{P} = (\mathbf{p}_0, \mathbf{p}_1, \mathbf{p}_2, \dots)$. While these two forms are equivalent, this again is a change of variable. The new path contribution function $f_p(\mathbf{P})$ is:
+A path can also be written in many different forms. A very convenient form is to define the path as a sequence of positions, as opposed of directions: $\mathbf{P} = (\mathbf{p}_0, \mathbf{p}_1, \mathbf{p}_2, \dots)$. While these two forms are equivalent, this again is a change of variable. The new path contribution function $f_p(\mathbf{P})$ is:
 \begin{equation}
     f_p(\mathbf{P}) = k((x', y')(\mathbf{p}_0, \mathbf{p_1})) G_0(\mathbf{p}_0, \mathbf{p}_1) f(\mathbf{p}_1, \mathbf{\omega}_0, \mathbf{\omega}_1)G(\mathbf{p}_1, \mathbf{p}_2) f(\mathbf{p}_2, \mathbf{\omega}_1, \mathbf{\omega}_2) \dots G(\mathbf{p}_{N-1}, \mathbf{p}_{N}) L_e(\mathbf{p}_N, \mathbf{\omega}_N),
 \end{equation}
@@ -262,7 +261,7 @@ struct Camera {
     Filter filter;
 };
 \end{lstlisting}
-The matrices transforms a 2D pixel location $(x, y)$ to a ray direction $\omega$. The \lstinline{sample_primary} function implements the functionality for sampling a ray given a screen position.
+The matrices transform a 2D pixel location $(x, y)$ to a ray direction $\omega$. The \lstinline{sample_primary} function implements the functionality for sampling a ray given a screen position.
 \begin{lstlisting}[language=c++]
 /// Given screen position in [0, 1] x [0, 1], generate a camera ray.
 Ray sample_primary(const Camera &camera,
@@ -296,7 +295,7 @@ Ray sample_primary(const Camera &camera,
     \label{fig:pixel_filter_comp}
 \end{figure}
 
-A crucial component of the camera is the \emph{pixel filter}, which corresponds to the $k$ kernel above. As we have emphasized: \textbf{a pixel is not a little square}. It is a reconstruction from a discrete sampling of a continuous underlying signal. The choice of the reconstruction filter/kernel can have significant impact on the quality of the reconstruction. A naive box filter can suffer from servere \emph{aliasing} effects, since it's Fourier transform is a sinc function that can have negative weights in frequency domain and high-frequency energy. Lajolla currently supports three different filters (Figure~\ref{fig:pixel_filter_comp} \footnotetext{In this particular case, a proper texture prefiltering should give a better result, but checkerboard texture filtering has not been implemented in lajolla.}):
+A crucial component of the camera is the \emph{pixel filter}, which corresponds to the $k$ kernel above. As we have emphasized: \textbf{a pixel is not a little square}. It is a reconstruction from a discrete sampling of a continuous underlying signal. The choice of the reconstruction filter/kernel can have a significant impact on the quality of the reconstruction. A naive box filter can suffer from severe \emph{aliasing} effects, since its Fourier transform is a sinc function that can have negative weights in the frequency domain and high-frequency energy. Lajolla currently supports three different filters (Figure~\ref{fig:pixel_filter_comp} \footnotetext{In this particular case, a proper texture prefiltering should give a better result, but checkerboard texture filtering has not been implemented in lajolla.}):
 
 \begin{lstlisting}[language=c++]
 struct Box {
@@ -311,9 +310,9 @@ struct Gaussian {
 using Filter = std::variant<Box, Tent, Gaussian>;
 \end{lstlisting}
 
-Lajolla implements pixel filtering in a slightly different way compared to other open source renderes such as Mitsuba or pbrt. Many common open source renderers implement pixel filtering using a "splatting" approach: they sample a point from a pixel, and then splat the contribution to all nearby pixels overlapped with the filter support. This approach works fine, but has a few disadvantages:
+Lajolla implements pixel filtering in a slightly different way compared to other open-source renderes such as Mitsuba or pbrt. Many common open-source renderers implement pixel filtering using a "splatting" approach: they sample a point from a pixel, and then splat the contribution to all nearby pixels overlapped with the filter support. This approach works fine, but has a few disadvantages:
 \begin{itemize}
-    \item This introduces race conditions between different pixels, and require atomic operations.
+    \item This introduces race conditions between different pixels, and requires atomic operations.
     \item This introduces correlation between pixels and hurts denoising.
     \item The splatting approach is biased and creates artifacts at low sampling rates.
     \item For filters with infinite supports (e.g., Gaussian), this requires a discontinuous cutoff radius (otherwise it would be too slow).
@@ -404,11 +403,11 @@ Ray sample_primary(const Camera &camera,
         \caption{rough dielectric}
         \label{fig:rough_dielectric}
     \end{subfigure}
-    \caption{Three materials lajolla supports currently. Lambertian is a diffusive material that reflects light uniformly. Rough plastic is a two-layer material with a dielectric coating at the top, and a diffusive material at the bottom. The Fresnel equation $F$ determines how much lights are reflected, and how much are refracted into the diffusive material. If light is reflected at the dielectric layer, a distribution centered at the mirror reflection angle determined by the microfacet theory~\cite{Cook:1982:RMC} is used. If light is reflected through the dielectric layer, a Lambertian response is used, attenuated by the Fresnel reflection. Finally, the rough dielectric material is similar to the dielectric layer of rough plastic, but it refracts light by an amount predicted by Fresnel equation.}
+    \caption{Three materials lajolla supports currently. Lambertian is a diffusive material that reflects light uniformly. Rough plastic is a two-layer material with a dielectric coating at the top, and a diffusive material at the bottom. The Fresnel equation $F$ determines how much lights are reflected, and how much are refracted into the diffusive material. If the light is reflected at the dielectric layer, a distribution centered at the mirror reflection angle determined by the microfacet theory~\cite{Cook:1982:RMC} is used. If the light is reflected through the dielectric layer, a Lambertian response is used, attenuated by the Fresnel reflection. Finally, the rough dielectric material is similar to the dielectric layer of rough plastic, but it refracts light by an amount predicted by the Fresnel equation.}
     \label{fig:materials}
 \end{figure}
 
-Recall that in the rendering equation, we need the BSDF $f$ for describing how objects reflect or refract lights. Designing and capturing BSDFs is a large field of study, and we will cover some of them in this course. Lajolla currently supports three different materials/BSDFs (and you will implement one more in the next homework!):
+Recall that in the rendering equation, we need the BSDF $f$ for describing how objects reflect or refract lights. Designing and capturing BSDFs is a large field of study, and we will cover some of them in this course. Lajolla currently supports three different materials/BSDFs (and you will implement a few more in the next homework!):
 \begin{lstlisting}[language=c++]
 struct Lambertian {
     Texture<Spectrum> reflectance;
@@ -433,7 +432,7 @@ struct RoughDielectric {
 };
 \end{lstlisting}
 
-See Figure~\ref{fig:materials} for explanation of the three materials. While we will cover them in the course, I highly recommend Cook and Torrance's seminal paper~\cite{Cook:1982:RMC} for a primer of the microfacet-based BSDFs. You should also read Walter's paper on extending Cook and Torrance's model to handle refraction~\cite{Walter:2007:MMR}.
+See Figure~\ref{fig:materials} for an explanation of the three materials. While we will cover them in the course, I highly recommend Cook and Torrance's seminal paper~\cite{Cook:1982:RMC} for a primer of the microfacet-based BSDFs. You should also read Walter's paper on extending Cook and Torrance's model to handle refraction~\cite{Walter:2007:MMR}.
 
 \paragraph{Material interfaces.} Every material in lajolla needs to implement the following functions:
 \begin{lstlisting}[language=c++]
@@ -490,10 +489,10 @@ Real pdf_sample_bsdf(const Material &material,
 const TextureSpectrum &get_texture(const Material &material);
 \end{lstlisting}
 
-The comments should be self-explanatory. If they are not, let us know. Note that in lajolla, the BSDF functions also contain the cosine term $|\mathbf{n}_{\mathbf{p}} \cdot \omega'|$: this makes the overall code simpler. \textbf{For the homeworks, you do not need to worry about \lstinline{TransportDirection}: you can assume they are always pointing towards the lights.} This is for convienence for implementing a bidirectional path tracer.
+The comments should be self-explanatory. If they are not, let us know. Note that in lajolla, the BSDF functions also contain the cosine term $|\mathbf{n}_{\mathbf{p}} \cdot \omega'|$: this makes the overall code simpler. \textbf{For the homework, you do not need to worry about \lstinline{TransportDirection}: you can assume they are always pointing towards the lights.} This is for convenience for implementing a bidirectional path tracer.
 
 \subsection{Textures and filtering}
-Almost all values of a material should be spatially varying. Textures are a way to describe these spatially varying materials using a 2D function: given a 2D coordinates $(u, v)$, a texture maps it to a value $T$ (can be a color or just a real number). There are three kinds of textures in lajolla currently:
+Almost all values of material should be spatially varying. Textures are a way to describe these spatially varying materials using a 2D function: given a 2D coordinates $(u, v)$, a texture maps it to a value $T$ (can be a color or just a real number). There are three kinds of textures in lajolla currently:
 
 \begin{lstlisting}[language=c++]
 template <typename T>
@@ -526,7 +525,7 @@ template <typename T>
 T eval(const Texture<T> &texture, const Vector2 &uv, Real footprint, const TexturePool &pool);
 \end{lstlisting}
 
-In lajolla, all surfaces must come with a 2D $(u, v)$ parametrization. We use this 2D $uv$ vector $(\in [0, 1]^2)$ for accessing the textures. A constant texture uses a constant value for all $uv$. An image texture loads an image from file and uses it for representing the texture. A checkerboard texture is a procedural texture that outputs a checkerboard pattern (see Figure~\ref{fig:pixel_filter_comp} for example).
+In lajolla, all surfaces must come with a 2D $(u, v)$ parametrization. We use this 2D $uv$ vector $(\in [0, 1]^2)$ for accessing the textures. A constant texture uses a constant value for all $uv$. An image texture loads an image from a file and uses it to represent the texture. A checkerboard texture is a procedural texture that outputs a checkerboard pattern (see Figure~\ref{fig:pixel_filter_comp} for example).
 
 \begin{figure}
     \centering
@@ -538,17 +537,17 @@ In lajolla, all surfaces must come with a 2D $(u, v)$ parametrization. We use th
 \begin{figure}
     \centering
     \includegraphics[width=0.3\linewidth]{imgs/ray_differential.pdf}
-    \caption{We use a simplified and conservative ray differential adopted by RenderMan: a radius and a spread is maintain for each ray for determining the texture footprint.}
+    \caption{We use a simplified and conservative ray differential adopted by RenderMan: a radius and a spread is maintained for each ray for determining the texture footprint.}
     \label{fig:ray_differential}
 \end{figure}
 
-\paragraph{Filtering and ray differentials.} Similar to the pixel filter, it is crucial that we filter the texture as well to avoid aliasing. When accessing a texture, we want to know the relative size between the filter on uv and the pixel filter (Figure~\ref{fig:texture_filtering}). This relative size is determined by the derivatives between $uv$ and $xy$. Note that we need to access textures for many bounces of lights, and it is difficult to estimate the texture footprint over many bounces. A common used method for determining texture footprint is the \emph{ray differentials}~\cite{Igehy:1999:TRD}, however it only works for purely specular materials. \emph{Path differentials}~\cite{Suykens:2001:PDA} is an extension of ray differential for glossy materials, however it is extremely expensive to compute. A slightly more principled way based on local Fourier analysis called covariance tracing~\cite{Belcour:2017:ACG} can propagate the Fourier spectrum of the pixel filter using a Gaussian approximation, but 1) it requires us to have knowledge of the Fourier spectrum of the BSDF, and 2) it is still an approximation because it ignores visibility. In general, if we ignore visibility, all existing methods would predict an infinite filter size if a light path goes through a diffuse bounce. However this is clearly incorrect, since object boundaries and visibility would limit the texture filter size. Existing approach has to place a manually determined maximum filter size to prevent infinite filter size.
+\paragraph{Filtering and ray differentials.} Similar to the pixel filter, it is crucial that we filter the texture as well to avoid aliasing. When accessing a texture, we want to know the relative size between the filter on uv and the pixel filter (Figure~\ref{fig:texture_filtering}). This relative size is determined by the derivatives between $uv$ and $xy$. Note that we need to access textures for many bounces of lights, and it is difficult to estimate the texture footprint over many bounces. A commonly used method for determining texture footprint is the \emph{ray differentials}~\cite{Igehy:1999:TRD}, however it only works for purely specular materials. \emph{Path differentials}~\cite{Suykens:2001:PDA} is an extension of ray differential for glossy materials, but it is extremely expensive to compute. A slightly more principled way based on local Fourier analysis called covariance tracing~\cite{Belcour:2017:ACG} can propagate the Fourier spectrum of the pixel filter using a Gaussian approximation, but 1) it requires us to have knowledge of the Fourier spectrum of the BSDF, and 2) it is still an approximation because it ignores visibility. In general, if we ignore visibility, all existing methods would predict an infinite filter size if a light path goes through a diffuse bounce. However this is clearly incorrect, since object boundaries and visibility would limit the texture filter size. The existing approaches have to place a manually determined maximum filter size to prevent infinite filter size.
 
-Since all existing methods are heuristics and there is not really a satisfactory solution for multiple bounces (which means there are research to be done here!), we will use a very simple and conservative heuristics, inspired by the implementation in modern RenderMan~\cite{Christensen:2018:RAP} and an experimental branch of pbrt.\footnote{See \href{THE IMPLEMENTATION OF A SCALABLE TEXTURE CACHE}{https://www.pbrt.org/texcache.pdf} from Matt Pharr} We maintain two numbers for a ray differential: the \emph{radius} of a ray and a \emph{spread} of a ray (Figure~\ref{fig:ray_differential}) -- now that the ray becomes a \emph{ray cone} and the size of the cone can be used for determining the texture footprint. These values are approximatedly the derivative of the ray origin and ray direction with respect to the pixel coordinates.
+Since all existing methods are heuristics and there is really no satisfactory solution for multiple bounces (which means there is research to be done here!), we will use a very simple and conservative heuristic, inspired by the implementation in modern RenderMan~\cite{Christensen:2018:RAP} and an experimental branch of pbrt.\footnote{See \href{THE IMPLEMENTATION OF A SCALABLE TEXTURE CACHE}{https://www.pbrt.org/texcache.pdf} from Matt Pharr} We maintain two numbers for a ray differential: the \emph{radius} of a ray and a \emph{spread} of a ray (Figure~\ref{fig:ray_differential}) -- now that the ray becomes a \emph{ray cone} and the size of the cone can be used for determining the texture footprint. These values are approximately the derivative of the ray origin and ray direction with respect to the pixel coordinates.
 \begin{lstlisting}[language=c++]
 struct RayDifferential {
-    // Radius is approximatedly (length(dp/dx) + length(dp/dy)) / 2
-    // Spread is approximatedly (length(dd/dx) + length(dd/dy)) / 2
+    // Radius is approximately (length(dp/dx) + length(dp/dy)) / 2
+    // Spread is approximately (length(dd/dx) + length(dd/dy)) / 2
     // p is ray position, d is ray direction.
     Real radius = 0, spread = 0; // The units are pixels.
 };
@@ -570,7 +569,7 @@ inline Real transfer(const RayDifferential &r, Real dist) {
 r.radius = transfer(r, dist);
 \end{lstlisting}
 
-To model a scattering event, we blend between the spread of a pure specular event and a spread of a diffuse event.
+To model a scattering event, we blend between the spread of a pure specular event and a spread of a diffuse event using the roughness of the material: roughness 0 corresponds to a pure specular event.
 For a pure specular event, the amount of spread is determined by the curvature of a surface.
 For the diffuse event, we manually set a cone size.
 \begin{lstlisting}[language=c++]
@@ -584,10 +583,10 @@ inline Real reflect(const RayDifferential &r,
 }
 \end{lstlisting}
 
-For a refraction, we need to additionally take the index of refraction into account. According to Snell-Descartes law, the ray spread would change by the ratio of index of refraction. If the ratio is large, rays will be more concentrated, and vice versa. So we just divide the spread with that ratio.
+For refraction, we need to additionally take the index of refraction into account. According to Snell-Descartes law, the ray spread would change by the ratio of the index of refraction. If the ratio is large, rays will be more concentrated, and vice versa. So we just divide the spread with that ratio.
 \begin{lstlisting}[language=c++]
 /// Update the spread (dd/dx) of a ray differential by scattering over a reflective surface.
-inline Real reflect(const RayDifferential &r,
+inline Real refract(const RayDifferential &r,
                     Real mean_curvature,
                     Real roughness) {
     Real spec_spread = (r.spread + 2 * mean_curvature * r.radius) / eta;
@@ -695,7 +694,7 @@ using Light = std::variant<DiffuseAreaLight, Envmap>;
     \label{fig:envmap}
 \end{figure}
 
-A diffuse area light should be straightforward: it is attached to a geometry, and emits lights uniformly at all direction. An environment map is usually represented as an image, and emits light on an sphere that is infinitely large (Figure~\ref{fig:envmap}). These two light sources are the most common kind in production. Some renderers implement area lights with spatial-directionally varying properties, but the emission profile of light sources are more scarce compared to BSDF (which is already scarce) -- more research needed!
+A diffuse area light should be straightforward: it is attached to some geometry, and emits lights uniformly in all directions. An environment map is usually represented as an image, and emits light on a sphere that is infinitely large (Figure~\ref{fig:envmap}). These two light sources are the most common kind in production. Some renderers implement area lights with spatial-directionally varying properties, but the emission profiles of light sources are more scarce compared to BSDF (which is already scarce) -- more research needed!
 
 All lights in lajolla needs to implement the following functions:
 \begin{lstlisting}[language=c++]
@@ -736,7 +735,7 @@ Hopefully the comments are self-explanatory (let us know if they are not). I rec
 \section{Geometry}
 A renderer also needs representation of surfaces in the scene. Lajolla supports two kinds of geometry (or \lstinline{Shape}):
 
-\begin{lstlisting}
+\begin{lstlisting}[language=c++]
 struct Sphere : public ShapeBase {
     Vector3 position;
     Real radius;
@@ -888,7 +887,7 @@ We use operator overloading to support common vector operations
 you might need to implement some for your own convienence.
 
 \subsection{Matrices}
-Lajolla implements a 4x4 row-major matrix with hard coded inversion and matrix matrix multiplication. 
+Lajolla implements a 4x4 row-major matrix with hard-coded inversion and matrix-matrix multiplication. 
 \begin{lstlisting}[language=c++]
 template <typename T>
 struct TMatrix4x4 {
@@ -932,7 +931,7 @@ Matrix4x4 perspective(Real fov);
 Spectral rendering is a complicated topic and requires its own document (see \href{https://www.csie.ntu.edu.tw/~cyy/courses/rendering/16fall/lectures/handouts/chap05_color_radiometry.pdf}{these slides} from my undergraduate institution for a really nice introduction to color and radiometry). In principle, while
 it is sufficient to use RGB representing color on an image, it is insufficient to just use RGB
 to represent reflectance and emission, since the interaction between photons and reflectance at different
-wavelength will affect RGB values non-linearly. Unfortunately, spectral measurement of materials is scarce (more research!) and most textures we have are on RGB format. For this reason, we still opt for a RGB representation
+wavelengths will affect the final RGB values non-linearly. Unfortunately, spectral measurement of materials is scarce (more research!) and most textures we have are on RGB format. For this reason, we still opt for an RGB representation
 of the spectrum. There are production renderers that support full spectral rendering. Manuka is a notable example~\cite{Fascione:2018:MBA}.
 
 \begin{lstlisting}[language=c++]
@@ -941,7 +940,7 @@ of the spectrum. There are production renderers that support full spectral rende
 using Spectrum = Vector3;
 \end{lstlisting}
 
-To render some Mitsuba scenes, we need to convert spectral data to RGB. We use a curve fitting solution from Wyman et al. for doing so~\cite{Wyman:2013:SAP}.
+To render some Mitsuba scenes, we need to convert spectral data to RGB. We use a curve-fitting solution from Wyman et al. for doing so~\cite{Wyman:2013:SAP}.
 \begin{lstlisting}[language=c++]
 inline Real xFit_1931(Real wavelength) {
     Real t1 = (wavelength - Real(442.0)) * ((wavelength < Real(442.0)) ? Real(0.0624) : Real(0.0374));
@@ -1017,9 +1016,9 @@ inline Vector3 XYZ_to_RGB(const Vector3 &xyz) {
 
 \subsection{Frame}
 
-A Frame is a 3D coordinate system with orthonormal basis $(x, y, n)$.
+A Frame is a 3D coordinate system with an orthonormal basis $(x, y, n)$.
 \begin{lstlisting}[language=c++]
-/// A "Frame" is a coordinate basis that consists of three orthogonal vectors.
+/// A "Frame" is a coordinate basis that consists of three orthogonal unit vectors.
 /// This is useful for sampling points on a hemisphere or defining anisotropic BSDFs.
 struct Frame {
     Frame() {}
@@ -1098,19 +1097,19 @@ parallel_for([&](const Vector2i &tile) {
 \end{lstlisting}
 
 \subsection{Random number generation}
-Lajolla uses a random number generator called \href{PCG}{https://www.pcg-random.org/} which is a very lightweight random number generator based on a simple postprocessing of a standard linear congruent generators. PCG has generally good statistical properties and is much cheaper to compute compared to more advanced RNG e.g., Merserner Twister. Highly recommend Melissa O'Neill's \href{talk}{https://www.youtube.com/watch?v=45Oet5qjlms} about PCG.
+Lajolla uses a random number generator called \href{PCG}{https://www.pcg-random.org/} which is a very lightweight random number generator based on simple postprocessing of a standard linear congruent generator. PCG generally has good statistical properties and is much cheaper to compute compared to more advanced RNG, e.g., Merserner Twister. Highly recommend Melissa O'Neill's \href{talk}{https://www.youtube.com/watch?v=45Oet5qjlms} about PCG.
 
-A crucial feature of PCG is to allow for multiple "streams": given a seed, we can initialize many different streams of RNGs that have different independent random numbers.
+A crucial feature of PCG is that it allows multiple "streams": given a seed, we can initialize many different streams of RNGs that have different independent random numbers.
 
 \begin{lstlisting}[language=c++]
 inline pcg32_state init_pcg32(uint64_t stream_id = 1, uint64_t seed = 0x853c49e6748fea9bULL);
 T next_pcg32_real(pcg32_state &rng);
 \end{lstlisting}
 
-\paragraph{Stratification.} Independent random number is in fact not a really good choice for Monte Carlo rendering. Samples can be clumped together and not providing good coverage of the sampling space. Stratified random sampling or low-discrepancy sequences are in fact much better choices. We do not implement these in lajolla (final project idea!), but we will cover them in the class.
+\paragraph{Stratification.} Independent random numbers are in fact not a really good choice for Monte Carlo rendering. Samples can be clumped together and not provide good coverage of the sampling space. Stratified random sampling or low-discrepancy sequences are much better choices. We do not implement these in lajolla (final project idea!), but we will cover them in the class.
 
 \subsection{Reusing random numbers}
-A commonly encountered scenario is when we only have one random number, but we want to use it for two random choices (we don't want to generate a new random number because it breaks the stratification property). If the first random choice we made is a discrete choice, this is possible. Consider the case where we want to sample one between two components of a BSDF, then sample an outgoing direction. Choosing between the two component only consumes 1-bit of the random numbers, and we still have 31/63 bits left depending on the floating point representation we use. Thus, we can remap the random number to reuse it. 
+A commonly encountered scenario is when we only have one random number, but we want to use it for two random choices (we don't want to generate a new random number because it breaks the stratification property). If the first random choice we made is a discrete choice, this is possible. Consider the case where we want to sample one between two components of a BSDF, then sample an outgoing direction. Choosing between the two components only consumes 1-bit of the random numbers, and we still have 31/63 bits left depending on the floating-point representation we use. Thus, we can remap the random number to reuse it. 
 \begin{lstlisting}[language=c++]
 Real u = ...; // uniform random number
 Real prob = ...;
@@ -1178,7 +1177,7 @@ See the pbrt book for more explaination: \href{https://pbr-book.org/3ed-2018/Mon
 
 \subsection{Russian roulette}
 
-The rendering equation recursive indefintely and can lead to infinite loops. We need to truncate the loop at some point, but an arbitrary truncate can lead to energy loss. The trick is to truncate the path \emph{probabilistically}, then scale the contribution by the inverse probability if the path does not terminate. This ``Russian roulette'' trick was originated for nuclear engineering simulation Arvo and Kirk brought this idea to graphics in 1990~\cite{Arvo:1990:PTI}. Determining a good path truncation probability is hard~\cite{Vorba:2016:ARR}. We just use a very basic heuristics based on the path throughput and the index of refraction.
+The rendering equation recurses indefintely and can lead to infinite loops. We need to truncate the loop at some point, but an arbitrary truncate can lead to energy loss. The trick is to truncate the path \emph{probabilistically}, then scale the contribution by the inverse probability if the path does not terminate. This ``Russian roulette'' trick was originated for nuclear engineering simulation. Arvo and Kirk brought this idea to graphics in 1990~\cite{Arvo:1990:PTI}. Determining a good path truncation probability is hard~\cite{Vorba:2016:ARR}. We just use a very basic heuristics based on the path throughput and the index of refraction.
 
 \begin{lstlisting}
 Real rr_prob = 1;

@@ -9,11 +9,11 @@
 // splat the contribution to all nearby pixels overlapped with the
 // filter support.
 // This approach works fine, but has a few disadvantages:
-// 1) This introduces race conditions between different pixels, and require atomic operations.
+// 1) This introduces race conditions between different pixels, and requires atomic operations.
 // 2) This introduces correlation between pixels and hurts denoising.
 // 3) The splatting approach is biased and creates artifacts at low sampling rates.
-// 4) For filters with infinite supports (e.g., Gaussian), this leads to 
-//    a discontinuous cutoff radius (otherwise it would be too slow).
+// 4) For filters with infinite supports (e.g., Gaussian), 
+//    this requires a discontinuous cutoff radius (otherwise it would be too slow).
 // For these reasons, many modern production renderers have started to employ
 // a different and simpler strategy.
 // For each pixel, we solve for the pixel filter integral by directly importance
