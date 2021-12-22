@@ -1,9 +1,13 @@
 Spectrum eval_op::operator()(const Lambertian &bsdf) const {
-    if (dot(dir_in, vertex.shading_frame.n) < 0) {
-        // Incoming direction is below the surface.
+    Vector3 n = vertex.shading_frame.n;
+    Real n_dot_in = dot(dir_in, n);
+    Real n_dot_out = dot(dir_out, n);
+    if (n_dot_in <= 0 || n_dot_out <= 0) {
+        // No light on the other side.
         return make_zero_spectrum();
     }
-    return fmax(dot(dir_out, vertex.shading_frame.n), Real(0)) * 
+
+    return n_dot_out * 
            eval(bsdf.reflectance, vertex.uv, vertex.uv_screen_size, texture_pool) / c_PI;
 }
 

@@ -54,7 +54,7 @@ struct DisneyDiffuse {
 
 // To add more materials, first create a struct for the material, then overload the () operators for all the
 // functors below.
-using Material = std::variant<Lambertian, RoughPlastic, RoughDielectric>;
+using Material = std::variant<Lambertian, RoughPlastic, RoughDielectric, DisneyDiffuse>;
 
 /// We allow non-reciprocal BRDFs, so it's important
 /// to distinguish which direction we are tracing the rays.
