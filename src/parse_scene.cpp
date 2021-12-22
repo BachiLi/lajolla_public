@@ -213,6 +213,30 @@ Texture<Spectrum> parse_spectrum_texture(
     }
 }
 
+Texture<Real> parse_float_texture(
+        pugi::xml_node node,
+        const std::map<std::string /* name id */, ParsedTexture> &texture_map,
+        TexturePool &texture_pool) {
+    std::string type = node.name();
+    if (type == "ref") {
+        // referencing a texture
+        std::string ref_id = node.attribute("id").value();
+        auto t_it = texture_map.find(ref_id);
+        if (t_it == texture_map.end()) {
+            Error(std::string("Texture not found. ID = ") + ref_id);
+        }
+        const ParsedTexture t = t_it->second;
+        return make_image_float_texture(
+            ref_id, imread1(t.filename), texture_pool, t.uscale, t.vscale);
+    } else if (type == "float") {
+        return make_constant_float_texture(
+            std::stof(node.attribute("value").value()));
+    } else {
+        Error(std::string("Unknown float texture type:") + type);
+        return make_constant_float_texture(Real(0));
+    }
+}
+
 Spectrum parse_color(pugi::xml_node node) {
     std::string type = node.name();
     if (type == "spectrum") {
@@ -358,7 +382,7 @@ parse_sensor(pugi::xml_node node) {
         if (std::string(child.name()) == "film") {
             std::tie(width, height, filename, filter) = parse_film(child);
         } else if (std::string(child.name()) == "sampler") {
-            std::string name = child.attribute("name").value();
+            std::string name = child.attribute("type").value();
             if (name != "independent") {
                 std::cerr << "Warning: the renderer currently only supports independent samplers." << std::endl;
             }
@@ -424,6 +448,8 @@ std::tuple<std::string /* ID */, Material> parse_bsdf(
             } else if (name == "specularReflectance") {
                 specular_reflectance = parse_spectrum_texture(child, texture_map, texture_pool);
             } else if (name == "alpha") {
+                // Alpha requires special treatment since we need to convert
+                // the values to roughness
                 std::string type = child.name();
                 if (type == "ref") {
                     // referencing a texture
@@ -448,22 +474,7 @@ std::tuple<std::string /* ID */, Material> parse_bsdf(
                     Error(std::string("Unknown float texture type:") + type);
                 }
             } else if (name == "roughness") {
-                std::string type = child.name();
-                if (type == "ref") {
-                    // referencing a texture
-                    std::string ref_id = child.attribute("id").value();
-                    auto t_it = texture_map.find(ref_id);
-                    if (t_it == texture_map.end()) {
-                        Error(std::string("Texture not found. ID = ") + ref_id);
-                    }
-                    const ParsedTexture t = t_it->second;
-                    roughness = make_image_float_texture(
-                        ref_id, t.filename, texture_pool, t.uscale, t.vscale);
-                } else if (type == "float") {
-                    roughness = make_constant_float_texture(std::stof(child.attribute("value").value()));
-                } else {
-                    Error(std::string("Unknown float texture type:") + type);
-                }
+                roughness = parse_float_texture(child, texture_map, texture_pool);
             } else if (name == "intIOR") {
                 intIOR = std::stof(child.attribute("value").value()); 
             } else if (name == "extIOR") {
@@ -513,22 +524,7 @@ std::tuple<std::string /* ID */, Material> parse_bsdf(
                     Error(std::string("Unknown float texture type:") + type);
                 }
             } else if (name == "roughness") {
-                std::string type = child.name();
-                if (type == "ref") {
-                    // referencing a texture
-                    std::string ref_id = child.attribute("id").value();
-                    auto t_it = texture_map.find(ref_id);
-                    if (t_it == texture_map.end()) {
-                        Error(std::string("Texture not found. ID = ") + ref_id);
-                    }
-                    const ParsedTexture t = t_it->second;
-                    roughness = make_image_float_texture(
-                        ref_id, t.filename, texture_pool, t.uscale, t.vscale);
-                } else if (type == "float") {
-                    roughness = make_constant_float_texture(std::stof(child.attribute("value").value()));
-                } else {
-                    Error(std::string("Unknown float texture type:") + type);
-                }
+                roughness = parse_float_texture(child, texture_map, texture_pool);
             } else if (name == "intIOR") {
                 intIOR = std::stof(child.attribute("value").value()); 
             } else if (name == "extIOR") {
@@ -537,6 +533,20 @@ std::tuple<std::string /* ID */, Material> parse_bsdf(
         }
         return std::make_tuple(id, RoughDielectric{
             specular_reflectance, specular_transmittance, roughness, intIOR / extIOR});
+    } else if (type == "disneydiffuse") {
+        Texture<Spectrum> base_color = make_constant_spectrum_texture(fromRGB(Vector3{0.5, 0.5, 0.5}));
+        Texture<Real> roughness = make_constant_float_texture(Real(0.5));
+        Texture<Real> subsurface = make_constant_float_texture(Real(0));
+        for (auto child : node.children()) {
+            std::string name = child.attribute("name").value();
+            if (name == "baseColor") {
+                base_color = parse_spectrum_texture(child, texture_map, texture_pool);
+            } else if (name == "roughness") {
+                roughness = parse_float_texture(child, texture_map, texture_pool);
+            } else if (name == "subsurface") {
+                subsurface = parse_float_texture(child, texture_map, texture_pool);
+            }
+        }
     } else {
         Error(std::string("Unknown BSDF: ") + type);
     }
