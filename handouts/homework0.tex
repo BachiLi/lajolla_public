@@ -128,10 +128,10 @@ Below we will take a whirlwind tour over the basics of physically-based renderin
 
 How does lajolla, or many other modern physically-based renderer compute the color for each pixel? They do this by \emph{integrating} all lights that goes through a pixel. Note that a pixel is not a infinitesimal point, not is it a little square~\cite{Smith:1995:PLS}. \textbf{A pixel is a reconstruction filter over an image function at a certain locatio} (Figure~\ref{fig:pixel_filter}). Mathematically, a pixel $I_{x, y}$'s color is written as an filtering integral:
 \begin{equation}
-    I_{x, y} = \iint_{D} k(x', y') L(\mathbf{p}, \mathbf{d}(x + x', y + y')) \mathrm{d}x\mathrm{d}y,
+    I_{x, y} = \iint_{D} k(x', y') L(\mathbf{p}, \mathbf{\omega}(x + x', y + y')) \mathrm{d}x\mathrm{d}y,
     \label{eq:pixel_filter}
 \end{equation}
-where $k$ is the \emph{filter kernel}, $D$ is the \emph{support} of the filter kernel (the pixel location where its value is non-zero), and $L(\mathbf{p}, \mathbf{d})$ is the radiance at point $\mathbf{p}$, received from direction $\mathbf{\omega}$ where the direction is pointing outwards from $\mathbf{p}$. In our case, $\mathbf{p}$ is the position of the camera, and $\mathbf{\omega}$ is the direction between the camera position and the points on the film (Figure~\ref{fig:camera}).
+where $k$ is the \emph{filter kernel}, $D$ is the \emph{support} of the filter kernel (the pixel location where its value is non-zero), and $L(\mathbf{p}, \mathbf{\omega})$ is the radiance at point $\mathbf{p}$, received from direction $\mathbf{\omega}$ where the direction is pointing outwards from $\mathbf{p}$. In our case, $\mathbf{p}$ is the position of the camera, and $\mathbf{\omega}$ is the direction between the camera position and the points on the film (Figure~\ref{fig:camera}).
 
 Now we have three questions: 1) what is the filter kernel $k$? 2) what is the radiance $L$?, and 3) how do we evaluate this integral on a computer? For 1), we will discuss a bit more in Section~\ref{sec:pixel_filter}, but for now you can think of it as something like a 2D Gaussian. For 3), these integrals typically do not have closed-form solutions,\footnote{There are rendering algorithms that based on closed-form solutions of these integrals. Some radiosity algorithms~\cite{Schroder:1993:OFF} make use of closed-form solutions, for example. Also check out the excellent paper from Heitz et al.~\cite{Heitz:2016:RPS}} so we need to \emph{discretize} these integrals:
 \begin{equation}
