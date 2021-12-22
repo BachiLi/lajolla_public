@@ -17,7 +17,7 @@ Real pdf_sample_bsdf_op::operator()(const Lambertian &bsdf) const {
         return 0;
     }
 
-    return fmax(n_dot_out, Real(0)) / c_PI;
+    return n_dot_out / c_PI;
 }
 
 std::optional<BSDFSampleRecord> sample_bsdf_op::operator()(const Lambertian &bsdf) const {
