@@ -53,7 +53,7 @@ Image1 imread1(const fs::path &filename);
 Image3 imread3(const fs::path &filename);
 
 /// Save an image to a file.
-/// Supported formats: PFM
+/// Supported formats: PFM & exr
 void imwrite(const fs::path &filename, const Image3 &image);
 
 inline Image3 to_image3(const Image1 &img) {

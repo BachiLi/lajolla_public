@@ -10,7 +10,7 @@
 
 const Real c_default_fov = 45.0;
 const int c_default_res = 256;
-const std::string c_default_filename = "image.pfm";
+const std::string c_default_filename = "image.exr";
 const std::string c_default_material_name = "___default_white";
 const Filter c_default_filter = Box{Real(1)};;
 

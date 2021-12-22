@@ -37,6 +37,7 @@ int main(int argc, char *argv[]) {
         Image3 img = render(scene);
         std::cout << "Done. Took " << tick(timer) << " seconds." << std::endl;
         imwrite(scene.output_filename, img);
+        std::cout << "Image written to " << scene.output_filename << std::endl;
     }
 
     parallel_cleanup();

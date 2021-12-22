@@ -126,5 +126,18 @@ void imwrite(const fs::path &filename, const Image3 &image) {
         std::transform(image.data.cbegin(), image.data.cend(), data.begin(),
             [] (const Vector3 &v) {return Vector3f(v.x, v.y, v.z);});
         ofs.write((const char *)data.data(), data.size() * sizeof(Vector3f));
+    } else if (ends_with(filename, ".exr")) {
+        // Convert image to float
+        vector<Vector3f> data(image.data.size());
+        std::transform(image.data.cbegin(), image.data.cend(), data.begin(),
+            [] (const Vector3 &v) {return Vector3f(v.x, v.y, v.z);});
+        const char* err = nullptr;
+        int ret = SaveEXR((float*)data.data(),
+            image.width, image.height, 3, 1 /* write as fp16 */, filename.c_str(), &err);
+        if (ret != TINYEXR_SUCCESS) {
+            std::cerr << "OpenEXR error: " << err << std::endl;
+            FreeEXRErrorMessage(err);
+            Error(std::string("Failure when writing image: ") + filename.string());
+        }
     }
 }
