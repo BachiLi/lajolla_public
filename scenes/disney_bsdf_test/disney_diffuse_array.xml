@@ -1,0 +1,416 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<scene version="0.5.0">
+	<integrator type="path">
+		<integer name="maxDepth" value="-1"/>
+	</integrator>
+
+	<texture type="checkerboard" id="__planetex">
+		<rgb name="color0" value="0.4"/>
+		<rgb name="color1" value="0.2"/>
+		<float name="uscale" value="8.0"/>
+		<float name="vscale" value="16.0"/>
+		<float name="uoffset" value="0.0"/>
+		<float name="voffset" value="0.0"/>
+	</texture>
+
+	<bsdf type="diffuse" id="__planemat">
+		<ref name="reflectance" id="__planetex"/>
+	</bsdf>
+
+	<bsdf type="diffuse" id="__diffmat">
+		<rgb name="reflectance" value="0.18 0.18 0.18"/>
+	</bsdf>
+
+	<shape type="serialized" id="Shell0">
+		<string name="filename" value="../matpreview/matpreview.serialized"/>
+		<integer name="shapeIndex" value="2"/>
+		<transform name="toWorld">
+			<matrix value="0.614046 0.614047 0 -1.78814e-07 -0.614047 0.614046 0 2.08616e-07 0 0 0.868393 1.02569 0 0 0 1"/>
+			<scale x="0.5" y="0.5" z="0.5"/>
+			<translate z="0.01"/>
+			<translate x="-4" y="1"/>
+		</transform>
+
+		<bsdf type="disneydiffuse">
+			<rgb name="baseColor" value="0.82 0.67 0.16"/>
+			<float name="roughness" value="0.0"/>
+			<float name="subsurface" value="0.0"/>
+		</bsdf>
+	</shape>
+
+	<shape type="serialized" id="Interior0">
+		<string name="filename" value="../matpreview/matpreview.serialized"/>
+		<integer name="shapeIndex" value="1"/>
+		<transform name="toWorld">
+			<scale x="0.5" y="0.5" z="0.5"/>
+			<matrix value="1 0 0 0 0 1 0 0 0 0 1 0.0252155 0 0 0 1"/>
+			<translate x="-4" y="1"/>
+		</transform>
+
+		<ref name="bsdf" id="__diffmat"/>
+	</shape>
+
+	<shape type="serialized" id="Shell1">
+		<string name="filename" value="../matpreview/matpreview.serialized"/>
+		<integer name="shapeIndex" value="2"/>
+		<transform name="toWorld">
+			<matrix value="0.614046 0.614047 0 -1.78814e-07 -0.614047 0.614046 0 2.08616e-07 0 0 0.868393 1.02569 0 0 0 1"/>
+			<scale x="0.5" y="0.5" z="0.5"/>
+			<translate z="0.01"/>
+			<translate x="-3" y="2"/>
+		</transform>
+
+		<bsdf type="disneydiffuse">
+			<rgb name="baseColor" value="0.82 0.67 0.16"/>
+			<float name="roughness" value="0.33"/>
+			<float name="subsurface" value="0.0"/>
+		</bsdf>
+	</shape>
+
+	<shape type="serialized" id="Interior1">
+		<string name="filename" value="../matpreview/matpreview.serialized"/>
+		<integer name="shapeIndex" value="1"/>
+		<transform name="toWorld">
+			<scale x="0.5" y="0.5" z="0.5"/>
+			<matrix value="1 0 0 0 0 1 0 0 0 0 1 0.0252155 0 0 0 1"/>
+			<translate x="-3" y="2"/>
+		</transform>
+
+		<ref name="bsdf" id="__diffmat"/>
+	</shape>
+
+	<shape type="serialized" id="Shell2">
+		<string name="filename" value="../matpreview/matpreview.serialized"/>
+		<integer name="shapeIndex" value="2"/>
+		<transform name="toWorld">
+			<matrix value="0.614046 0.614047 0 -1.78814e-07 -0.614047 0.614046 0 2.08616e-07 0 0 0.868393 1.02569 0 0 0 1"/>
+			<scale x="0.5" y="0.5" z="0.5"/>
+			<translate z="0.01"/>
+			<translate x="-2" y="3"/>
+		</transform>
+
+		<bsdf type="disneydiffuse">
+			<rgb name="baseColor" value="0.82 0.67 0.16"/>
+			<float name="roughness" value="0.66"/>
+			<float name="subsurface" value="0.0"/>
+		</bsdf>
+	</shape>
+
+	<shape type="serialized" id="Interior2">
+		<string name="filename" value="../matpreview/matpreview.serialized"/>
+		<integer name="shapeIndex" value="1"/>
+		<transform name="toWorld">
+			<scale x="0.5" y="0.5" z="0.5"/>
+			<matrix value="1 0 0 0 0 1 0 0 0 0 1 0.0252155 0 0 0 1"/>
+			<translate x="-2" y="3"/>
+		</transform>
+
+		<ref name="bsdf" id="__diffmat"/>
+	</shape>
+
+	<shape type="serialized" id="Shell3">
+		<string name="filename" value="../matpreview/matpreview.serialized"/>
+		<integer name="shapeIndex" value="2"/>
+		<transform name="toWorld">
+			<matrix value="0.614046 0.614047 0 -1.78814e-07 -0.614047 0.614046 0 2.08616e-07 0 0 0.868393 1.02569 0 0 0 1"/>
+			<scale x="0.5" y="0.5" z="0.5"/>
+			<translate z="0.01"/>
+			<translate x="-1" y="4"/>
+		</transform>
+
+		<bsdf type="disneydiffuse">
+			<rgb name="baseColor" value="0.82 0.67 0.16"/>
+			<float name="roughness" value="1.0"/>
+			<float name="subsurface" value="0.0"/>
+		</bsdf>
+	</shape>
+
+	<shape type="serialized" id="Interior3">
+		<string name="filename" value="../matpreview/matpreview.serialized"/>
+		<integer name="shapeIndex" value="1"/>
+		<transform name="toWorld">
+			<scale x="0.5" y="0.5" z="0.5"/>
+			<matrix value="1 0 0 0 0 1 0 0 0 0 1 0.0252155 0 0 0 1"/>
+			<translate x="-1" y="4"/>
+		</transform>
+
+		<ref name="bsdf" id="__diffmat"/>
+	</shape>
+
+	<shape type="serialized" id="Shell4">
+		<string name="filename" value="../matpreview/matpreview.serialized"/>
+		<integer name="shapeIndex" value="2"/>
+		<transform name="toWorld">
+			<matrix value="0.614046 0.614047 0 -1.78814e-07 -0.614047 0.614046 0 2.08616e-07 0 0 0.868393 1.02569 0 0 0 1"/>
+			<scale x="0.5" y="0.5" z="0.5"/>
+			<translate z="0.01"/>
+			<translate x="-3.5" y="0.5" z="-0.75"/>
+		</transform>
+
+		<bsdf type="disneydiffuse">
+			<rgb name="baseColor" value="0.82 0.67 0.16"/>
+			<float name="roughness" value="0.0"/>
+			<float name="subsurface" value="0.5"/>
+		</bsdf>
+	</shape>
+
+	<shape type="serialized" id="Interior4">
+		<string name="filename" value="../matpreview/matpreview.serialized"/>
+		<integer name="shapeIndex" value="1"/>
+		<transform name="toWorld">
+			<scale x="0.5" y="0.5" z="0.5"/>
+			<matrix value="1 0 0 0 0 1 0 0 0 0 1 0.0252155 0 0 0 1"/>
+			<translate x="-3.5" y="0.5" z="-0.75"/>
+		</transform>
+
+		<ref name="bsdf" id="__diffmat"/>
+	</shape>
+
+	<shape type="serialized" id="Shell5">
+		<string name="filename" value="../matpreview/matpreview.serialized"/>
+		<integer name="shapeIndex" value="2"/>
+		<transform name="toWorld">
+			<matrix value="0.614046 0.614047 0 -1.78814e-07 -0.614047 0.614046 0 2.08616e-07 0 0 0.868393 1.02569 0 0 0 1"/>
+			<scale x="0.5" y="0.5" z="0.5"/>
+			<translate z="0.01"/>
+			<translate x="-2.5" y="1.5" z="-0.75"/>
+		</transform>
+
+		<bsdf type="disneydiffuse">
+			<rgb name="baseColor" value="0.82 0.67 0.16"/>
+			<float name="roughness" value="0.33"/>
+			<float name="subsurface" value="0.5"/>
+		</bsdf>
+	</shape>
+
+	<shape type="serialized" id="Interior5">
+		<string name="filename" value="../matpreview/matpreview.serialized"/>
+		<integer name="shapeIndex" value="1"/>
+		<transform name="toWorld">
+			<scale x="0.5" y="0.5" z="0.5"/>
+			<matrix value="1 0 0 0 0 1 0 0 0 0 1 0.0252155 0 0 0 1"/>
+			<translate x="-2.5" y="1.5" z="-0.75"/>
+		</transform>
+
+		<ref name="bsdf" id="__diffmat"/>
+	</shape>
+
+	<shape type="serialized" id="Shell6">
+		<string name="filename" value="../matpreview/matpreview.serialized"/>
+		<integer name="shapeIndex" value="2"/>
+		<transform name="toWorld">
+			<matrix value="0.614046 0.614047 0 -1.78814e-07 -0.614047 0.614046 0 2.08616e-07 0 0 0.868393 1.02569 0 0 0 1"/>
+			<scale x="0.5" y="0.5" z="0.5"/>
+			<translate z="0.01"/>
+			<translate x="-1.5" y="2.5" z="-0.75"/>
+		</transform>
+
+		<bsdf type="disneydiffuse">
+			<rgb name="baseColor" value="0.82 0.67 0.16"/>
+			<float name="roughness" value="0.66"/>
+			<float name="subsurface" value="0.5"/>
+		</bsdf>
+	</shape>
+
+	<shape type="serialized" id="Interior6">
+		<string name="filename" value="../matpreview/matpreview.serialized"/>
+		<integer name="shapeIndex" value="1"/>
+		<transform name="toWorld">
+			<scale x="0.5" y="0.5" z="0.5"/>
+			<matrix value="1 0 0 0 0 1 0 0 0 0 1 0.0252155 0 0 0 1"/>
+			<translate x="-1.5" y="2.5" z="-0.75"/>
+		</transform>
+
+		<ref name="bsdf" id="__diffmat"/>
+	</shape>
+
+	<shape type="serialized" id="Shell7">
+		<string name="filename" value="../matpreview/matpreview.serialized"/>
+		<integer name="shapeIndex" value="2"/>
+		<transform name="toWorld">
+			<matrix value="0.614046 0.614047 0 -1.78814e-07 -0.614047 0.614046 0 2.08616e-07 0 0 0.868393 1.02569 0 0 0 1"/>
+			<scale x="0.5" y="0.5" z="0.5"/>
+			<translate z="0.01"/>
+			<translate x="-0.5" y="3.5" z="-0.75"/>
+		</transform>
+
+		<bsdf type="disneydiffuse">
+			<rgb name="baseColor" value="0.82 0.67 0.16"/>
+			<float name="roughness" value="1.0"/>
+			<float name="subsurface" value="0.5"/>
+		</bsdf>
+	</shape>
+
+	<shape type="serialized" id="Interior7">
+		<string name="filename" value="../matpreview/matpreview.serialized"/>
+		<integer name="shapeIndex" value="1"/>
+		<transform name="toWorld">
+			<scale x="0.5" y="0.5" z="0.5"/>
+			<matrix value="1 0 0 0 0 1 0 0 0 0 1 0.0252155 0 0 0 1"/>
+			<translate x="-0.5" y="3.5" z="-0.75"/>
+		</transform>
+
+		<ref name="bsdf" id="__diffmat"/>
+	</shape>
+
+	<shape type="serialized" id="Shell8">
+		<string name="filename" value="../matpreview/matpreview.serialized"/>
+		<integer name="shapeIndex" value="2"/>
+		<transform name="toWorld">
+			<matrix value="0.614046 0.614047 0 -1.78814e-07 -0.614047 0.614046 0 2.08616e-07 0 0 0.868393 1.02569 0 0 0 1"/>
+			<scale x="0.5" y="0.5" z="0.5"/>
+			<translate z="0.01"/>
+			<translate x="-2" y="-0.5" z="-0.9"/>
+		</transform>
+
+		<bsdf type="disneydiffuse">
+			<rgb name="baseColor" value="0.82 0.67 0.16"/>
+			<float name="roughness" value="0.0"/>
+			<float name="subsurface" value="1.0"/>
+		</bsdf>
+	</shape>
+
+	<shape type="serialized" id="Interior8">
+		<string name="filename" value="../matpreview/matpreview.serialized"/>
+		<integer name="shapeIndex" value="1"/>
+		<transform name="toWorld">
+			<scale x="0.5" y="0.5" z="0.5"/>
+			<matrix value="1 0 0 0 0 1 0 0 0 0 1 0.0252155 0 0 0 1"/>
+			<translate x="-2" y="-0.5" z="-0.9"/>
+		</transform>
+
+		<ref name="bsdf" id="__diffmat"/>
+	</shape>
+
+	<shape type="serialized" id="Shell9">
+		<string name="filename" value="../matpreview/matpreview.serialized"/>
+		<integer name="shapeIndex" value="2"/>
+		<transform name="toWorld">
+			<matrix value="0.614046 0.614047 0 -1.78814e-07 -0.614047 0.614046 0 2.08616e-07 0 0 0.868393 1.02569 0 0 0 1"/>
+			<scale x="0.5" y="0.5" z="0.5"/>
+			<translate z="0.01"/>
+			<translate x="-1.15" y="0.35" z="-0.9"/>
+		</transform>
+
+		<bsdf type="disneydiffuse">
+			<rgb name="baseColor" value="0.82 0.67 0.16"/>
+			<float name="roughness" value="0.33"/>
+			<float name="subsurface" value="1.0"/>
+		</bsdf>
+	</shape>
+
+	<shape type="serialized" id="Interior9">
+		<string name="filename" value="../matpreview/matpreview.serialized"/>
+		<integer name="shapeIndex" value="1"/>
+		<transform name="toWorld">
+			<scale x="0.5" y="0.5" z="0.5"/>
+			<matrix value="1 0 0 0 0 1 0 0 0 0 1 0.0252155 0 0 0 1"/>
+			<translate x="-1.15" y="0.35" z="-0.9"/>
+		</transform>
+
+		<ref name="bsdf" id="__diffmat"/>
+	</shape>
+
+	<shape type="serialized" id="Shell10">
+		<string name="filename" value="../matpreview/matpreview.serialized"/>
+		<integer name="shapeIndex" value="2"/>
+		<transform name="toWorld">
+			<matrix value="0.614046 0.614047 0 -1.78814e-07 -0.614047 0.614046 0 2.08616e-07 0 0 0.868393 1.02569 0 0 0 1"/>
+			<scale x="0.5" y="0.5" z="0.5"/>
+			<translate z="0.01"/>
+			<translate x="-0.3" y="1.2" z="-0.9"/>
+		</transform>
+
+		<bsdf type="disneydiffuse">
+			<rgb name="baseColor" value="0.82 0.67 0.16"/>
+			<float name="roughness" value="0.66"/>
+			<float name="subsurface" value="1.0"/>
+		</bsdf>
+	</shape>
+
+	<shape type="serialized" id="Interior10">
+		<string name="filename" value="../matpreview/matpreview.serialized"/>
+		<integer name="shapeIndex" value="1"/>
+		<transform name="toWorld">
+			<scale x="0.5" y="0.5" z="0.5"/>
+			<matrix value="1 0 0 0 0 1 0 0 0 0 1 0.0252155 0 0 0 1"/>
+			<translate x="-0.3" y="1.2" z="-0.9"/>
+		</transform>
+
+		<ref name="bsdf" id="__diffmat"/>
+	</shape>
+
+	<shape type="serialized" id="Shell11">
+		<string name="filename" value="../matpreview/matpreview.serialized"/>
+		<integer name="shapeIndex" value="2"/>
+		<transform name="toWorld">
+			<matrix value="0.614046 0.614047 0 -1.78814e-07 -0.614047 0.614046 0 2.08616e-07 0 0 0.868393 1.02569 0 0 0 1"/>
+			<scale x="0.5" y="0.5" z="0.5"/>
+			<translate z="0.01"/>
+			<translate x="0.55" y="2.05" z="-0.9"/>
+		</transform>
+
+		<bsdf type="disneydiffuse">
+			<rgb name="baseColor" value="0.82 0.67 0.16"/>
+			<float name="roughness" value="1.0"/>
+			<float name="subsurface" value="1.0"/>
+		</bsdf>
+	</shape>
+
+	<shape type="serialized" id="Interior11">
+		<string name="filename" value="../matpreview/matpreview.serialized"/>
+		<integer name="shapeIndex" value="1"/>
+		<transform name="toWorld">
+			<scale x="0.5" y="0.5" z="0.5"/>
+			<matrix value="1 0 0 0 0 1 0 0 0 0 1 0.0252155 0 0 0 1"/>
+			<translate x="0.55" y="2.05" z="-0.9"/>
+		</transform>
+
+		<ref name="bsdf" id="__diffmat"/>
+	</shape>
+
+	<shape type="serialized" id="Plane-mesh_0">
+		<string name="filename" value="../matpreview/matpreview.serialized"/>
+		<integer name="shapeIndex" value="0"/>
+		<transform name="toWorld">
+			<scale y="2"/>
+			<rotate z="1" angle="-4.3"/>
+			<matrix value="3.38818 -4.06354 0 -1.74958 4.06354 3.38818 0 1.43683 0 0 5.29076 -0.0120714 0 0 0 1"/>
+			<translate z="-1"/>
+		</transform>
+
+		<ref name="bsdf" id="__planemat"/>
+	</shape>
+
+	<sensor type="perspective" id="Camera-camera">
+		<string name="fovAxis" value="smaller"/>
+		<float name="focusDistance" value="6.0"/>
+		<float name="fov" value="28.8415"/>
+		<transform name="toWorld">
+			<lookAt target="3.24072, -2.85176, 2.80939" origin="3.89558, -3.46243, 3.25463" up="-0.317366, 0.312466, 0.895346"/>
+		</transform>
+
+		<sampler type="independent">
+			<integer name="sampleCount" value="256"/>
+		</sampler>
+
+		<film type="hdrfilm" id="film">
+			<integer name="width" value="1366"/>
+			<integer name="height" value="1024"/>
+			<string name="pixelFormat" value="rgb"/>
+			<boolean name="banner" value="false"/>
+
+			<rfilter type="gaussian"/>
+		</film>
+	</sensor>
+
+	<emitter type="envmap" id="Area_002-light">
+		<string name="filename" value="../matpreview/envmap.exr"/>
+		<transform name="toWorld">
+			<rotate y="1" angle="-180"/>
+			<matrix value="-0.224951 -0.000001 -0.974370 0.000000 -0.974370 0.000000 0.224951 0.000000 0.000000 1.000000 -0.000001 8.870000 0.000000 0.000000 0.000000 1.000000 "/>
+		</transform>
+		<float name="scale" value="3"/>
+	</emitter>
+</scene>
