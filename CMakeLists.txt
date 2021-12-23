@@ -35,6 +35,7 @@ set(SRCS src/3rdparty/miniz.h
          src/materials/roughdielectric.inl
          src/materials/roughplastic.inl
          src/materials/disney_diffuse.inl
+         src/materials/disney_metal.inl
          src/shapes/sphere.inl
          src/shapes/triangle_mesh.inl
          src/camera.h

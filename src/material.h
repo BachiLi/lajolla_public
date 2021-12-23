@@ -52,9 +52,22 @@ struct DisneyDiffuse {
     Texture<Real> subsurface;
 };
 
+/// For problem set 1: the metallic component of the Disney BRDF.
+struct DisneyMetal {
+    Texture<Spectrum> base_color;
+    Texture<Real> metallic;
+    Texture<Real> specular;
+    Texture<Real> roughness;
+    Texture<Real> anisotropic;
+};
+
 // To add more materials, first create a struct for the material, then overload the () operators for all the
 // functors below.
-using Material = std::variant<Lambertian, RoughPlastic, RoughDielectric, DisneyDiffuse>;
+using Material = std::variant<Lambertian,
+                              RoughPlastic,
+                              RoughDielectric,
+                              DisneyDiffuse,
+                              DisneyMetal>;
 
 /// We allow non-reciprocal BRDFs, so it's important
 /// to distinguish which direction we are tracing the rays.
