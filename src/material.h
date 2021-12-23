@@ -55,8 +55,6 @@ struct DisneyDiffuse {
 /// For problem set 1: the metallic component of the Disney BRDF.
 struct DisneyMetal {
     Texture<Spectrum> base_color;
-    Texture<Real> metallic;
-    Texture<Real> specular;
     Texture<Real> roughness;
     Texture<Real> anisotropic;
 };

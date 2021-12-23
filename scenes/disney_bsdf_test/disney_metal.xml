@@ -15,8 +15,6 @@
 
 		<bsdf type="disneymetal">
 			<rgb name="baseColor" value="0.82 0.67 0.16"/>
-			<float name="metallic" value="1.0"/>
-			<float name="specular" value="1.0"/>
 			<float name="roughness" value="0.2"/>
 			<float name="anisotropic" value="0.5"/>
 		</bsdf>
