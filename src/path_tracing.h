@@ -118,10 +118,11 @@ Spectrum path_tracing(const Scene &scene,
                 dir_light = normalize(point_on_light.position - vertex.position);
                 // If the point on light is occluded, G is 0. So we need to test for occlusion.
                 // To avoid self intersection, we need to set the tnear of the ray
-                // to a small "epsilon" which we define as c_shadow_epsilon as a global constant.
+                // to a small "epsilon". We set the epsilon to be a small constant times the
+                // scale of the scene, which we can obtain through the get_shadow_epsilon() function.
                 Ray shadow_ray{vertex.position, dir_light, 
-                               c_shadow_epsilon,
-                               (1 - c_shadow_epsilon) * distance(point_on_light.position, vertex.position)};
+                               get_shadow_epsilon(scene),
+                               (1 - get_shadow_epsilon(scene)) * distance(point_on_light.position, vertex.position)};
                 if (!occluded(scene, shadow_ray)) {
                     // geometry term is cosine at v_{i+1} divided by distance squared
                     // this can be derived by the infinitesimal area of a surface projected on
@@ -138,7 +139,7 @@ Spectrum path_tracing(const Scene &scene,
                 // To avoid self intersection, we need to set the tnear of the ray
                 // to a small "epsilon" which we define as c_shadow_epsilon as a global constant.
                 Ray shadow_ray{vertex.position, dir_light, 
-                               c_shadow_epsilon,
+                               get_shadow_epsilon(scene),
                                infinity<Real>() /* envmaps are infinitely far away */};
                 if (!occluded(scene, shadow_ray)) {
                     // We integrate envmaps using the solid angle measure,
@@ -158,10 +159,9 @@ Spectrum path_tracing(const Scene &scene,
             // a light path with probability zero
             if (G > 0 && p1 > 0) {
                 // Let's compute f (BSDF) next.
-                Spectrum f;
                 Vector3 dir_view = -ray.dir;
                 assert(vertex.material_id >= 0);
-                f = eval(mat, dir_view, dir_light, vertex, scene.texture_pool);
+                Spectrum f = eval(mat, dir_view, dir_light, vertex, scene.texture_pool);
 
                 // Evaluate the emission
                 // We set the footprint to zero since it is not fully clear how
@@ -231,7 +231,7 @@ Spectrum path_tracing(const Scene &scene,
 
         // Trace a ray towards bsdf_dir. Note that again we have
         // to have an "epsilon" tnear to prevent self intersection.
-        Ray bsdf_ray{vertex.position, dir_bsdf, c_isect_epsilon, infinity<Real>()};
+        Ray bsdf_ray{vertex.position, dir_bsdf, get_intersection_epsilon(scene), infinity<Real>()};
         std::optional<PathVertex> bsdf_vertex = intersect(scene, bsdf_ray);
 
         // To update current_path_throughput

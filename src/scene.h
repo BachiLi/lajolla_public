@@ -85,3 +85,11 @@ inline const Light &get_envmap(const Scene &scene) {
     assert(scene.envmap_light_id != -1);
     return scene.lights[scene.envmap_light_id];
 }
+
+inline Real get_shadow_epsilon(const Scene &scene) {
+    return min(scene.bounds.radius * Real(1e-4), Real(0.01));
+}
+
+inline Real get_intersection_epsilon(const Scene &scene) {
+    return min(scene.bounds.radius * Real(1e-4), Real(0.01));
+}
