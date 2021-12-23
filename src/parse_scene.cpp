@@ -677,8 +677,17 @@ Shape parse_shape(pugi::xml_node node,
                     if (rad_type == "spectrum") {
                         std::vector<std::pair<Real, Real>> spec =
                             parse_spectrum(grand_child.attribute("value").value());
-                        Vector3 xyz = integrate_XYZ(spec);
-                        radiance = fromRGB(XYZ_to_RGB(xyz));
+                        if (spec.size() == 1) {
+                            // For a light source, the white point is
+                            // XYZ(0.9505, 1.0, 1.0888) instead
+                            // or XYZ(1, 1, 1). We need to handle this special case when
+                            // we don't have the full spectrum data.
+                            Vector3 xyz{Real(0.9505), Real(1.0), Real(1.0888)};
+                            radiance = fromRGB(XYZ_to_RGB(xyz * spec[0].second));
+                        } else {
+                            Vector3 xyz = integrate_XYZ(spec);
+                            radiance = fromRGB(XYZ_to_RGB(xyz));
+                        }
                     } else if (rad_type == "rgb") {
                         radiance = fromRGB(parse_vector3(grand_child.attribute("value").value()));
                     } else if (rad_type == "srgb") {
