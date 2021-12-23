@@ -34,8 +34,8 @@ Spectrum eval_op::operator()(const RoughPlastic &bsdf) const {
     Real F_o = fresnel_dielectric(dot(half_vector, dir_out), bsdf.eta); // F_o is the reflection percentage.
     Real n_dot_h = dot(half_vector, vertex.shading_frame.n);
     Real D = GTR2(n_dot_h, roughness); // "Generalized Trowbridge Reitz", GTR2 is equivalent to GGX.
-    Real G = smith_masking(to_local(vertex.shading_frame, dir_in), roughness) *
-             smith_masking(to_local(vertex.shading_frame, dir_out), roughness);
+    Real G = smith_masking_gtr2(to_local(vertex.shading_frame, dir_in), roughness) *
+             smith_masking_gtr2(to_local(vertex.shading_frame, dir_out), roughness);
 
     Spectrum spec_contrib = Ks * (G * F_o * D) / (4 * n_dot_in * n_dot_out);
 
@@ -77,7 +77,7 @@ Real pdf_sample_bsdf_op::operator()(const RoughPlastic &bsdf) const {
     // "Sampling the GGX Distribution of Visible Normals"
     // https://jcgt.org/published/0007/04/01/
     // this importance samples smith_masking(cos_theta_in) * GTR2(cos_theta_h, roughness) * cos_theta_out
-    Real G = smith_masking(to_local(vertex.shading_frame, dir_in), roughness);
+    Real G = smith_masking_gtr2(to_local(vertex.shading_frame, dir_in), roughness);
     Vector3 half_vector = normalize(dir_in + dir_out);
     Real cos_theta_h = dot(half_vector, vertex.shading_frame.n);
     Real D = GTR2(cos_theta_h, roughness);

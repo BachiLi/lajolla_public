@@ -65,13 +65,13 @@ inline Real GGX(Real n_dot_h, Real roughness) {
     return GTR2(n_dot_h, roughness);
 }
 
-/// The masking term models the occlusion between
-/// the small mirrors of the microfacet models.
+/// The masking term models the occlusion between the small mirrors of the microfacet models.
 /// See Eric Heitz's paper "Understanding the Masking-Shadowing Function in Microfacet-Based BRDFs"
 /// for a great explanation.
 /// https://jcgt.org/published/0003/02/03/paper.pdf
 /// The derivation is based on Smith's paper "Geometrical shadowing of a random rough surface".
-inline Real smith_masking(const Vector3 &v_local, Real roughness) {
+/// Note that different microfacet distributions have different masking terms.
+inline Real smith_masking_gtr2(const Vector3 &v_local, Real roughness) {
     Real alpha = roughness * roughness;
     Real a2 = alpha * alpha;
     Vector3 v2 = v_local * v_local;

@@ -42,8 +42,8 @@ Spectrum eval_op::operator()(const RoughDielectric &bsdf) const {
     // us to use F to decide whether to reflect or refract during sampling.
     Real F = fresnel_dielectric(h_dot_in, eta);
     Real D = GTR2(dot(half_vector, n), roughness);
-    Real G = smith_masking(to_local(vertex.shading_frame, dir_in), roughness) *
-             smith_masking(to_local(vertex.shading_frame, dir_out), roughness);
+    Real G = smith_masking_gtr2(to_local(vertex.shading_frame, dir_in), roughness) *
+             smith_masking_gtr2(to_local(vertex.shading_frame, dir_out), roughness);
     if (reflect) {
         return Ks * (F * D * G) / (4 * fabs(n_dot_in));
     } else {
@@ -101,7 +101,7 @@ Real pdf_sample_bsdf_op::operator()(const RoughDielectric &bsdf) const {
     Real h_dot_in = dot(half_vector, dir_in);
     Real F = fresnel_dielectric(h_dot_in, eta);
     Real D = GTR2(dot(half_vector, n), roughness);
-    Real G = smith_masking(to_local(vertex.shading_frame, dir_in), roughness);
+    Real G = smith_masking_gtr2(to_local(vertex.shading_frame, dir_in), roughness);
 
     if (reflect) {
         return (F * D * G) / (4 * fabs(n_dot_in));
