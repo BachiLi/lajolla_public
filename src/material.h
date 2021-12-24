@@ -74,6 +74,12 @@ struct DisneyClearcoat {
     Texture<Real> clearcoat_gloss;
 };
 
+/// For homework 1: the sheen component of the Disney BRDF.
+struct DisneySheen {
+    Texture<Spectrum> base_color;
+    Texture<Real> sheen_tint;
+};
+
 // To add more materials, first create a struct for the material, then overload the () operators for all the
 // functors below.
 using Material = std::variant<Lambertian,
@@ -82,7 +88,8 @@ using Material = std::variant<Lambertian,
                               DisneyDiffuse,
                               DisneyMetal,
                               DisneyTransmission,
-                              DisneyClearcoat>;
+                              DisneyClearcoat,
+                              DisneySheen>;
 
 /// We allow non-reciprocal BRDFs, so it's important
 /// to distinguish which direction we are tracing the rays.

@@ -596,6 +596,15 @@ std::tuple<std::string /* ID */, Material> parse_bsdf(
             }
         }
         return std::make_tuple(id, DisneyClearcoat{clearcoat_gloss});
+    } else if (type == "disneysheen") {
+        Texture<Real> sheen_tint = make_constant_float_texture(Real(0.5));
+        for (auto child : node.children()) {
+            std::string name = child.attribute("name").value();
+            if (name == "sheenTint") {
+                sheen_tint = parse_float_texture(child, texture_map, texture_pool);
+            }
+        }
+        return std::make_tuple(id, DisneySheen{sheen_tint});
     } else {
         Error(std::string("Unknown BSDF: ") + type);
     }
