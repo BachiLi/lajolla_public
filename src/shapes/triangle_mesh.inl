@@ -118,13 +118,11 @@ ShadingInfo compute_shading_info_op::operator()(const TriangleMesh &mesh) const 
         std::tie(dpdu, dpdv) = coordinate_system(vertex.geometry_normal);
     }
 
-    // normalize for shading frame calculation
-    Vector3 tangent = normalize(dpdu);
-
     // Now let's get the shading normal & mean_curvature.
     // By default it is the geometry normal and we have zero curvature.
     Vector3 shading_normal = vertex.geometry_normal;
     Real mean_curvature = 0;
+    Vector3 tangent, bitangent;
     // However if we have vertex normals, that overrides the geometry normal.
     if (mesh.normals.size() > 0) {
         Vector3 n0 = mesh.normals[index[0]],
@@ -134,6 +132,10 @@ ShadingInfo compute_shading_info_op::operator()(const TriangleMesh &mesh) const 
             (1 - vertex.st[0] - vertex.st[1]) * n0 + 
                                 vertex.st[0] * n1 +
                                 vertex.st[1] * n2);
+        // dpdu may not be orthogonal to shading normal:
+        // subtract the projection of shading_normal onto dpdu to make them orthogonal
+        tangent = normalize(dpdu - shading_normal * dot(shading_normal, dpdu));
+
         // We want to compute dn/du & dn/dv for mean curvature.
         // This is computed in a similar way to dpdu.
         // dn/duv = dn/dst * dst/duv = dn/dst * (duv/dst)^{-1}
@@ -141,14 +143,15 @@ ShadingInfo compute_shading_info_op::operator()(const TriangleMesh &mesh) const 
         Vector3 dndt = n2 - n1;
         Vector3 dndu = dnds * dsdu + dndt * dtdu;
         Vector3 dndv = dnds * dsdv + dndt * dtdv;
-        Vector3 bitangent = normalize(cross(shading_normal, tangent));
+        bitangent = normalize(cross(shading_normal, tangent));
         mean_curvature = (dot(dndu, tangent) + 
                           dot(dndv, bitangent)) / Real(2);
+    } else {
+        tangent = normalize(dpdu - shading_normal * dot(shading_normal, dpdu));
+        bitangent = normalize(cross(shading_normal, tangent));
     }
 
-    Frame shading_frame(tangent,
-                        cross(shading_normal, tangent),
-                        shading_normal);
+    Frame shading_frame(tangent, bitangent, shading_normal);
     return ShadingInfo{uv, shading_frame, mean_curvature,
                        max(length(dpdu), length(dpdv)) /* inv_uv_size */};
 }
