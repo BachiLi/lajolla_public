@@ -11,6 +11,10 @@ inline Spectrum make_zero_spectrum() {
     return Vector3{0, 0, 0};
 }
 
+inline Spectrum make_const_spectrum(Real v) {
+    return Vector3{v, v, v};
+}
+
 inline Spectrum fromRGB(const Vector3 &rgb) {
     return rgb;
 }
