@@ -15,7 +15,7 @@
 
 		<bsdf type="disneytransmission">
 			<rgb name="baseColor" value="0.82 0.67 0.16"/>
-			<float name="roughness" value="0.2"/>
+			<float name="roughness" value="0.1"/>
 			<float name="anisotropic" value="0.8"/>
 			<float name="specular_tint" value="0.5"/>
 			<float name="eta" value="1.5"/>
