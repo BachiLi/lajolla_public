@@ -27,7 +27,7 @@ Real pdf_point_on_light_op::operator()(const Envmap &light) const {
     // Convert the Cartesian coordinates to the spherical coordinates.
     // We use the convention that y is the up-axis.
     Vector2 uv{atan2(local_dir[0], -local_dir[2]) * c_INVTWOPI,
-               acos(std::clamp(local_dir[1], Real(0), Real(1))) * c_INVPI};
+               acos(std::clamp(local_dir[1], Real(-1), Real(1))) * c_INVPI};
     // atan2 returns -pi to pi, we map [-pi, 0] to [pi, 2pi]
     if (uv[0] < 0) {
         uv[0] += 1;
@@ -49,7 +49,7 @@ Spectrum emission_op::operator()(const Envmap &light) const {
     Vector3 local_dir = xform_vector(light.to_local, -view_dir);
     // Convert the Cartesian coordinates to the spherical coordinates.
     Vector2 uv{atan2(local_dir[0], -local_dir[2]) * c_INVTWOPI,
-               acos(std::clamp(local_dir[1], Real(0), Real(1))) * c_INVPI};
+               acos(std::clamp(local_dir[1], Real(-1), Real(1))) * c_INVPI};
     // atan2 returns -pi to pi, we map [-pi, 0] to [pi, 2pi]
     if (uv[0] < 0) {
         uv[0] += 1;

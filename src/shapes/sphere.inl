@@ -88,7 +88,7 @@ void sphere_intersect_func(const RTCIntersectFunctionNArguments* args) {
         Vector3 cartesian = geometry_normal / sphere->radius;
         // https://en.wikipedia.org/wiki/Spherical_coordinate_system#Cartesian_coordinates
         // We use the convention that y is up axis.
-        Real elevation = acos(cartesian.y);
+        Real elevation = acos(std::clamp(cartesian.y, Real(-1), Real(1)));
         Real azimuth = atan2(cartesian.z, cartesian.x);
         rtc_hit->u = azimuth / c_TWOPI;
         rtc_hit->v = elevation / c_PI;
