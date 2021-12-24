@@ -60,13 +60,13 @@ struct sample_bsdf_op {
 };
 
 struct get_texture_op {
-    const TextureSpectrum& operator()(const Lambertian &bsdf) const;
-    const TextureSpectrum& operator()(const RoughPlastic &bsdf) const;
-    const TextureSpectrum& operator()(const RoughDielectric &bsdf) const;
-    const TextureSpectrum& operator()(const DisneyDiffuse &bsdf) const;
-    const TextureSpectrum& operator()(const DisneyMetal &bsdf) const;
-    const TextureSpectrum& operator()(const DisneyTransmission &bsdf) const;
-    const TextureSpectrum& operator()(const DisneyClearcoat &bsdf) const;
+    TextureSpectrum operator()(const Lambertian &bsdf) const;
+    TextureSpectrum operator()(const RoughPlastic &bsdf) const;
+    TextureSpectrum operator()(const RoughDielectric &bsdf) const;
+    TextureSpectrum operator()(const DisneyDiffuse &bsdf) const;
+    TextureSpectrum operator()(const DisneyMetal &bsdf) const;
+    TextureSpectrum operator()(const DisneyTransmission &bsdf) const;
+    TextureSpectrum operator()(const DisneyClearcoat &bsdf) const;
 };
 
 #include "materials/lambertian.inl"
@@ -108,6 +108,6 @@ Real pdf_sample_bsdf(const Material &material,
         dir_light, dir_view, vertex, texture_pool, dir}, material);
 }
 
-const TextureSpectrum &get_texture(const Material &material) {
+TextureSpectrum get_texture(const Material &material) {
     return std::visit(get_texture_op{}, material);
 }

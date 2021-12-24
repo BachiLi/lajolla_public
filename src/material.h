@@ -71,7 +71,6 @@ struct DisneyTransmission {
 
 /// For homework 1: the clearcoat component of the Disney BRDF.
 struct DisneyClearcoat {
-    Texture<Spectrum> base_color;
     Texture<Real> clearcoat_gloss;
 };
 
@@ -143,4 +142,4 @@ Real pdf_sample_bsdf(const Material &material,
 
 /// Return a texture from the material for debugging.
 /// If the material contains multiple textures, return an arbitrary one.
-const TextureSpectrum &get_texture(const Material &material);
+TextureSpectrum get_texture(const Material &material);

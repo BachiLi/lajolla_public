@@ -48,6 +48,6 @@ std::optional<BSDFSampleRecord>
     return {};
 }
 
-const TextureSpectrum& get_texture_op::operator()(const DisneyClearcoat &bsdf) const {
-    return bsdf.base_color;
+TextureSpectrum get_texture_op::operator()(const DisneyClearcoat &bsdf) const {
+    return make_constant_spectrum_texture(make_zero_spectrum());
 }

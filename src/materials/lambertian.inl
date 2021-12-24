@@ -49,6 +49,6 @@ std::optional<BSDFSampleRecord> sample_bsdf_op::operator()(const Lambertian &bsd
         Real(0) /* eta */, Real(1) /* roughness */};
 }
 
-const TextureSpectrum& get_texture_op::operator()(const Lambertian &bsdf) const {
+TextureSpectrum get_texture_op::operator()(const Lambertian &bsdf) const {
     return bsdf.reflectance;
 }

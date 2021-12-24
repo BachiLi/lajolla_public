@@ -40,6 +40,6 @@ std::optional<BSDFSampleRecord>
     return {};
 }
 
-const TextureSpectrum& get_texture_op::operator()(const DisneyTransmission &bsdf) const {
+TextureSpectrum get_texture_op::operator()(const DisneyTransmission &bsdf) const {
     return bsdf.base_color;
 }

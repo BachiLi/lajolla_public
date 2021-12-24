@@ -160,6 +160,6 @@ std::optional<BSDFSampleRecord>
     }
 }
 
-const TextureSpectrum& get_texture_op::operator()(const RoughPlastic &bsdf) const {
+TextureSpectrum get_texture_op::operator()(const RoughPlastic &bsdf) const {
     return bsdf.diffuse_reflectance;
 }
