@@ -19,6 +19,12 @@ inline Spectrum fromRGB(const Vector3 &rgb) {
     return rgb;
 }
 
+inline Spectrum sqrt(const Spectrum &s) {
+    return Vector3{sqrt(max(s[0], Real(0))),
+                   sqrt(max(s[1], Real(0))),
+                   sqrt(max(s[2], Real(0)))};
+}
+
 inline Real luminance(const Spectrum &s) {
     return s.x * Real(0.212671) + s.y * Real(0.715160) + s.z * Real(0.072169);
 }
