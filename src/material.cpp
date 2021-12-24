@@ -17,6 +17,7 @@ struct eval_op {
     Spectrum operator()(const DisneyDiffuse &bsdf) const;
     Spectrum operator()(const DisneyMetal &bsdf) const;
     Spectrum operator()(const DisneyTransmission &bsdf) const;
+    Spectrum operator()(const DisneyClearcoat &bsdf) const;
 
     const Vector3 &dir_in;
     const Vector3 &dir_out;
@@ -32,6 +33,7 @@ struct pdf_sample_bsdf_op {
     Real operator()(const DisneyDiffuse &bsdf) const;
     Real operator()(const DisneyMetal &bsdf) const;
     Real operator()(const DisneyTransmission &bsdf) const;
+    Real operator()(const DisneyClearcoat &bsdf) const;
 
     const Vector3 &dir_in;
     const Vector3 &dir_out;
@@ -47,6 +49,7 @@ struct sample_bsdf_op {
     std::optional<BSDFSampleRecord> operator()(const DisneyDiffuse &bsdf) const;
     std::optional<BSDFSampleRecord> operator()(const DisneyMetal &bsdf) const;
     std::optional<BSDFSampleRecord> operator()(const DisneyTransmission &bsdf) const;
+    std::optional<BSDFSampleRecord> operator()(const DisneyClearcoat &bsdf) const;
 
     const Vector3 &dir_in;
     const PathVertex &vertex;
@@ -63,6 +66,7 @@ struct get_texture_op {
     const TextureSpectrum& operator()(const DisneyDiffuse &bsdf) const;
     const TextureSpectrum& operator()(const DisneyMetal &bsdf) const;
     const TextureSpectrum& operator()(const DisneyTransmission &bsdf) const;
+    const TextureSpectrum& operator()(const DisneyClearcoat &bsdf) const;
 };
 
 #include "materials/lambertian.inl"
@@ -71,6 +75,7 @@ struct get_texture_op {
 #include "materials/disney_diffuse.inl"
 #include "materials/disney_metal.inl"
 #include "materials/disney_transmission.inl"
+#include "materials/disney_clearcoat.inl"
 
 Spectrum eval(const Material &material,
               const Vector3 &dir_light,

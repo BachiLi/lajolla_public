@@ -69,6 +69,12 @@ struct DisneyTransmission {
     Real eta; // internal IOR / externalIOR
 };
 
+/// For homework 1: the clearcoat component of the Disney BRDF.
+struct DisneyClearcoat {
+    Texture<Spectrum> base_color;
+    Texture<Real> clearcoat_gloss;
+};
+
 // To add more materials, first create a struct for the material, then overload the () operators for all the
 // functors below.
 using Material = std::variant<Lambertian,
@@ -76,7 +82,8 @@ using Material = std::variant<Lambertian,
                               RoughDielectric,
                               DisneyDiffuse,
                               DisneyMetal,
-                              DisneyTransmission>;
+                              DisneyTransmission,
+                              DisneyClearcoat>;
 
 /// We allow non-reciprocal BRDFs, so it's important
 /// to distinguish which direction we are tracing the rays.

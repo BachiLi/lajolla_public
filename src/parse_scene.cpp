@@ -587,6 +587,18 @@ std::tuple<std::string /* ID */, Material> parse_bsdf(
             }
         }
         return std::make_tuple(id, DisneyTransmission{base_color, roughness, anisotropic, specular_tint, eta});
+    } else if (type == "disneyclearcoat") {
+        Texture<Spectrum> base_color = make_constant_spectrum_texture(fromRGB(Vector3{0.5, 0.5, 0.5}));
+        Texture<Real> clearcoat_gloss = make_constant_float_texture(Real(1.0));
+        for (auto child : node.children()) {
+            std::string name = child.attribute("name").value();
+            if (name == "baseColor") {
+                base_color = parse_spectrum_texture(child, texture_map, texture_pool);
+            } else if (name == "clearcoatGloss") {
+                clearcoat_gloss = parse_float_texture(child, texture_map, texture_pool);
+            }
+        }
+        return std::make_tuple(id, DisneyClearcoat{base_color, clearcoat_gloss});
     } else {
         Error(std::string("Unknown BSDF: ") + type);
     }
