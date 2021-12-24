@@ -1,45 +1,4 @@
-\documentclass{article}
-\usepackage{hyperref}
-\usepackage{listings}
-\usepackage{color}
-\usepackage{geometry}
-\usepackage{graphicx}
-\usepackage{amsmath}
-\usepackage{caption}
-\usepackage{subcaption}
-\geometry{margin=1in}
-\pdfminorversion=6
-
-\newcommand\TODO[1]{\textcolor{red}{TODO: #1}}
-
-\newcommand\header[2]{
-    \begin{center}
-        {\large
-        UCSD CSE 272 Assignment #1: \\
-        \vspace{0.3cm}
-        \Large
-        #2}
-    \end{center}
-}
-
-\definecolor{dkgreen}{rgb}{0,0.6,0}
-\definecolor{gray}{rgb}{0.5,0.5,0.5}
-\definecolor{mauve}{rgb}{0.58,0,0.82}
-\lstset{frame=tb,
-        aboveskip=3mm,
-        belowskip=3mm,
-        showstringspaces=false,
-        columns=flexible,
-        basicstyle={\small\ttfamily},
-        numbers=none,
-        numberstyle=\tiny\color{gray},
-        keywordstyle=\color{blue},
-        commentstyle=\color{dkgreen},
-        stringstyle=\color{mauve},
-        breaklines=true,
-        breakatwhitespace=true,
-        tabsize=2
-}
+\input{preamble}
 
 \begin{document}
 
@@ -105,7 +64,7 @@ Lajolla mostly follows the design of other existing physically-based renderers, 
 \end{lstlisting}
 We do not declare \lstinline{auto} that often, since I am still not convinced that it would not hurt code readability.
 
-\paragraph{Variant-based polymorphism.} Perhaps the biggest difference on the surface between lajolla and most other (CPU-based) renderers is how it implements polymorphism. In rendering, the same rendering code would need to handle different materials, lights, cameras, and etc. Most renderers adopt a heavily object-oriented design with classes and inheritance. While this is an acceptable approach, the hierarchical vtable pointers make the whole scene data structure very difficult to convert to GPU. I also personally just do not think OOP is a good idea\footnote{see \href{https://www.youtube.com/watch?v=QM1iUe6IofM}{``Object-Oriented Programming is Bad''} from Brain Will}. To support polymorphism, we use a modern C++ feature \lstinline{std::variant}. It is essentially a \emph{tagged union} (or a \emph{sum type} if you are functional guru): a C union with a member indicating which type it is. Read more about it \href{https://www.cppstories.com/2020/04/variant-virtual-polymorphism.html/}{here}. Another renderer \href{visionaray}{https://github.com/szellmann/visionaray} also adopts a similar approach.
+\paragraph{Variant-based polymorphism.} Perhaps the biggest difference on the surface between lajolla and most other (CPU-based) renderers is how it implements polymorphism. In rendering, the same rendering code would need to handle different materials, lights, cameras, and etc. Most renderers adopt a heavily object-oriented design with classes and inheritance. While this is an acceptable approach, the hierarchical vtable pointers make the whole scene data structure very difficult to convert to GPU. I also personally just do not think OOP is a good idea\footnote{see \href{https://www.youtube.com/watch?v=QM1iUe6IofM}{``Object-Oriented Programming is Bad''} from Brain Will}. To support polymorphism, we use a modern C++ feature \lstinline{std::variant}. It is essentially a \emph{tagged union} (or a \emph{sum type} if you are functional guru): a C union with a member indicating which type it is. Read more about it \href{https://www.cppstories.com/2020/04/variant-virtual-polymorphism.html/}{here}. Another renderer \href{https://github.com/szellmann/visionaray}{visionaray} also adopts a similar approach.
 
 Below we will take a whirlwind tour over the basics of physically-based rendering and how they are implemented in lajolla.
 
@@ -486,7 +445,7 @@ Real pdf_sample_bsdf(const Material &material,
 
 /// Return a texture from the material for debugging.
 /// If the material contains multiple textures, return an arbitrary one.
-const TextureSpectrum &get_texture(const Material &material);
+TextureSpectrum get_texture(const Material &material);
 \end{lstlisting}
 
 The comments should be self-explanatory. If they are not, let us know. Note that in lajolla, the BSDF functions also contain the cosine term $|\mathbf{n}_{\mathbf{p}} \cdot \omega'|$: this makes the overall code simpler. \textbf{For the homework, you do not need to worry about \lstinline{TransportDirection}: you can assume they are always pointing towards the lights.} This is for convenience for implementing a bidirectional path tracer.
@@ -543,7 +502,7 @@ In lajolla, all surfaces must come with a 2D $(u, v)$ parametrization. We use th
 
 \paragraph{Filtering and ray differentials.} Similar to the pixel filter, it is crucial that we filter the texture as well to avoid aliasing. When accessing a texture, we want to know the relative size between the filter on uv and the pixel filter (Figure~\ref{fig:texture_filtering}). This relative size is determined by the derivatives between $uv$ and $xy$. Note that we need to access textures for many bounces of lights, and it is difficult to estimate the texture footprint over many bounces. A commonly used method for determining texture footprint is the \emph{ray differentials}~\cite{Igehy:1999:TRD}, however it only works for purely specular materials. \emph{Path differentials}~\cite{Suykens:2001:PDA} is an extension of ray differential for glossy materials, but it is extremely expensive to compute. A slightly more principled way based on local Fourier analysis called covariance tracing~\cite{Belcour:2017:ACG} can propagate the Fourier spectrum of the pixel filter using a Gaussian approximation, but 1) it requires us to have knowledge of the Fourier spectrum of the BSDF, and 2) it is still an approximation because it ignores visibility. In general, if we ignore visibility, all existing methods would predict an infinite filter size if a light path goes through a diffuse bounce. However this is clearly incorrect, since object boundaries and visibility would limit the texture filter size. The existing approaches have to place a manually determined maximum filter size to prevent infinite filter size.
 
-Since all existing methods are heuristics and there is really no satisfactory solution for multiple bounces (which means there is research to be done here!), we will use a very simple and conservative heuristic, inspired by the implementation in modern RenderMan~\cite{Christensen:2018:RAP} and an experimental branch of pbrt.\footnote{See \href{THE IMPLEMENTATION OF A SCALABLE TEXTURE CACHE}{https://www.pbrt.org/texcache.pdf} from Matt Pharr} We maintain two numbers for a ray differential: the \emph{radius} of a ray and a \emph{spread} of a ray (Figure~\ref{fig:ray_differential}) -- now that the ray becomes a \emph{ray cone} and the size of the cone can be used for determining the texture footprint. These values are approximately the derivative of the ray origin and ray direction with respect to the pixel coordinates.
+Since all existing methods are heuristics and there is really no satisfactory solution for multiple bounces (which means there is research to be done here!), we will use a very simple and conservative heuristic, inspired by the implementation in modern RenderMan~\cite{Christensen:2018:RAP} and an experimental branch of pbrt.\footnote{See \href{https://www.pbrt.org/texcache.pdf}{THE IMPLEMENTATION OF A SCALABLE TEXTURE CACHE} from Matt Pharr} We maintain two numbers for a ray differential: the \emph{radius} of a ray and a \emph{spread} of a ray (Figure~\ref{fig:ray_differential}) -- now that the ray becomes a \emph{ray cone} and the size of the cone can be used for determining the texture footprint. These values are approximately the derivative of the ray origin and ray direction with respect to the pixel coordinates.
 \begin{lstlisting}[language=c++]
 struct RayDifferential {
     // Radius is approximately (length(dp/dx) + length(dp/dy)) / 2
@@ -660,7 +619,7 @@ inline const Mipmap1 &get_img1(const TexturePool &pool, int texture_id);
 inline const Mipmap3 &get_img3(const TexturePool &pool, int texture_id);
 \end{lstlisting}
 
-I recommend Matt Pharr's article \href{The Implementation of a Scalable Texture Cache}{https://www.pbrt.org/texcache.pdf} if you want to learn more about texture caches.
+I recommend Matt Pharr's article \href{https://www.pbrt.org/texcache.pdf}{The Implementation of a Scalable Texture Cache} if you want to learn more about texture caches.
 
 That was a lot: handling textures correctly is difficult and there is actually more! We will cover some of them in the classes.
 
@@ -755,7 +714,7 @@ struct TriangleMesh : public ShapeBase {
 using Shape = std::variant<Sphere, TriangleMesh>;
 \end{lstlisting}
 
-Lajolla uses \href{Embree}{https://www.embree.org/} as its ray casting engine. So a shape would need to register itself to the Embree API:
+Lajolla uses \href{https://www.embree.org/}{Embree} as its ray casting engine. So a shape would need to register itself to the Embree API:
 \begin{lstlisting}[language=c++]
 /// Add the shape to an Embree scene.
 uint32_t register_embree(const Shape &shape, const RTCDevice &device, const RTCScene &scene);
@@ -938,6 +897,28 @@ of the spectrum. There are production renderers that support full spectral rende
 /// For now, lajolla assumes we are operating in the linear and trimulus RGB color space.
 /// In the future we might implement a proper spectral renderer.
 using Spectrum = Vector3;
+
+inline Spectrum make_zero_spectrum() {
+    return Vector3{0, 0, 0};
+}
+
+inline Spectrum make_const_spectrum(Real v) {
+    return Vector3{v, v, v};
+}
+
+inline Spectrum fromRGB(const Vector3 &rgb) {
+    return rgb;
+}
+
+inline Spectrum sqrt(const Spectrum &s) {
+    return Vector3{sqrt(max(s[0], Real(0))),
+                   sqrt(max(s[1], Real(0))),
+                   sqrt(max(s[2], Real(0)))};
+}
+
+inline Real luminance(const Spectrum &s) {
+    return s.x * Real(0.212671) + s.y * Real(0.715160) + s.z * Real(0.072169);
+}
 \end{lstlisting}
 
 To render some Mitsuba scenes, we need to convert spectral data to RGB. We use a curve-fitting solution from Wyman et al. for doing so~\cite{Wyman:2013:SAP}.
@@ -1062,7 +1043,7 @@ inline std::pair<Vector3, Vector3> coordinate_system(const Vector3 &n) {
 \end{lstlisting}
 
 \subsection{Parallelization}
-We take the parallelization code from \href{pbrt}{https://github.com/mmp/pbrt-v3/blob/master/src/core/parallel.h}. The following functions can be used for parallelizing loops:
+We take the parallelization code from \href{https://github.com/mmp/pbrt-v3/blob/master/src/core/parallel.h}{pbrt}. The following functions can be used for parallelizing loops:
 \begin{lstlisting}[language=c++]
 void parallel_for(const std::function<void(int64_t)> &func, int64_t count, int64_t chunkSize = 1);
 void parallel_for(std::function<void(Vector2i)> func, const Vector2i count);
@@ -1097,7 +1078,7 @@ parallel_for([&](const Vector2i &tile) {
 \end{lstlisting}
 
 \subsection{Random number generation}
-Lajolla uses a random number generator called \href{PCG}{https://www.pcg-random.org/} which is a very lightweight random number generator based on simple postprocessing of a standard linear congruent generator. PCG generally has good statistical properties and is much cheaper to compute compared to more advanced RNG, e.g., Merserner Twister. Highly recommend Melissa O'Neill's \href{talk}{https://www.youtube.com/watch?v=45Oet5qjlms} about PCG.
+Lajolla uses a random number generator called \href{https://www.pcg-random.org/}{PCG} which is a very lightweight random number generator based on simple postprocessing of a standard linear congruent generator. PCG generally has good statistical properties and is much cheaper to compute compared to more advanced RNG, e.g., Merserner Twister. Highly recommend Melissa O'Neill's \href{https://www.youtube.com/watch?v=45Oet5qjlms}{talk} about PCG.
 
 A crucial feature of PCG is that it allows multiple "streams": given a seed, we can initialize many different streams of RNGs that have different independent random numbers.
 
