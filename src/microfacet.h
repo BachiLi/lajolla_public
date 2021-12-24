@@ -20,8 +20,7 @@
 /// See "Memo on Fresnel equations" from Sebastien Lagarde
 /// for a really nice introduction.
 /// https://seblagarde.wordpress.com/2013/04/29/memo-on-fresnel-equations/
-template <typename T>
-inline T schlick_fresnel(const T &F0, Real cos_theta) {
+inline Spectrum schlick_fresnel(const Spectrum &F0, Real cos_theta) {
     return F0 + (Real(1) - F0) *
         pow(max(1 - cos_theta, Real(0)), Real(5));
 }
