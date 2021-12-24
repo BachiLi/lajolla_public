@@ -105,12 +105,8 @@ inline Vector3 sample_visible_normals(const Vector3 &local_dir_in, Real alpha, c
     Vector3 disk_N{t1, t2, sqrt(max(Real(0), 1 - t1*t1 - t2*t2))};
 
     // Reprojection onto hemisphere -- we get our sampled normal in hemisphere space.
-    // Frame hemi_frame(hemi_dir_in);
-    // Vector3 hemi_N = to_world(hemi_frame, disk_N);
-    Vector3 T1 = (hemi_dir_in.z < Real(0.99999)) ? 
-        normalize(cross(Vector3{0, 0, 1}, hemi_dir_in)) : Vector3{1, 0, 0};
-    Vector3 T2 = cross(hemi_dir_in, T1);
-    Vector3 hemi_N = normalize(disk_N.x * T1 + disk_N.y * T2 + disk_N.z * hemi_dir_in);
+    Frame hemi_frame(hemi_dir_in);
+    Vector3 hemi_N = to_world(hemi_frame, disk_N);
 
     // Transforming the normal back to the ellipsoid configuration
     return normalize(Vector3{alpha * hemi_N.x, alpha * hemi_N.y, max(Real(0), hemi_N.z)});
