@@ -11,6 +11,7 @@
 
 enum class Integrator {
     Depth,
+    ShadingNormal,
     MeanCurvature,
     RayDifferential, // visualize radius & spread
     MipmapLevel,

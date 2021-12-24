@@ -30,6 +30,8 @@ Image3 aux_render(const Scene &scene) {
                     Vector3 color{0, 0, 0};
                     if (scene.options.integrator == Integrator::Depth) {
                         color = Vector3{dist, dist, dist};
+                    } else if (scene.options.integrator == Integrator::ShadingNormal) {
+                        color = (vertex->shading_frame.n + Vector3{1, 1, 1}) / Real(2);
                     } else if (scene.options.integrator == Integrator::MeanCurvature) {
                         Real kappa = vertex->mean_curvature;
                         color = Vector3{kappa, kappa, kappa};
@@ -98,6 +100,7 @@ Image3 path_render(const Scene &scene) {
 
 Image3 render(const Scene &scene) {
     if (scene.options.integrator == Integrator::Depth ||
+            scene.options.integrator == Integrator::ShadingNormal ||
             scene.options.integrator == Integrator::MeanCurvature ||
             scene.options.integrator == Integrator::RayDifferential ||
             scene.options.integrator == Integrator::MipmapLevel) {

@@ -279,6 +279,8 @@ RenderOptions parse_integrator(pugi::xml_node node) {
         options.max_depth = 2;
     } else if (type == "depth") {
         options.integrator = Integrator::Depth;
+    } else if (type == "shadingNormal") {
+        options.integrator = Integrator::ShadingNormal;
     } else if (type == "meanCurvature") {
         options.integrator = Integrator::MeanCurvature;
     } else if (type == "rayDifferential") {
