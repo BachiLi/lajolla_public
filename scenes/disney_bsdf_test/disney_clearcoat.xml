@@ -13,8 +13,7 @@
 			<translate z="0.01"/>
 		</transform>
 
-		<bsdf type="disneymetal">
-			<rgb name="baseColor" value="0.82 0.67 0.16"/>
+		<bsdf type="disneyclearcoat">
 			<float name="clearcoatGloss" value="0.5"/>
 		</bsdf>
 	</shape>
