@@ -32,10 +32,20 @@
 			<translate x="-4" y="1"/>
 		</transform>
 
-		<bsdf type="disneydiffuse">
+		<bsdf type="disneybsdf">
 			<rgb name="baseColor" value="0.82 0.67 0.16"/>
-			<float name="roughness" value="0.0"/>
-			<float name="subsurface" value="0.0"/>
+			<float name="specularTransmission" value="0.0"/>
+			<float name="metallic" value="0.0"/>
+			<float name="subsurface" value="0.5"/>
+			<float name="specular" value="0.5"/>
+			<float name="roughness" value="0.5"/>
+			<float name="specularTint" value="0.5"/>
+			<float name="anisotropic" value="0.0"/>
+			<float name="sheen" value="0.0"/>
+			<float name="sheenTint" value="0.5"/>
+			<float name="clearcoat" value="0.0"/>
+			<float name="clearcoatGloss" value="0.5"/>
+			<float name="eta" value="1.5"/>
 		</bsdf>
 	</shape>
 
@@ -61,10 +71,20 @@
 			<translate x="-3" y="2"/>
 		</transform>
 
-		<bsdf type="disneydiffuse">
-			<rgb name="baseColor" value="0.82 0.67 0.16"/>
-			<float name="roughness" value="0.33"/>
-			<float name="subsurface" value="0.0"/>
+		<bsdf type="disneybsdf">
+			<rgb name="baseColor" value="0.25 0.83 0.36"/>
+			<float name="specularTransmission" value="0.0"/>
+			<float name="metallic" value="0.8"/>
+			<float name="subsurface" value="0.5"/>
+			<float name="specular" value="0.5"/>
+			<float name="roughness" value="0.5"/>
+			<float name="specularTint" value="0.5"/>
+			<float name="anisotropic" value="0.0"/>
+			<float name="sheen" value="0.0"/>
+			<float name="sheenTint" value="0.5"/>
+			<float name="clearcoat" value="1.0"/>
+			<float name="clearcoatGloss" value="0.5"/>
+			<float name="eta" value="1.5"/>
 		</bsdf>
 	</shape>
 
@@ -90,10 +110,20 @@
 			<translate x="-2" y="3"/>
 		</transform>
 
-		<bsdf type="disneydiffuse">
-			<rgb name="baseColor" value="0.82 0.67 0.16"/>
-			<float name="roughness" value="0.66"/>
-			<float name="subsurface" value="0.0"/>
+		<bsdf type="disneybsdf">
+			<rgb name="baseColor" value="0.75 0.83 0.46"/>
+			<float name="specularTransmission" value="0.0"/>
+			<float name="metallic" value="0.1"/>
+			<float name="subsurface" value="0.5"/>
+			<float name="specular" value="0.5"/>
+			<float name="roughness" value="0.5"/>
+			<float name="specularTint" value="0.5"/>
+			<float name="anisotropic" value="0.0"/>
+			<float name="sheen" value="1.0"/>
+			<float name="sheenTint" value="0.5"/>
+			<float name="clearcoat" value="0.5"/>
+			<float name="clearcoatGloss" value="0.5"/>
+			<float name="eta" value="1.5"/>
 		</bsdf>
 	</shape>
 
@@ -119,10 +149,20 @@
 			<translate x="-1" y="4"/>
 		</transform>
 
-		<bsdf type="disneydiffuse">
-			<rgb name="baseColor" value="0.82 0.67 0.16"/>
-			<float name="roughness" value="1.0"/>
+		<bsdf type="disneybsdf">
+			<rgb name="baseColor" value="0.75 0.83 0.46"/>
+			<float name="specularTransmission" value="0.5"/>
+			<float name="metallic" value="0.1"/>
 			<float name="subsurface" value="0.0"/>
+			<float name="specular" value="1.0"/>
+			<float name="roughness" value="0.5"/>
+			<float name="specularTint" value="0.5"/>
+			<float name="anisotropic" value="0.0"/>
+			<float name="sheen" value="0.0"/>
+			<float name="sheenTint" value="0.5"/>
+			<float name="clearcoat" value="0.0"/>
+			<float name="clearcoatGloss" value="0.5"/>
+			<float name="eta" value="1.5"/>
 		</bsdf>
 	</shape>
 
@@ -148,10 +188,20 @@
 			<translate x="-3.5" y="0.5" z="-0.75"/>
 		</transform>
 
-		<bsdf type="disneydiffuse">
-			<rgb name="baseColor" value="0.82 0.67 0.16"/>
-			<float name="roughness" value="0.0"/>
-			<float name="subsurface" value="0.5"/>
+		<bsdf type="disneybsdf">
+			<rgb name="baseColor" value="0.5 0.23 0.84"/>
+			<float name="specularTransmission" value="0.0"/>
+			<float name="metallic" value="0.5"/>
+			<float name="subsurface" value="1.0"/>
+			<float name="specular" value="1.0"/>
+			<float name="roughness" value="0.5"/>
+			<float name="specularTint" value="0.5"/>
+			<float name="anisotropic" value="0.1"/>
+			<float name="sheen" value="0.5"/>
+			<float name="sheenTint" value="0.5"/>
+			<float name="clearcoat" value="0.5"/>
+			<float name="clearcoatGloss" value="0.5"/>
+			<float name="eta" value="1.5"/>
 		</bsdf>
 	</shape>
 
@@ -177,10 +227,20 @@
 			<translate x="-2.5" y="1.5" z="-0.75"/>
 		</transform>
 
-		<bsdf type="disneydiffuse">
-			<rgb name="baseColor" value="0.82 0.67 0.16"/>
-			<float name="roughness" value="0.33"/>
-			<float name="subsurface" value="0.5"/>
+		<bsdf type="disneybsdf">
+			<rgb name="baseColor" value="0.5 0.9 0.84"/>
+			<float name="specularTransmission" value="1.0"/>
+			<float name="metallic" value="0.0"/>
+			<float name="subsurface" value="1.0"/>
+			<float name="specular" value="1.0"/>
+			<float name="roughness" value="0.1"/>
+			<float name="specularTint" value="0.5"/>
+			<float name="anisotropic" value="0.1"/>
+			<float name="sheen" value="0.5"/>
+			<float name="sheenTint" value="0.5"/>
+			<float name="clearcoat" value="0.5"/>
+			<float name="clearcoatGloss" value="0.5"/>
+			<float name="eta" value="1.5"/>
 		</bsdf>
 	</shape>
 
@@ -206,10 +266,20 @@
 			<translate x="-1.5" y="2.5" z="-0.75"/>
 		</transform>
 
-		<bsdf type="disneydiffuse">
-			<rgb name="baseColor" value="0.82 0.67 0.16"/>
-			<float name="roughness" value="0.66"/>
-			<float name="subsurface" value="0.5"/>
+		<bsdf type="disneybsdf">
+			<rgb name="baseColor" value="0.9 0.9 0.84"/>
+			<float name="specularTransmission" value="0.0"/>
+			<float name="metallic" value="1.0"/>
+			<float name="subsurface" value="1.0"/>
+			<float name="specular" value="1.0"/>
+			<float name="roughness" value="0.1"/>
+			<float name="specularTint" value="0.5"/>
+			<float name="anisotropic" value="0.1"/>
+			<float name="sheen" value="0.5"/>
+			<float name="sheenTint" value="0.5"/>
+			<float name="clearcoat" value="0.5"/>
+			<float name="clearcoatGloss" value="0.5"/>
+			<float name="eta" value="1.5"/>
 		</bsdf>
 	</shape>
 
@@ -235,10 +305,20 @@
 			<translate x="-0.5" y="3.5" z="-0.75"/>
 		</transform>
 
-		<bsdf type="disneydiffuse">
-			<rgb name="baseColor" value="0.82 0.67 0.16"/>
-			<float name="roughness" value="1.0"/>
+		<bsdf type="disneybsdf">
+			<rgb name="baseColor" value="0.2 0.2 0.3"/>
+			<float name="specularTransmission" value="0.5"/>
+			<float name="metallic" value="0.5"/>
 			<float name="subsurface" value="0.5"/>
+			<float name="specular" value="0.5"/>
+			<float name="roughness" value="0.2"/>
+			<float name="specularTint" value="0.5"/>
+			<float name="anisotropic" value="0.1"/>
+			<float name="sheen" value="0.5"/>
+			<float name="sheenTint" value="0.5"/>
+			<float name="clearcoat" value="0.5"/>
+			<float name="clearcoatGloss" value="0.5"/>
+			<float name="eta" value="1.5"/>
 		</bsdf>
 	</shape>
 
@@ -264,10 +344,20 @@
 			<translate x="-2" y="-0.5" z="-0.9"/>
 		</transform>
 
-		<bsdf type="disneydiffuse">
-			<rgb name="baseColor" value="0.82 0.67 0.16"/>
-			<float name="roughness" value="0.0"/>
-			<float name="subsurface" value="1.0"/>
+		<bsdf type="disneybsdf">
+			<rgb name="baseColor" value="0.5 0.6 0.7"/>
+			<float name="specularTransmission" value="0.2"/>
+			<float name="metallic" value="0.8"/>
+			<float name="subsurface" value="0.2"/>
+			<float name="specular" value="0.7"/>
+			<float name="roughness" value="0.1"/>
+			<float name="specularTint" value="0.0"/>
+			<float name="anisotropic" value="0.3"/>
+			<float name="sheen" value="0.5"/>
+			<float name="sheenTint" value="0.5"/>
+			<float name="clearcoat" value="0.5"/>
+			<float name="clearcoatGloss" value="0.5"/>
+			<float name="eta" value="1.5"/>
 		</bsdf>
 	</shape>
 
@@ -293,10 +383,20 @@
 			<translate x="-1.15" y="0.35" z="-0.9"/>
 		</transform>
 
-		<bsdf type="disneydiffuse">
-			<rgb name="baseColor" value="0.82 0.67 0.16"/>
-			<float name="roughness" value="0.33"/>
-			<float name="subsurface" value="1.0"/>
+		<bsdf type="disneybsdf">
+			<rgb name="baseColor" value="0.9 0.2 0.3"/>
+			<float name="specularTransmission" value="0.0"/>
+			<float name="metallic" value="0.0"/>
+			<float name="subsurface" value="0.8"/>
+			<float name="specular" value="0.3"/>
+			<float name="roughness" value="0.1"/>
+			<float name="specularTint" value="0.0"/>
+			<float name="anisotropic" value="0.0"/>
+			<float name="sheen" value="1.0"/>
+			<float name="sheenTint" value="0.5"/>
+			<float name="clearcoat" value="1.0"/>
+			<float name="clearcoatGloss" value="0.5"/>
+			<float name="eta" value="1.5"/>
 		</bsdf>
 	</shape>
 
@@ -322,10 +422,20 @@
 			<translate x="-0.3" y="1.2" z="-0.9"/>
 		</transform>
 
-		<bsdf type="disneydiffuse">
-			<rgb name="baseColor" value="0.82 0.67 0.16"/>
-			<float name="roughness" value="0.66"/>
-			<float name="subsurface" value="1.0"/>
+		<bsdf type="disneybsdf">
+			<rgb name="baseColor" value="0.3 0.5 0.3"/>
+			<float name="specularTransmission" value="1.0"/>
+			<float name="metallic" value="0.9"/>
+			<float name="subsurface" value="0.8"/>
+			<float name="specular" value="0.3"/>
+			<float name="roughness" value="0.2"/>
+			<float name="specularTint" value="0.0"/>
+			<float name="anisotropic" value="0.3"/>
+			<float name="sheen" value="1.0"/>
+			<float name="sheenTint" value="0.5"/>
+			<float name="clearcoat" value="1.0"/>
+			<float name="clearcoatGloss" value="0.5"/>
+			<float name="eta" value="1.5"/>
 		</bsdf>
 	</shape>
 
@@ -351,10 +461,20 @@
 			<translate x="0.55" y="2.05" z="-0.9"/>
 		</transform>
 
-		<bsdf type="disneydiffuse">
-			<rgb name="baseColor" value="0.82 0.67 0.16"/>
-			<float name="roughness" value="1.0"/>
-			<float name="subsurface" value="1.0"/>
+		<bsdf type="disneybsdf">
+			<rgb name="baseColor" value="0.1 0.1 0.3"/>
+			<float name="specularTransmission" value="0.5"/>
+			<float name="metallic" value="0.5"/>
+			<float name="subsurface" value="0.5"/>
+			<float name="specular" value="0.3"/>
+			<float name="roughness" value="0.9"/>
+			<float name="specularTint" value="0.0"/>
+			<float name="anisotropic" value="0.1"/>
+			<float name="sheen" value="0.0"/>
+			<float name="sheenTint" value="0.5"/>
+			<float name="clearcoat" value="0.0"/>
+			<float name="clearcoatGloss" value="0.5"/>
+			<float name="eta" value="1.5"/>
 		</bsdf>
 	</shape>
 
@@ -392,7 +512,7 @@
 		</transform>
 
 		<sampler type="independent">
-			<integer name="sampleCount" value="256"/>
+			<integer name="sampleCount" value="1024"/>
 		</sampler>
 
 		<film type="hdrfilm" id="film">
