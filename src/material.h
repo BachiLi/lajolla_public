@@ -78,8 +78,6 @@ struct DisneyClearcoat {
 struct DisneySheen {
     Texture<Spectrum> base_color;
     Texture<Real> sheen_tint;
-
-    Real eta; // internal IOR / externalIOR
 };
 
 // To add more materials, first create a struct for the material, then overload the () operators for all the

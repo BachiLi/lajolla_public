@@ -1,10 +1,13 @@
 Spectrum eval_op::operator()(const DisneyDiffuse &bsdf) const {
-    Vector3 n = vertex.shading_frame.n;
-    Real n_dot_in = dot(dir_in, n);
-    Real n_dot_out = dot(dir_out, n);
-    if (n_dot_in <= 0 || n_dot_out <= 0) {
-        // No light on the other side.
+    if (dot(vertex.geometry_normal, dir_in) < 0 ||
+            dot(vertex.geometry_normal, dir_out) < 0) {
+        // No light below the surface
         return make_zero_spectrum();
+    }
+    // Flip the shading frame if it is inconsistent with the geometry normal
+    Frame frame = vertex.shading_frame;
+    if (dot(frame.n, dir_in) < 0) {
+        frame = -frame;
     }
 
     // Homework 1: implement this!
@@ -12,24 +15,32 @@ Spectrum eval_op::operator()(const DisneyDiffuse &bsdf) const {
 }
 
 Real pdf_sample_bsdf_op::operator()(const DisneyDiffuse &bsdf) const {
-    Vector3 n = vertex.shading_frame.n;
-    Real n_dot_in = dot(dir_in, n);
-    Real n_dot_out = dot(dir_out, n);
-    if (n_dot_in <= 0 || n_dot_out <= 0) {
-        // No light on the other side.
+    if (dot(vertex.geometry_normal, dir_in) < 0 ||
+            dot(vertex.geometry_normal, dir_out) < 0) {
+        // No light below the surface
         return 0;
     }
-
+    // Flip the shading frame if it is inconsistent with the geometry normal
+    Frame frame = vertex.shading_frame;
+    if (dot(frame.n, dir_in) < 0) {
+        frame = -frame;
+    }
+    
     // Homework 1: implement this!
     return Real(0);
 }
 
 std::optional<BSDFSampleRecord> sample_bsdf_op::operator()(const DisneyDiffuse &bsdf) const {
-    if (dot(vertex.shading_frame.n, dir_in) < 0) {
-        // Incoming direction is below the surface.
+    if (dot(vertex.geometry_normal, dir_in) < 0) {
+        // No light below the surface
         return {};
     }
-
+    // Flip the shading frame if it is inconsistent with the geometry normal
+    Frame frame = vertex.shading_frame;
+    if (dot(frame.n, dir_in) < 0) {
+        frame = -frame;
+    }
+    
     // Homework 1: implement this!
     return {};
 }

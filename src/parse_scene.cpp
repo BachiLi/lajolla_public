@@ -599,18 +599,15 @@ std::tuple<std::string /* ID */, Material> parse_bsdf(
     } else if (type == "disneysheen") {
         Texture<Spectrum> base_color = make_constant_spectrum_texture(fromRGB(Vector3{0.5, 0.5, 0.5}));
         Texture<Real> sheen_tint = make_constant_float_texture(Real(0.5));
-        Real eta = Real(1.5);
         for (auto child : node.children()) {
             std::string name = child.attribute("name").value();
             if (name == "baseColor") {
                 base_color = parse_spectrum_texture(child, texture_map, texture_pool);
             } else if (name == "sheenTint") {
                 sheen_tint = parse_float_texture(child, texture_map, texture_pool);
-            } else if (name == "eta") {
-                eta = std::stof(child.attribute("value").value());
             }
         }
-        return std::make_tuple(id, DisneySheen{base_color, sheen_tint, eta});
+        return std::make_tuple(id, DisneySheen{base_color, sheen_tint});
     } else {
         Error(std::string("Unknown BSDF: ") + type);
     }
