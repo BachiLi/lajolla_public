@@ -13,7 +13,7 @@
 			<translate z="0.01"/>
 		</transform>
 
-		<bsdf type="disney_bsdf">
+		<bsdf type="disneybsdf">
 			<rgb name="baseColor" value="0.82 0.67 0.16"/>
 			<float name="specularTransmission" value="0.5"/>
 			<float name="metallic" value="0.5"/>
