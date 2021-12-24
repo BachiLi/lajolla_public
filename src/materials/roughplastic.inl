@@ -144,22 +144,6 @@ std::optional<BSDFSampleRecord>
         Vector3 local_micro_normal =
             sample_visible_normals(local_dir_in, alpha, rnd_param_uv);
         
-        // !!!! IMPORTANT !!!!
-        // We can do the following two lines in two ways:
-        // 1) first reflect the vector in local coordinates, then transform to world space
-        // 2) first transform to world space, then reflect the vector
-        // While they are mathemtically equivalent, it turns out that their
-        // numerical properties are very different!!!
-        // Since in other places of our code, we evaluate the half-vector in the world space,
-        // if we do the reflection in the local coordinates, we suffer from floating point
-        // precision loss of the world coordinates transformation. 
-        // This turns out to be *extremely* crucial for very low roughness BRDFs.
-        // You can try to play with this using the following commented out code.
-        //
-        // Vector3 reflected = 
-        //     normalize(-local_dir_in + 2 * dot(local_dir_in, local_micro_normal) * local_micro_normal);
-        // return to_world(frame, reflected);
-
         // Transform the micro normal to world space
         Vector3 half_vector = to_world(frame, local_micro_normal);
         // Reflect over the world space normal

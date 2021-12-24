@@ -139,8 +139,7 @@ std::optional<BSDFSampleRecord>
     Vector3 local_dir_in = to_local(frame, dir_in);
     Vector3 local_micro_normal =
         sample_visible_normals(local_dir_in, alpha, rnd_param_uv);
-    // See sample_bsdf_op::operator()(const RoughPlastic &bsdf)
-    // for why we need to convert half vector to world coordinates here.
+
     Vector3 half_vector = to_world(frame, local_micro_normal);
     // Flip half-vector if it's below surface
     if (dot(half_vector, frame.n) < 0) {
