@@ -14,7 +14,9 @@
 		</transform>
 
 		<bsdf type="disneysheen">
+			<rgb name="baseColor" value="0.82 0.67 0.16"/>
 			<float name="sheenTint" value="0.5"/>
+			<float name="eta" value="1.5"/>
 		</bsdf>
 	</shape>
 
