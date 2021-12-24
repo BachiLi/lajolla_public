@@ -571,6 +571,7 @@ std::tuple<std::string /* ID */, Material> parse_bsdf(
         Texture<Real> roughness = make_constant_float_texture(Real(0.5));
         Texture<Real> anisotropic = make_constant_float_texture(Real(0.0));
         Texture<Real> specular_tint = make_constant_float_texture(Real(0.0));
+        Real eta = Real(1.5);
         for (auto child : node.children()) {
             std::string name = child.attribute("name").value();
             if (name == "baseColor") {
@@ -579,11 +580,13 @@ std::tuple<std::string /* ID */, Material> parse_bsdf(
                 roughness = parse_float_texture(child, texture_map, texture_pool);
             } else if (name == "anisotropic") {
                 anisotropic = parse_float_texture(child, texture_map, texture_pool);
-            } else {
+            } else if (name == "specularTint") {
                 specular_tint = parse_float_texture(child, texture_map, texture_pool);
+            } else if (name == "eta") {
+                eta = std::stof(child.attribute("value").value());
             }
         }
-        return std::make_tuple(id, DisneyTransmission{base_color, roughness, anisotropic, specular_tint});
+        return std::make_tuple(id, DisneyTransmission{base_color, roughness, anisotropic, specular_tint, eta});
     } else {
         Error(std::string("Unknown BSDF: ") + type);
     }

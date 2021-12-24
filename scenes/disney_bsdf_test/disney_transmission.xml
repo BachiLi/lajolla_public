@@ -18,6 +18,7 @@
 			<float name="roughness" value="0.2"/>
 			<float name="anisotropic" value="0.8"/>
 			<float name="specular_tint" value="0.5"/>
+			<float name="eta" value="1.5"/>
 		</bsdf>
 	</shape>
 
