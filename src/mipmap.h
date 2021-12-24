@@ -52,8 +52,9 @@ template <typename T>
 inline T lookup(const Mipmap<T> &mipmap, Real u, Real v, int level) {
     assert(level >= 0 && level < (int)mipmap.images.size());
     // Bilinear interpolation
-    u *= mipmap.images[level].width;
-    v *= mipmap.images[level].height;
+    // (-0.5 to match Mitsuba's coordinates)
+    u = u * mipmap.images[level].width - Real(0.5);
+    v = v * mipmap.images[level].height - Real(0.5);
     int ufi = modulo(int(u), mipmap.images[level].width);
     int vfi = modulo(int(v), mipmap.images[level].height);
     int uci = modulo(ufi + 1, mipmap.images[level].width);
