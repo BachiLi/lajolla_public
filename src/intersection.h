@@ -14,7 +14,7 @@ struct Scene;
 /// We store the information we need for computing any sort of path contribution & sampling density.
 struct PathVertex {
     Vector3 position;
-    Vector3 geometry_normal;
+    Vector3 geometry_normal; // always face at the same direction at shading_frame.n
     Frame shading_frame;
     Vector2 st; // A 2D parametrization of the surface. Irrelavant to UV mapping.
                 // for triangle this is the barycentric coordinates, which we use

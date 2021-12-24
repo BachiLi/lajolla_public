@@ -1,6 +1,17 @@
 #include "../microfacet.h"
 
 Spectrum eval_op::operator()(const RoughDielectric &bsdf) const {
+    bool reflect = dot(vertex.geometry_normal, dir_in) *
+                   dot(vertex.geometry_normal, dir_out) > 0;
+    // Flip the shading frame if it is inconsistent with the geometry normal
+    Frame frame = vertex.shading_frame;
+    if (dot(frame.n, dir_in) * dot(vertex.geometry_normal, dir_in) < 0) {
+        frame = -frame;
+    }
+    // If we are going into the surface, then we use normal eta
+    // (internal/external), otherwise we use external/internal.
+    Real eta = dot(vertex.geometry_normal, dir_in) > 0 ? bsdf.eta : 1 / bsdf.eta;
+
     Spectrum Ks = eval(
         bsdf.specular_reflectance, vertex.uv, vertex.uv_screen_size, texture_pool);
     Spectrum Kt = eval(
@@ -8,13 +19,6 @@ Spectrum eval_op::operator()(const RoughDielectric &bsdf) const {
     Real roughness = eval(
         bsdf.roughness, vertex.uv, vertex.uv_screen_size, texture_pool);
 
-    Vector3 n = vertex.shading_frame.n;
-    Real n_dot_in = dot(dir_in, n);
-    Real n_dot_out = dot(dir_out, n);
-    // If we are going into the surface, then we use normal eta
-    // (internal/external), otherwise we use external/internal.
-    Real eta = n_dot_in > 0 ? bsdf.eta : 1 / bsdf.eta;
-    bool reflect = n_dot_in * n_dot_out > 0;
     Vector3 half_vector;
     if (reflect) {
         half_vector = normalize(dir_in + dir_out);
@@ -25,7 +29,7 @@ Spectrum eval_op::operator()(const RoughDielectric &bsdf) const {
     }
 
     // Flip half-vector if it's below surface
-    if (dot(half_vector, vertex.shading_frame.n) < 0) {
+    if (dot(half_vector, frame.n) < 0) {
         half_vector = -half_vector;
     }
 
@@ -41,11 +45,11 @@ Spectrum eval_op::operator()(const RoughDielectric &bsdf) const {
     // However, using the incoming direction allows
     // us to use F to decide whether to reflect or refract during sampling.
     Real F = fresnel_dielectric(h_dot_in, eta);
-    Real D = GTR2(dot(half_vector, n), roughness);
-    Real G = smith_masking_gtr2(to_local(vertex.shading_frame, dir_in), roughness) *
-             smith_masking_gtr2(to_local(vertex.shading_frame, dir_out), roughness);
+    Real D = GTR2(dot(half_vector, frame.n), roughness);
+    Real G = smith_masking_gtr2(to_local(frame, dir_in), roughness) *
+             smith_masking_gtr2(to_local(frame, dir_out), roughness);
     if (reflect) {
-        return Ks * (F * D * G) / (4 * fabs(n_dot_in));
+        return Ks * (F * D * G) / (4 * fabs(dot(frame.n, dir_in)));
     } else {
         // Snell-Descartes law predicts that the light will contract/expand 
         // due to the different index of refraction. So the normal BSDF needs
@@ -63,19 +67,23 @@ Spectrum eval_op::operator()(const RoughDielectric &bsdf) const {
         // Very complicated BSDF. See Walter et al.'s paper for more details.
         // "Microfacet Models for Refraction through Rough Surfaces"
         return Kt * (eta_factor * (1 - F) * D * G * eta * eta * fabs(h_dot_out * h_dot_in)) / 
-            (fabs(n_dot_in) * sqrt_denom * sqrt_denom);
+            (fabs(dot(frame.n, dir_in)) * sqrt_denom * sqrt_denom);
     }
 }
 
 Real pdf_sample_bsdf_op::operator()(const RoughDielectric &bsdf) const {
-    Vector3 n = vertex.shading_frame.n;
-    Real n_dot_in = dot(dir_in, n);
-    Real n_dot_out = dot(dir_out, n);
+    bool reflect = dot(vertex.geometry_normal, dir_in) *
+                   dot(vertex.geometry_normal, dir_out) > 0;
+    // Flip the shading frame if it is inconsistent with the geometry normal
+    Frame frame = vertex.shading_frame;
+    if (dot(frame.n, dir_in) * dot(vertex.geometry_normal, dir_in) < 0) {
+        frame = -frame;
+    }
     // If we are going into the surface, then we use normal eta
     // (internal/external), otherwise we use external/internal.
-    Real eta = n_dot_in > 0 ? bsdf.eta : 1 / bsdf.eta;
+    Real eta = dot(vertex.geometry_normal, dir_in) > 0 ? bsdf.eta : 1 / bsdf.eta;
     assert(eta > 0);
-    bool reflect = n_dot_in * n_dot_out > 0;
+
     Vector3 half_vector;
     if (reflect) {
         half_vector = normalize(dir_in + dir_out);
@@ -86,7 +94,7 @@ Real pdf_sample_bsdf_op::operator()(const RoughDielectric &bsdf) const {
     }
 
     // Flip half-vector if it's below surface
-    if (dot(half_vector, vertex.shading_frame.n) < 0) {
+    if (dot(half_vector, frame.n) < 0) {
         half_vector = -half_vector;
     }
 
@@ -100,16 +108,16 @@ Real pdf_sample_bsdf_op::operator()(const RoughDielectric &bsdf) const {
     // so PDF ~ F * D * G_in for reflection, PDF ~ (1 - F) * D * G_in for refraction.
     Real h_dot_in = dot(half_vector, dir_in);
     Real F = fresnel_dielectric(h_dot_in, eta);
-    Real D = GTR2(dot(half_vector, n), roughness);
-    Real G = smith_masking_gtr2(to_local(vertex.shading_frame, dir_in), roughness);
+    Real D = GTR2(dot(half_vector, frame.n), roughness);
+    Real G = smith_masking_gtr2(to_local(frame, dir_in), roughness);
 
     if (reflect) {
-        return (F * D * G) / (4 * fabs(n_dot_in));
+        return (F * D * G) / (4 * fabs(dot(frame.n, dir_in)));
     } else {
         Real h_dot_out = dot(half_vector, dir_out);
         Real sqrt_denom = h_dot_in + eta * h_dot_out;
         Real dh_dout = eta * eta * h_dot_out / (sqrt_denom * sqrt_denom);
-        return (1 - F) * D * G * fabs(dh_dout * h_dot_in / n_dot_in);
+        return (1 - F) * D * G * fabs(dh_dout * h_dot_in / dot(frame.n, dir_in));
     }
 }
 
@@ -117,19 +125,24 @@ std::optional<BSDFSampleRecord>
         sample_bsdf_op::operator()(const RoughDielectric &bsdf) const {
     // If we are going into the surface, then we use normal eta
     // (internal/external), otherwise we use external/internal.
-    Real eta = dot(dir_in, vertex.shading_frame.n) > 0 ? bsdf.eta : 1 / bsdf.eta;
+    Real eta = dot(vertex.geometry_normal, dir_in) > 0 ? bsdf.eta : 1 / bsdf.eta;
+    // Flip the shading frame if it is inconsistent with the geometry normal
+    Frame frame = vertex.shading_frame;
+    if (dot(frame.n, dir_in) * dot(vertex.geometry_normal, dir_in) < 0) {
+        frame = -frame;
+    }
     Real roughness = eval(
         bsdf.roughness, vertex.uv, vertex.uv_screen_size, texture_pool);
     // Clamp roughness to avoid numerical issues.
     roughness = std::clamp(roughness, Real(0.01), Real(1));
     // Sample a micro normal and transform it to world space -- this is our half-vector.
     Real alpha = roughness * roughness;
-    Vector3 local_dir_in = to_local(vertex.shading_frame, dir_in);
+    Vector3 local_dir_in = to_local(frame, dir_in);
     Vector3 local_micro_normal =
         sample_visible_normals(local_dir_in, alpha, rnd_param_uv);
     // See sample_bsdf_op::operator()(const RoughPlastic &bsdf)
     // for why we need to convert half vector to world coordinates here.
-    Vector3 half_vector = to_world(vertex.shading_frame, local_micro_normal);
+    Vector3 half_vector = to_world(frame, local_micro_normal);
     // Now we need to decide whether to reflect or refract.
     // We do this using the Fresnel term.
     Real h_dot_in = dot(half_vector, dir_in);

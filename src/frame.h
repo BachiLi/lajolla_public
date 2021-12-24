@@ -41,6 +41,10 @@ struct Frame {
     Vector3 x, y, n;
 };
 
+inline Frame operator-(const Frame &frame) {
+    return Frame(-frame.x, -frame.y, -frame.n);
+}
+
 /// Project a vector to a frame's local coordinates.
 inline Vector3 to_local(const Frame &frame, const Vector3 &v) {
     return Vector3{dot(v, frame[0]), dot(v, frame[1]), dot(v, frame[2])};
