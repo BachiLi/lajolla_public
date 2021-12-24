@@ -37,6 +37,9 @@ set(SRCS src/3rdparty/miniz.h
          src/materials/disney_diffuse.inl
          src/materials/disney_metal.inl
          src/materials/disney_transmission.inl
+         src/materials/disney_clearcoat.inl
+         src/materials/disney_sheen.inl
+         src/materials/disney_bsdf.inl
          src/shapes/sphere.inl
          src/shapes/triangle_mesh.inl
          src/camera.h
