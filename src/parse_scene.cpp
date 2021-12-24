@@ -608,6 +608,63 @@ std::tuple<std::string /* ID */, Material> parse_bsdf(
             }
         }
         return std::make_tuple(id, DisneySheen{base_color, sheen_tint});
+    } else if (type == "disneybsdf") {
+        Texture<Spectrum> base_color = make_constant_spectrum_texture(fromRGB(Vector3{0.5, 0.5, 0.5}));
+        Texture<Real> specular_transmission = make_constant_float_texture(Real(0));
+        Texture<Real> metallic = make_constant_float_texture(Real(0));
+        Texture<Real> subsurface = make_constant_float_texture(Real(0));
+        Texture<Real> specular = make_constant_float_texture(Real(0.5));
+        Texture<Real> roughness = make_constant_float_texture(Real(0.5));
+        Texture<Real> specular_tint = make_constant_float_texture(Real(0));
+        Texture<Real> anisotropic = make_constant_float_texture(Real(0));
+        Texture<Real> sheen = make_constant_float_texture(Real(0));
+        Texture<Real> sheen_tint = make_constant_float_texture(Real(0.5));
+        Texture<Real> clearcoat = make_constant_float_texture(Real(0));
+        Texture<Real> clearcoat_gloss = make_constant_float_texture(Real(1));
+        Real eta = Real(1.5);
+        for (auto child : node.children()) {
+            std::string name = child.attribute("name").value();
+            if (name == "baseColor") {
+                base_color = parse_spectrum_texture(child, texture_map, texture_pool);
+            } else if (name == "specularTransmission") {
+                specular_transmission = parse_float_texture(child, texture_map, texture_pool);
+            } else if (name == "metallic") {
+                metallic = parse_float_texture(child, texture_map, texture_pool);
+            } else if (name == "subsurface") {
+                subsurface = parse_float_texture(child, texture_map, texture_pool);
+            } else if (name == "specular") {
+                specular = parse_float_texture(child, texture_map, texture_pool);
+            } else if (name == "roughness") {
+                roughness = parse_float_texture(child, texture_map, texture_pool);
+            } else if (name == "specularTint") {
+                specular_tint = parse_float_texture(child, texture_map, texture_pool);
+            } else if (name == "anisotropic") {
+                anisotropic = parse_float_texture(child, texture_map, texture_pool);
+            } else if (name == "sheen") {
+                sheen = parse_float_texture(child, texture_map, texture_pool);
+            } else if (name == "sheenTint") {
+                sheen_tint = parse_float_texture(child, texture_map, texture_pool);
+            } else if (name == "clearcoat") {
+                clearcoat = parse_float_texture(child, texture_map, texture_pool);
+            } else if (name == "clearcoatGloss") {
+                clearcoat_gloss = parse_float_texture(child, texture_map, texture_pool);
+            } else if (name == "eta") {
+                eta = std::stof(child.attribute("value").value());
+            }
+        }
+        return std::make_tuple(id, DisneyBSDF{base_color,
+                                              specular_transmission,
+                                              metallic,
+                                              subsurface,
+                                              specular,
+                                              roughness,
+                                              specular_tint,
+                                              anisotropic,
+                                              sheen,
+                                              sheen_tint,
+                                              clearcoat,
+                                              clearcoat_gloss,
+                                              eta});
     } else {
         Error(std::string("Unknown BSDF: ") + type);
     }

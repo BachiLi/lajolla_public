@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<scene version="0.5.0">
+	<integrator type="path">
+		<integer name="maxDepth" value="-1"/>
+	</integrator>
+
+	<shape type="serialized">
+		<string name="filename" value="../matpreview/matpreview.serialized"/>
+		<integer name="shapeIndex" value="2"/>
+		<transform name="toWorld">
+			<matrix value="0.614046 0.614047 0 -1.78814e-07 -0.614047 0.614046 0 2.08616e-07 0 0 0.868393 1.02569 0 0 0 1"/>
+			<translate z="0.01"/>
+		</transform>
+
+		<bsdf type="disney_bsdf">
+			<rgb name="baseColor" value="0.82 0.67 0.16"/>
+			<float name="specularTransmission" value="0.5"/>
+			<float name="metallic" value="0.5"/>
+			<float name="subsurface" value="0.5"/>
+			<float name="specular" value="0.5"/>
+			<float name="roughness" value="0.1"/>
+			<float name="specularTint" value="0.5"/>
+			<float name="anisotropic" value="0.5"/>
+			<float name="sheen" value="0.5"/>
+			<float name="sheenTint" value="0.5"/>
+			<float name="clearcoat" value="0.5"/>
+			<float name="clearcoatGloss" value="0.5"/>
+		</bsdf>
+	</shape>
+
+	<sensor type="perspective" id="Camera-camera">
+		<string name="fovAxis" value="smaller"/>
+		<float name="focusDistance" value="6.0"/>
+		<float name="fov" value="28.8415"/>
+		<transform name="toWorld">
+			<lookAt target="3.04072, -2.85176, 2.80939" origin="3.69558, -3.46243, 3.25463" up="-0.317366, 0.312466, 0.895346"/>
+		</transform>
+
+		<sampler type="independent">
+			<integer name="sampleCount" value="256"/>
+		</sampler>
+
+		<film type="hdrfilm" id="film">
+			<integer name="width" value="683"/>
+			<integer name="height" value="512"/>
+			<string name="pixelFormat" value="rgb"/>
+			<boolean name="banner" value="false"/>
+
+			<rfilter type="gaussian"/>
+		</film>
+	</sensor>
+
+	<emitter type="envmap" id="Area_002-light">
+		<string name="filename" value="../matpreview/envmap.exr"/>
+		<transform name="toWorld">
+			<rotate y="1" angle="-180"/>
+			<matrix value="-0.224951 -0.000001 -0.974370 0.000000 -0.974370 0.000000 0.224951 0.000000 0.000000 1.000000 -0.000001 8.870000 0.000000 0.000000 0.000000 1.000000 "/>
+		</transform>
+		<float name="scale" value="3"/>
+	</emitter>
+
+	<bsdf type="diffuse" id="__diffmat">
+		<rgb name="reflectance" value="0.18 0.18 0.18"/>
+	</bsdf>
+
+	<texture type="checkerboard" id="__planetex">
+		<rgb name="color0" value="0.4"/>
+		<rgb name="color1" value="0.2"/>
+		<float name="uscale" value="8.0"/>
+		<float name="vscale" value="8.0"/>
+		<float name="uoffset" value="0.0"/>
+		<float name="voffset" value="0.0"/>
+	</texture>
+
+	<bsdf type="diffuse" id="__planemat">
+		<ref name="reflectance" id="__planetex"/>
+	</bsdf>
+
+	<shape type="serialized" id="Interior-mesh_0">
+		<string name="filename" value="../matpreview/matpreview.serialized"/>
+		<integer name="shapeIndex" value="1"/>
+		<transform name="toWorld">
+			<matrix value="1 0 0 0 0 1 0 0 0 0 1 0.0252155 0 0 0 1"/>
+		</transform>
+
+		<ref name="bsdf" id="__diffmat"/>
+	</shape>
+
+	<shape type="serialized" id="Plane-mesh_0">
+		<string name="filename" value="../matpreview/matpreview.serialized"/>
+		<integer name="shapeIndex" value="0"/>
+		<transform name="toWorld">
+			<rotate z="1" angle="-4.3"/>
+			<matrix value="3.38818 -4.06354 0 -1.74958 4.06354 3.38818 0 1.43683 0 0 5.29076 -0.0120714 0 0 0 1"/>
+		</transform>
+
+		<ref name="bsdf" id="__planemat"/>
+	</shape>
+</scene>
