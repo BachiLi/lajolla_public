@@ -60,11 +60,10 @@ struct DisneyMetal {
 };
 
 /// For homework 1: the transmissive component of the Disney BRDF.
-struct DisneyTransmission {
+struct DisneyGlass {
     Texture<Spectrum> base_color;
     Texture<Real> roughness;
     Texture<Real> anisotropic;
-    Texture<Real> specular_tint;
 
     Real eta; // internal IOR / externalIOR
 };
@@ -105,7 +104,7 @@ using Material = std::variant<Lambertian,
                               RoughDielectric,
                               DisneyDiffuse,
                               DisneyMetal,
-                              DisneyTransmission,
+                              DisneyGlass,
                               DisneyClearcoat,
                               DisneySheen,
                               DisneyBSDF>;

@@ -1,6 +1,6 @@
 #include "../microfacet.h"
 
-Spectrum eval_op::operator()(const DisneyTransmission &bsdf) const {
+Spectrum eval_op::operator()(const DisneyGlass &bsdf) const {
     bool reflect = dot(vertex.geometry_normal, dir_in) *
                    dot(vertex.geometry_normal, dir_out) > 0;
     // Flip the shading frame if it is inconsistent with the geometry normal
@@ -14,7 +14,7 @@ Spectrum eval_op::operator()(const DisneyTransmission &bsdf) const {
     return make_zero_spectrum();
 }
 
-Real pdf_sample_bsdf_op::operator()(const DisneyTransmission &bsdf) const {
+Real pdf_sample_bsdf_op::operator()(const DisneyGlass &bsdf) const {
     bool reflect = dot(vertex.geometry_normal, dir_in) *
                    dot(vertex.geometry_normal, dir_out) > 0;
     // Flip the shading frame if it is inconsistent with the geometry normal
@@ -29,7 +29,7 @@ Real pdf_sample_bsdf_op::operator()(const DisneyTransmission &bsdf) const {
 }
 
 std::optional<BSDFSampleRecord>
-        sample_bsdf_op::operator()(const DisneyTransmission &bsdf) const {
+        sample_bsdf_op::operator()(const DisneyGlass &bsdf) const {
     // Flip the shading frame if it is inconsistent with the geometry normal
     Frame frame = vertex.shading_frame;
     if (dot(frame.n, dir_in) * dot(vertex.geometry_normal, dir_in) < 0) {
@@ -40,6 +40,6 @@ std::optional<BSDFSampleRecord>
     return {};
 }
 
-TextureSpectrum get_texture_op::operator()(const DisneyTransmission &bsdf) const {
+TextureSpectrum get_texture_op::operator()(const DisneyGlass &bsdf) const {
     return bsdf.base_color;
 }

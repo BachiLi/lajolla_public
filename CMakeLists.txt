@@ -36,7 +36,7 @@ set(SRCS src/3rdparty/miniz.h
          src/materials/roughplastic.inl
          src/materials/disney_diffuse.inl
          src/materials/disney_metal.inl
-         src/materials/disney_transmission.inl
+         src/materials/disney_glass.inl
          src/materials/disney_clearcoat.inl
          src/materials/disney_sheen.inl
          src/materials/disney_bsdf.inl
