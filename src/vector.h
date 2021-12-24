@@ -120,6 +120,16 @@ inline TVector3<T> operator+(const TVector3<T> &v0, const TVector3<T> &v1) {
 }
 
 template <typename T>
+inline TVector3<T> operator+(const TVector3<T> &v, const T &s) {
+    return TVector3<T>(v.x + s, v.y + s, v.z + s);
+}
+
+template <typename T>
+inline TVector3<T> operator+(const T &s, const TVector3<T> &v) {
+    return TVector3<T>(s + v.x, s + v.y, s + v.z);
+}
+
+template <typename T>
 inline TVector3<T>& operator+=(TVector3<T> &v0, const TVector3<T> &v1) {
     v0.x += v1.x;
     v0.y += v1.y;
