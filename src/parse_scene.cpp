@@ -833,7 +833,7 @@ Scene parse_scene(pugi::xml_node node, const RTCDevice &embree_device) {
                     Texture<Spectrum> t = make_image_spectrum_texture(
                         "__envmap_texture__", filename, texture_pool, 1, 1);
                     Matrix4x4 to_local = inverse(to_world);
-                    lights.push_back(Envmap{t, to_world, to_local});
+                    lights.push_back(Envmap{t, to_world, to_local, scale});
                     envmap_light_id = (int)lights.size() - 1;
                 } else {
                     Error("Filename unspecified for envmap.");

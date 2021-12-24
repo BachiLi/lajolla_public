@@ -23,6 +23,7 @@ struct DiffuseAreaLight {
 struct Envmap {
     Texture<Spectrum> values;
     Matrix4x4 to_world, to_local;
+    Real scale;
 
     // For sampling a point on the envmap
     TableDist2D sampling_dist;

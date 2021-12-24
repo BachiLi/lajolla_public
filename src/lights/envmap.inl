@@ -20,7 +20,7 @@ PointAndNormal sample_point_on_light_op::operator()(const Envmap &light) const {
 }
 
 Real pdf_point_on_light_op::operator()(const Envmap &light) const {
-    // We store the direction from light in point_on_light.normal.
+    // We store the direction pointing outwards from light in point_on_light.normal.
     Vector3 world_dir = -point_on_light.normal;
     // Convert the direction to local Catesian coordinates.
     Vector3 local_dir = xform_vector(light.to_local, world_dir);
@@ -68,11 +68,8 @@ Spectrum emission_op::operator()(const Envmap &light) const {
     // The local coordinate transformation is length preserving,
     // so we don't need to differentiate through it.
     Real footprint = min(sqrt(dudwx * dudwx + dudwz * dudwz), dvdwy);
-    // (I haven't see this in any renderer I know...the closest one is 
-    // "real-time shading with filtered importance sampling" from Colbert et al.
-    // I don't know why people don't do this.)
 
-    return eval(light.values, uv, footprint, scene.texture_pool);
+    return eval(light.values, uv, footprint, scene.texture_pool) * light.scale;
 }
 
 void init_sampling_dist_op::operator()(Envmap &light) const {

@@ -289,7 +289,7 @@ Spectrum path_tracing(const Scene &scene,
             Spectrum C2 = G * f * L;
             // Next let's compute p1(v2): the probability of the light source sampling
             // directly drawing the direction bsdf_dir.
-            PointAndNormal light_point{Vector3{0, 0, 0}, dir_bsdf}; // pointing towards the scene
+            PointAndNormal light_point{Vector3{0, 0, 0}, -dir_bsdf}; // pointing outwards from light
             Real p1 = light_pmf(scene, scene.envmap_light_id) *
                       pdf_point_on_light(light, light_point, scene);
             Real w2 = (p2*p2) / (p1*p1 + p2*p2);
