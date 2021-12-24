@@ -566,6 +566,24 @@ std::tuple<std::string /* ID */, Material> parse_bsdf(
             }
         }
         return std::make_tuple(id, DisneyMetal{base_color, roughness, anisotropic});
+    } else if (type == "disneytransmission") {
+        Texture<Spectrum> base_color = make_constant_spectrum_texture(fromRGB(Vector3{0.5, 0.5, 0.5}));
+        Texture<Real> roughness = make_constant_float_texture(Real(0.5));
+        Texture<Real> anisotropic = make_constant_float_texture(Real(0.0));
+        Texture<Real> specular_tint = make_constant_float_texture(Real(0.0));
+        for (auto child : node.children()) {
+            std::string name = child.attribute("name").value();
+            if (name == "baseColor") {
+                base_color = parse_spectrum_texture(child, texture_map, texture_pool);
+            } else if (name == "roughness") {
+                roughness = parse_float_texture(child, texture_map, texture_pool);
+            } else if (name == "anisotropic") {
+                anisotropic = parse_float_texture(child, texture_map, texture_pool);
+            } else {
+                specular_tint = parse_float_texture(child, texture_map, texture_pool);
+            }
+        }
+        return std::make_tuple(id, DisneyTransmission{base_color, roughness, anisotropic, specular_tint});
     } else {
         Error(std::string("Unknown BSDF: ") + type);
     }

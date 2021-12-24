@@ -45,18 +45,28 @@ struct RoughDielectric {
     Real eta; // internal IOR / externalIOR
 };
 
-/// For problem set 1: the diffuse and subsurface component of the Disney BRDF.
+/// For homework 1: the diffuse and subsurface component of the Disney BRDF.
 struct DisneyDiffuse {
     Texture<Spectrum> base_color;
     Texture<Real> roughness;
     Texture<Real> subsurface;
 };
 
-/// For problem set 1: the metallic component of the Disney BRDF.
+/// For homework 1: the metallic component of the Disney BRDF.
 struct DisneyMetal {
     Texture<Spectrum> base_color;
     Texture<Real> roughness;
     Texture<Real> anisotropic;
+};
+
+/// For homework 1: the transmissive component of the Disney BRDF.
+struct DisneyTransmission {
+    Texture<Spectrum> base_color;
+    Texture<Real> roughness;
+    Texture<Real> anisotropic;
+    Texture<Real> specular_tint;
+
+    Real eta; // internal IOR / externalIOR
 };
 
 // To add more materials, first create a struct for the material, then overload the () operators for all the
@@ -65,7 +75,8 @@ using Material = std::variant<Lambertian,
                               RoughPlastic,
                               RoughDielectric,
                               DisneyDiffuse,
-                              DisneyMetal>;
+                              DisneyMetal,
+                              DisneyTransmission>;
 
 /// We allow non-reciprocal BRDFs, so it's important
 /// to distinguish which direction we are tracing the rays.
