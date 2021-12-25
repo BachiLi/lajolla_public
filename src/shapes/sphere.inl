@@ -248,8 +248,10 @@ ShadingInfo compute_shading_info_op::operator()(const Sphere &sphere) const {
     Vector3 dpdv{ sphere.radius * cos(vertex.st[0]) * cos(vertex.st[1]),
                   sphere.radius * sin(vertex.st[0]) * cos(vertex.st[1]),
                  -sphere.radius * sin(vertex.st[1])};
-    // normalize for shading frame calculation
-    Vector3 tangent = normalize(dpdu);
+    // dpdu may not be orthogonal to shading normal:
+    // subtract the projection of shading_normal onto dpdu to make them orthogonal
+    Vector3 tangent = normalize(
+        dpdu - vertex.geometry_normal * dot(vertex.geometry_normal, dpdu));
     Frame shading_frame(tangent,
                         normalize(cross(vertex.geometry_normal, tangent)),
                         vertex.geometry_normal);
