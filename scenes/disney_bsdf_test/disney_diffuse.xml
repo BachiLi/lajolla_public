@@ -19,8 +19,8 @@
 
 		<bsdf type="disneydiffuse">
 			<rgb name="baseColor" value="0.82 0.67 0.16"/>
-			<float name="roughness" value="0.0"/>
-			<float name="subsurface" value="0.0"/>
+			<float name="roughness" value="0.5"/>
+			<float name="subsurface" value="0.5"/>
 		</bsdf>
 	</shape>
 

@@ -12,17 +12,19 @@
 
 In this homework we will implement a Bidirectional Scattering Distribution Function, called the \emph{Disney principled BSDF} (Figure~\ref{fig:gallery}), in lajolla. Disney principled BSDF is an attempt to have an one-size-fit-all solutions to cover most common materials using a single BSDF. It is \emph{principled} since it is (mostly) based on physical principles and observations from measured data~\cite{Matusik:2003:DRM}. However, physical correctness is not the utmost priority of the BSDF: it is a useful guideline for parametrizing the space of plausible materials for artistic expression. Ultimately, Disney BSDF is for making visual effects: as long as it makes graphics artists express what they want with least efforts, it achieves its goal. Disney BSDF is extremely influential since its inception in 2012. Nowadays, many commercial and non-commercial rendering engines feature a similar material: \href{https://docs.blender.org/manual/en/latest/render/shader_nodes/shader/principled.html}{Blender's principled BSDF}, \href{https://autodesk.github.io/standard-surface/}{Autodesk's Standard Surface}, \href{https://docs.unrealengine.com/4.26/en-US/RenderingAndGraphics/Materials/PhysicallyBased/}{Unreal Engine 4's physically-based materials}, \href{https://substance3d.adobe.com/tutorials/courses/the-pbr-guide-part-1}{Substance's physically-based shaders}, and \href{https://appleseed.readthedocs.io/projects/appleseed-maya/en/master/shaders/material/as_standard_surface.html}{Appleseed standard surface}, are all heavily inspired, if not directly borrowed from the Disney BSDF.
 
-We will implement the Disney BSDF with a slight simplification: first, we won't implement the full volumetric absorption/scattering model (we will implement something similar in the next homework!). Second, we remove a sheen transmissive lobe to make sampling easier. When implementing the BSDF, feel free to reference code from internet. However, be aware that due to the ambiguity in the course note, all implementations I found are slightly different to each other, and some are flatout wrong\footnote{Even the implementation in pbrt appears to be wrong. See \href{https://github.com/mmp/pbrt-v3/issues/313}{here}.} I found the following links to be useful: \href{https://github.com/wdas/brdf/blob/main/src/brdfs/disney.brdf}{the official implementation of the BRDF} (lacks the transmission component and no sampling procedures), \href{https://github.com/mmp/pbrt-v3/blob/master/src/materials/disney.cpp}{pbrt's implementation}, \href{Joe Schutte's walkthrough}{https://schuttejoe.github.io/post/disneybsdf/}, \href{https://github.com/knightcrawler25/GLSL-PathTracer/blob/master/src/shaders/common/disney.glsl}{a GLSL implementation}, and \href{https://github.com/dfelinto/blender/blob/master/intern/cycles/kernel/shaders/node_principled_bsdf.osl}{Blender's open shading language implementation}. The model we will implement is the closest to Blender's version. You should read Burley's notes and presentations.\footnote{\url{https://blog.selfshadow.com/publications/s2012-shading-course/} and \url{https://blog.selfshadow.com/publications/s2015-shading-course/}}
+We will implement the Disney BSDF with some slight simplifications: first, we won't implement the full volumetric absorption/scattering model (we will implement something similar in the next homework!). Second, we remove a sheen transmissive lobe to make sampling easier. Finally, we do not implement the \emph{thin BSDF} model. When implementing the BSDF, feel free to reference code from internet. However, be aware that due to the ambiguity in the course note, all implementations I found are slightly different to each other, and some are flatout wrong\footnote{Even the implementation in pbrt appears to be wrong. See \href{https://github.com/mmp/pbrt-v3/issues/313}{here}.} I found the following links to be useful: \href{https://github.com/wdas/brdf/blob/main/src/brdfs/disney.brdf}{the official implementation of the BRDF} (lacks the transmission component and no sampling procedures), \href{https://github.com/mmp/pbrt-v3/blob/master/src/materials/disney.cpp}{pbrt's implementation}, \href{Joe Schutte's walkthrough}{https://schuttejoe.github.io/post/disneybsdf/}, \href{https://github.com/knightcrawler25/GLSL-PathTracer/blob/master/src/shaders/common/disney.glsl}{a GLSL implementation}, and \href{https://github.com/dfelinto/blender/blob/master/intern/cycles/kernel/shaders/node_principled_bsdf.osl}{Blender's open shading language implementation}. The model we will implement is the closest to Blender's version. You should read Burley's notes and presentations.\footnote{\url{https://blog.selfshadow.com/publications/s2012-shading-course/} and \url{https://blog.selfshadow.com/publications/s2015-shading-course/}}
 
 A Disney BSDF is made of five components: a \textbf{diffuse} lobe that captures the base diffusive color of the surface, a \textbf{metallic} lobe that features major specular highlights, a \textbf{clearcoat} lobe that models the heavy tails of the specularity, a \textbf{sheen} lobe that addresses retroreflection, and a \textbf{glass} lobe that handles transmission. We will first implement each individual component, then we will combine all of them into a single material. 
 
 \paragraph{Submission and grading.} Please send our teaching assistant Yan Xiao (yax010@ucsd.edu) a zip file including your code, and a text file (readme.txt) answering the questions below. We will grade your code by comparing individual ray queries with our reference code for the BSDF evaluation, we will check if your sampling code is consistent with the PDF, and we will eyeball your rendering to make sure everything looks fine. For the questions, as long as you say something plausible you will get full scores.
 
-\paragraph{Notation and convention.} In the following, $\omega_{\text{in}}$ is the \emph{incoming} direction of the BSDF (usually represent the view direction), and $\omega_{\text{out}}$ is the \emph{outgoing} direction of the BSDF (usually represent the light direction), both pointing \emph{outwards} from the surface. $n$ is the shading normal, $h$ is the half-vector $h = \frac{\omega_{\text{in}} + \omega_{\text{out}}}{\|\omega_{\text{in}} + \omega_{\text{out}}\|}$. All of our BSDF include the cosine term $|n \cdot \omega_{\text{out}}|$. All parameters of Disney BSDF are normalized within $[0, 1]$.
+\paragraph{Notation and convention.} In the following, $\omega_{\text{in}}$ is the \emph{incoming} direction of the BSDF (usually represent the view direction), and $\omega_{\text{out}}$ is the \emph{outgoing} direction of the BSDF (usually represent the light direction), both pointing \emph{outwards} from the surface. $n$ is the shading normal, $n_g$ is the geometry normal, $h$ is the half-vector $h = \frac{\omega_{\text{in}} + \omega_{\text{out}}}{\|\omega_{\text{in}} + \omega_{\text{out}}\|}$. All of our BSDF include the cosine term $|n \cdot \omega_{\text{out}}|$. $\eta$ is the ratio of index of refraction of the medium below divided by the medium above the surface $\frac{\text{IOR}_{\text{internal}}}{\text{IOR}_{\text{external}}}$. All parameters of Disney BSDF are normalized within $[0, 1]$.
 
 \section{Diffuse}
 \begin{figure}
-	\caption{Diffuse rendering}
+	\centering
+	\includegraphics[width=0.5\linewidth]{imgs/disney_diffuse.png}
+	\caption{Diffuse component of the Disney BSDF.}
 \end{figure}
 
 By looking at the MERL measured BRDF~\cite{Matusik:2003:DRM}, Burley found that at grazing retroreflection (when the half vector is roughly orthogonal to the normal), smooth materials (materials that are more specular) tend to have their reflectance dropped, and rough materials tend to have a peak at the grazing angle. The dropped reflectance can be predicted by Fresnel reflection: at grazing angles, (dielectric) Fresnel equation predicts low transmittance and less lights are scattered inside the surfaces and thus less diffusion. Thus they design the following diffuse BRDF based on a modified version of the Schlick Fresnel approximation~\cite{Schlick:1994:IBM}:
@@ -86,7 +88,9 @@ Try out \lstinline{./lajolla ../scenes/disney_diffuse.xml} to see how the materi
 
 \section{Metal}
 \begin{figure}
-	\caption{Metal rendering}
+	\centering
+	\includegraphics[width=0.5\linewidth]{imgs/disney_metal.png}
+	\caption{Metal component of the Disney BSDF.}
 \end{figure}
 
 For specular reflection, Burley uses a standard Cook-Torrance microfacet BRDF~\cite{Cook:1982:RMC}:
@@ -104,16 +108,16 @@ The reason why they use an approximation instead of the true Fresnel equation is
 
 For the normal distribution function $D_m$, Burley uses the anisotropic Trowbridge-Reitz distribution~\cite{Trowbridge:1975:AIR}, popularized by Walter et al.~\cite{Walter:2007:MMR} in graphics and it is known as \emph{GGX} (Ground Glass X):
 \begin{equation}
-D_m = \frac{1}{\pi \alpha_x \alpha_y \left(\frac{h_l.x^2}{\alpha_x^2} + \frac{h_l.y^2}{\alpha_y^2} + h_l.z^2\right)^2},
+D_m = \frac{1}{\pi \alpha_x \alpha_y \left(\frac{{h^l_x}^2}{\alpha_x^2} + \frac{{h^l_y}^2}{\alpha_y^2} + {h^l_z}^2\right)^2},
 \end{equation}
-where $h_l$ is the half vector projected to the local frame. Trowbridge-Reitz distribution was found to be fitting the MERL measured data excellently thanks to its heavy tails compared to a Gaussian or a cosine (some materials have even longer tails, and those will be modelled by the clearcoat component later). 
+where $h^l$ is the half vector projected to the local shading frame. Trowbridge-Reitz distribution was found to be fitting the MERL measured data excellently thanks to its heavy tails compared to a Gaussian or a cosine (some materials have even longer tails, and those will be modelled by the clearcoat component later). 
 
 $\alpha_x, \alpha_y$ are parameters for modelling the smoothness of the material. If we directly use these parameters, we need very small $\alpha$ to represent highly specular materials. Burley found that the following mapping is more intuitive:
 \begin{equation}
 \begin{aligned}
 \text{aspect} &= \sqrt{1 - 0.9 \text{anisotropic}} \\
-\alpha_x &= max(\alpha_{\text{min}}, \text{roughness} \cdot \text{roughness} / \text{aspect}) \\
-\alpha_y &= max(\alpha_{\text{min}}, \text{roughness} \cdot \text{roughness} \cdot \text{aspect})
+\alpha_x &= max(\alpha_{\text{min}}, \text{roughness}^2 / \text{aspect}) \\
+\alpha_y &= max(\alpha_{\text{min}}, \text{roughness}^2 \cdot \text{aspect})
 \end{aligned},
 \end{equation}
 where $\text{anisotropic}$ and $\text{roughness}$ are the parameters.
@@ -129,7 +133,7 @@ G(\omega) &= \frac{1}{1 + \Lambda(\omega)} \\
 
 Combining all of these, and you will get a nice metallic BRDF.
 
-\paragraph{Task (10\%).} You will implement the \lstinline{Disney} BRDF (Equation~\ref{eq:f_metal})
+\paragraph{Task (10\%).} You will implement the \lstinline{DisneyMetal} BRDF (Equation~\ref{eq:f_metal})
 \begin{lstlisting}
 // in material.h
 struct DisneyMetal {
@@ -146,7 +150,7 @@ Real pdf_sample_bsdf_op::operator()(const DisneyMetal &bsdf) const;
 std::optional<BSDFSampleRecord> sample_bsdf_op::operator()(const DisneyMetal &bsdf) const;
 \end{lstlisting}
 
-For sampling, we will use the visible normal sampling developed by Heitz~\cite{Heitz:2018:SGD}, which importance samples $D_m G(\omega_{\text{in}})$. See Heitz's presentation \href{https://jcgt.org/published/0007/04/01/slides.pdf}{slides} for a really nice illustration of the method. This sampling is also used in the \lstinline{roughplastic} material in lajolla, so you might want to look at it as well.
+For sampling, we will use the visible normal sampling developed by Heitz~\cite{Heitz:2018:SGD}, which importance samples $\frac{D_m G(\omega_{\text{in}})}{4 |n \cdot \omega_{\text{in}}|}$. See Heitz's presentation \href{https://jcgt.org/published/0007/04/01/slides.pdf}{slides} for a really nice illustration of the method. This sampling is also used in the \lstinline{roughplastic} material in lajolla, so you might want to look at it as well.
 
 Try out \lstinline{./lajolla ../scenes/disney_metal.xml} to see how the material look like. Play with the parameters.
 
@@ -154,6 +158,243 @@ Try out \lstinline{./lajolla ../scenes/disney_metal.xml} to see how the material
 \begin{enumerate}
 	\item Compare \lstinline{DisneyMetal} with the \lstinline{roughplastic} material. What differences do you see?
 \end{enumerate}
+
+\section{Clearcoat}
+\begin{figure}
+	\centering
+	\includegraphics[width=0.5\linewidth]{imgs/disney_clearcoat.png}
+	\caption{Clearcoat component of the Disney BSDF.}
+\end{figure}
+
+Burley found that the Trowbridge-Reitz distribution used by the metallic component above, while already having a wide tail comaparing to most other normal distribution functions, is still not wide enough. Therefore they propose to have another acromatic specular component with a modified normal distribution function:
+\begin{equation}
+f_{\text{clearcoat}} = \frac{F_c D_c G_c}{4 |n \cdot \omega_{\text{in}}|},
+\label{eq:f_clearcoat}
+\end{equation}
+where
+\begin{equation}
+\begin{aligned}
+F_c &= R_0(\eta = 1.5) + (1 - R_0(\eta = 1.5)) (1 - |n \cdot \omega_{\text{out}}|^5) \\
+D_c &= \frac{1}{\pi \alpha_g \left|\frac{{h^l_x}^2}{\alpha_g^2} + \frac{{h^l_y}^2}{\alpha_g^2} + {h^l_z}^2\right|} \\
+G_c &= G_{c}(\omega_{\text{in}}) G_{c}(\omega_{\text{out}}) \\
+G_{c}(\omega_{\text{in}}) &= \frac{1}{1 + \Lambda_c(\omega)} \\
+\Lambda_c(\omega) &= \frac{\sqrt{1 + \frac{\left(\omega_l.x \cdot 0.25\right)^2 + \left(\omega_l.y \cdot 0.25\right)^2}{\omega_l.z^2}} - 1}{2}
+\end{aligned}.
+\end{equation}
+The Schlick Fresnel $F_c$ has a hard-coded index of refraction $\eta = 1.5$. The normal distribution function $D_c$ uses an isotropic roughness $\alpha = \alpha_g$. The masking-shadowing term $G_c$ uses a fixed roughness $0.25$. Note that this is an ad-hoc fit and there is no clear geometric meaning of this microfacet BRDF.
+
+The Schlick approximation maps index of refraction to $R_0$ with the following equation:
+\begin{equation}
+R_0(\eta) = \frac{\left(\eta - 1\right)^2}{\left(\eta + 1\right)^2}
+\end{equation}
+
+The $\alpha_g$ parameter is mapped to a parameter $\text{clearcoatGloss}$ with the following equation:
+\begin{equation}
+\alpha_g = (1 - \text{clearcoatGloss}) 0.1 + \text{clearcoatGloss} 0.001.
+\end{equation}
+The higher the $\text{clearcoatGloss}$, the lower the $\alpha_g$.
+
+\paragraph{Task (10\%).} You will implement the \lstinline{DisneyClearcoat} BRDF (Equation~\ref{eq:f_clearcoat})
+\begin{lstlisting}
+// in material.h
+struct DisneyClearcoat {
+    Texture<Real> clearcoat_gloss;
+};
+\end{lstlisting}
+
+You need to implement the following three functions in \lstinline{materials/disney_clearcoat.inl}:
+\begin{lstlisting}
+Spectrum eval_op::operator()(const DisneyClearcoat &bsdf) const;
+Real pdf_sample_bsdf_op::operator()(const DisneyClearcoat &bsdf) const;
+std::optional<BSDFSampleRecord> sample_bsdf_op::operator()(const DisneyClearcoat &bsdf) const;
+\end{lstlisting}
+
+For sampling, there is no known visible normal sampling for this BRDF (since it does not correspond to a meaning physical configuration). We will importance sample $\frac{D_c |n \cdot h|}{4 |h \cdot \omega_{\text{out}}|}$ by choosing a micro normal proportional to $D_c$ then reflect the incoming direction. To sample a normal $h^{l}$ in the local shading frame using a 2D random number $(u_0, u_1)$:
+\begin{equation}
+\begin{aligned}
+\cos(h_{\text{elevation}}) &= \sqrt{\frac{1 - \left(\alpha^2\right)^{1 - u_0}}{1 - \alpha^2}} \\
+h_{\text{azimuth}} &= 2 \pi u_1 \\
+h^l_x &= \sin(h_{\text{elevation}}) \cos(h_{\text{azimuth}})
+h^l_y &= \sin(h_{\text{elevation}}) \sin(h_{\text{azimuth}})
+h^l_z &= \cos(h_{\text{elevation}})
+\end{aligned}.
+\end{equation}
+
+Try out \lstinline{./lajolla ../scenes/disney_clearcoat.xml} to see how the material look like. Play with the parameters.
+
+\paragraph{Questions (5\%).} Answer these question(s) in a text file:
+\begin{enumerate}
+	\item Compare \lstinline{DisneyClearcoat} with \lstinline{DisneyMetal} using comparable parameters. What differences do you see?
+\end{enumerate}
+
+\section{Glass}
+\begin{figure}
+	\centering
+	\includegraphics[width=0.5\linewidth]{imgs/disney_glass.png}
+	\caption{Glass component of the Disney BSDF.}
+\end{figure}
+
+The 2012 version of the Disney BRDF did not support glasses. In the 2015 version Burley added a dielectric lobe that is both transmissive and reflective using a standard microfacet-based refraction model~\cite{Walter:2007:MMR}:
+\begin{equation}
+f_{\text{glass}} = \begin{cases}
+\frac{\text{baseColor} F_g D_g G_g}{4 |n \cdot \omega_{\text{in}}|} & \mbox{ if } \left(n_g \cdot \omega_{\text{in}}\right) \left(n_g \cdot \omega_{\text{out}}\right) > 0 \\
+\frac{\sqrt{\text{baseColor}} (1 - F_g) D_g G_g \left|h \cdot \omega_{\text{out}} h \cdot \omega_{\text{in}} \right|}{
+\left|n \cdot \omega_{\text{in}}\right| \left( h \cdot \omega_{\text{in}} + \eta \cdot \omega_{\text{out}} \right)^2} & \mbox{ otherwise}\\
+\end{cases}
+\label{eq:f_glass}
+\end{equation}
+
+Note that for the refractive case (the second case), the color is taken square root for albedo preservation: a ray can refract twice in a.
+
+For the Fresnel $F_g$, Burley found that the Schlick approximation was very inaccurate for $\eta \approx 1$ (up to $40 \times$ brighter than actual Fresnel), and decided to use the actual Fresnel equation for the dielectric materials. Unlike conductors, the Fresnel reflection for dielectric materials does not require complex index of refraction and is much more intuitive to control. For completeness the Fresnel equation is:
+\begin{equation}
+\begin{aligned}
+F_g &= R_s^2 + R_p^2 \\
+R_s &= \frac{n \cdot \omega{\text{in}} - \eta n \cdot \omega{\text{out}}}{n \cdot \omega{\text{in}} + \eta n \cdot \omega{\text{out}}} \\
+R_p &= \frac{\eta n \cdot \omega{\text{in}} - n \cdot \omega{\text{out}}}{\eta n \cdot \omega{\text{in}} + n \cdot \omega{\text{out}}}
+\end{aligned}
+\end{equation}
+
+Sometimes we need to compute the Fresnel term solely using either the incoming direction or the outgoing direction. This can be done by using the Snell-Descartes law to convert $n \cdot \omega$ to the other one.
+
+The normal distribution function $D_g$ and the masking-shadowing term $G_g$ are the same as the metal case.
+
+\paragraph{Task (10\%).} You will implement the \lstinline{DisneyGlass} BRDF (Equation~\ref{eq:f_glass})
+\begin{lstlisting}
+// in material.h
+struct DisneyGlass {
+    Texture<Spectrum> base_color;
+    Texture<Real> roughness;
+    Texture<Real> anisotropic;
+
+    Real eta; // internal IOR / externalIOR
+};
+\end{lstlisting}
+
+You need to implement the following three functions in \lstinline{materials/disney_glass.inl}:
+\begin{lstlisting}
+Spectrum eval_op::operator()(const DisneyGlass &bsdf) const;
+Real pdf_sample_bsdf_op::operator()(const DisneyGlass &bsdf) const;
+std::optional<BSDFSampleRecord> sample_bsdf_op::operator()(const DisneyGlass &bsdf) const;
+\end{lstlisting}
+
+Lajolla already has an implementation of a dielectric glass in \lstinline{roughdielectric}. The only two differences are 1) the reflectance/transmittance color are handled differently and 2) the BSDF in \lstinline{roughdielectric} is isotropic. I suggest you start from copy-pasting or referencing the code from \lstinline{roughdielectric} and modify it.
+
+Try out \lstinline{./lajolla ../scenes/disney_glass.xml} to see how the material look like. Play with the parameters.
+
+\paragraph{Questions (5\%).} Answer these question(s) in a text file:
+\begin{enumerate}
+	\item Play with the index of refraction parameter $\eta$ (the physically plausible range is $[1, 2]$). How does it affect the appearance?
+	\item (Optional, not graded) Replace the dielectric Fresnel equation with a Schlick approximation (see Burley's course notes~\cite{Burley:2015:EDB} on the fix to the Schlick approximation to make it work for $\eta < 1$). Do you observe any differences when $\eta=1.5$? What about $\eta=1.01$?
+\end{enumerate}
+
+\section{Sheen}
+\begin{figure}
+	\centering
+	\includegraphics[width=0.5\linewidth]{imgs/disney_sheen.png}
+	\caption{Sheen component of the Disney BSDF.}
+\end{figure}
+
+Materials such as clothes often exhibit even stronger retroreflection at grazing angles. To compensate for this, Burley adds another retroreflection component called the \emph{sheen}. Anything related to grazing retroreflection can be done by hacking the Fresnel response (just like $f_{\text{diffuse}}$). The sheen BRDF is again a modified Schlick Fresnel:
+\begin{equation}
+\begin{aligned}
+f_{\text{sheen}} &= C_{\text{sheen}} (1 - |h \cdot out|)^5 |n \cdot \omega_{\text{out}}| \\
+C_{\text{sheen}} &= \left(1 - \text{sheenTint}\right) + \text{sheenTint} \cdot C_{\text{tint}} \\
+C_{\text{tint}} &= \text{baseColor} / \text{luminance}(\text{baseColor}) \text{ if } \text{luminance}(\text{baseColor}) > 0 \text{ else } 1
+\end{aligned}.
+\label{eq:f_sheen}
+\end{equation}
+
+Here the color $C_{\text{sheen}}$ is a blending between the hue and saturation of the base color and a white color based on the parameter $\text{sheenTint}$. Physical-wise specular reflection caused by a dielectric material is usually acromatic when the index of refraction is the same across different wavelengths (and it often is). However, sheen is a BSDF for modelling strong retroreflection from clothes that is caused by the mesostructure of the cloth -- a much more complicated phenomonon. It is thus the best to give artists control here for how acromatic they want the retroreflection to be.
+
+In the 2015 version of the Disney BSDF, the sheen component is applied for both the reflection and transmission. We only apply the sheen for the reflection here, since it is easier to sample and code.
+
+\paragraph{Task (15\%).} You will implement the \lstinline{DisneySheen} BRDF (Equation~\ref{eq:f_sheen})
+\begin{lstlisting}
+// in material.h
+struct DisneySheen {
+    Texture<Spectrum> base_color;
+    Texture<Real> sheen_tint;
+};
+\end{lstlisting}
+
+You need to implement the following three functions in \lstinline{materials/disney_sheen.inl}:
+\begin{lstlisting}
+Spectrum eval_op::operator()(const DisneySheen &bsdf) const;
+Real pdf_sample_bsdf_op::operator()(const DisneySheen &bsdf) const;
+std::optional<BSDFSampleRecord> sample_bsdf_op::operator()(const DisneySheen &bsdf) const;
+\end{lstlisting}
+
+For sampling we will simply apply a cosine hemisphere sampling.
+
+Try out \lstinline{./lajolla ../scenes/disney_sheen.xml} to see how the material look like. Play with the parameters.
+
+\section{Putting everything together}
+Finally, we combine the five components we have and weight them to get our final BSDF:
+\begin{equation}
+\begin{aligned}
+f_{\text{disney}} =& (1 - \text{specularTransmission}) * (1 - \text{metallic}) f_{\text{diffuse}} + \\
+                     (1 - \text{metallic}) f_{\text{sheen}} + \\
+                     (1 - \text{specularTransmission} * (1 - \text{metallic})) \hat{f}_{\text{metal}} + \\
+                     0.25 \text{clearcoat} f_{\text{clearcoat}} + \\
+                     (1 - \text{metallic}) * \text{specularTransmission} f_{\text{glass}}
+\end{aligned}
+\label{eq:disney_bsdf}
+\end{equation}
+
+We need to modify the metal BRDF $\hat{f}_{\text{metal}}$ a bit: recall that our diffuse material is missing
+a dielectric specular reflection. We include that to our metal BRDF. To do this we modify the Fresnel term $F_m$ to include a acromatic specular component, with a control parameter $\text{specularTint}$ to potentially make it closer to the base color:
+\begin{equation}
+\begin{aligned}
+	\hat{F}_m &= C_0 + (1 - C_0) (1 - \left(h \cdot n\right)^5) \\
+	C_0 &= \text{specular} \cdot R_0(\eta) (1 - \text{metallic}) K_s + \text{metallic} \cdot \text{baseColor} \\
+	K_s &= (1 - \text{specularTint}) + \text{specularTint} \cdot C_{\text{tint}}
+\end{aligned}
+\end{equation}
+
+\paragraph{Task (20\%).} You will implement \lstinline{DisneyBSDF} (Equation~\ref{eq:disney_bsdf})
+\begin{lstlisting}
+// in material.h
+struct DisneyBSDF {
+    Texture<Spectrum> base_color;
+    Texture<Real> specular_transmission;
+    Texture<Real> metallic;
+    Texture<Real> subsurface;
+    Texture<Real> specular;
+    Texture<Real> roughness;
+    Texture<Real> specular_tint;
+    Texture<Real> anisotropic;
+    Texture<Real> sheen;
+    Texture<Real> sheen_tint;
+    Texture<Real> clearcoat;
+    Texture<Real> clearcoat_gloss;
+
+    Real eta;
+};
+\end{lstlisting}
+
+You need to implement the following three functions in \lstinline{materials/disney_bsdf.inl}:
+\begin{lstlisting}
+Spectrum eval_op::operator()(const DisneyBSDF &bsdf) const;
+Real pdf_sample_bsdf_op::operator()(const DisneyBSDF &bsdf) const;
+std::optional<BSDFSampleRecord> sample_bsdf_op::operator()(const DisneyBSDF &bsdf) const;
+\end{lstlisting}
+
+For importance sampling, ignore the sheen component since it is relatively weak compare to other lobes. Randomly choose between a diffuse lobe, a metal lobe, a clearcoat lobe, and a glass lobe based on the following weights:
+\begin{equation}
+\begin{aligned}
+\text{diffuseWeight} &= (1 - \text{metallic}) \cdot (1 - \text{specularTransmission}) \\
+\text{metalWeight} &= (1 - \text{specularTransmission} \cdot (1 - \text{metallic})) \\
+\text{glassWeight} &= (1 - \text{metallic}) \cdot \text{specularTransmission} \\
+\text{clearcoatWeight} &= 0.25 \cdot \text{clearcoat}
+\end{aligned}
+\end{equation}
+
+When implementing, add one component at a time. Don't rush and put everything in there at once. Do sanity check with only enabling one component at a time. Note that even if everything other than the base color is set to zero, there is still a specular component from the dielectric specular response of the modified metal lobe. 
+
+Try out \lstinline{./lajolla ../scenes/disney_bsdf.xml} to see how the material look like. Play with the parameters.
+
+\paragraph{Task (5\%).} Render an image that is not in the test scenes with your Disney BSDF! Play with textures and geometry to make it look interesting. Have fun!
 
 \bibliographystyle{plain}
 \bibliography{refs}
