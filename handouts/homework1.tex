@@ -60,7 +60,7 @@ where $\text{subsurface}$ is a parameter.
 Note that the physical model here is a dielectric coating on top of a diffusive scattering media (similar to the \lstinline{roughplastic} material in lajolla/Mitsuba), but $f_{\text{diffuse}}$ does not model the specular reflection of the dielectric coating. We will include the specular reflection in the final assembly.
 
 \paragraph{Task (10\%).} You will implement the \lstinline{DisneyDiffuse} BRDF (Equation~\ref{eq:f_diffuse})
-\begin{lstlisting}
+\begin{lstlisting}[language=c++]
 // in material.h
 struct DisneyDiffuse {
     Texture<Spectrum> base_color;
@@ -70,7 +70,7 @@ struct DisneyDiffuse {
 \end{lstlisting}
 
 You need to implement the following three functions in \lstinline{materials/disney_diffuse.inl}:
-\begin{lstlisting}
+\begin{lstlisting}[language=c++]
 Spectrum eval_op::operator()(const DisneyDiffuse &bsdf) const;
 Real pdf_sample_bsdf_op::operator()(const DisneyDiffuse &bsdf) const;
 std::optional<BSDFSampleRecord> sample_bsdf_op::operator()(const DisneyDiffuse &bsdf) const;
@@ -134,7 +134,7 @@ G(\omega) &= \frac{1}{1 + \Lambda(\omega)} \\
 Combining all of these, and you will get a nice metallic BRDF.
 
 \paragraph{Task (10\%).} You will implement the \lstinline{DisneyMetal} BRDF (Equation~\ref{eq:f_metal})
-\begin{lstlisting}
+\begin{lstlisting}[language=c++]
 // in material.h
 struct DisneyMetal {
     Texture<Spectrum> base_color;
@@ -144,7 +144,7 @@ struct DisneyMetal {
 \end{lstlisting}
 
 You need to implement the following three functions in \lstinline{materials/disney_metal.inl}:
-\begin{lstlisting}
+\begin{lstlisting}[language=c++]
 Spectrum eval_op::operator()(const DisneyMetal &bsdf) const;
 Real pdf_sample_bsdf_op::operator()(const DisneyMetal &bsdf) const;
 std::optional<BSDFSampleRecord> sample_bsdf_op::operator()(const DisneyMetal &bsdf) const;
@@ -195,7 +195,7 @@ The $\alpha_g$ parameter is mapped to a parameter $\text{clearcoatGloss}$ with t
 The higher the $\text{clearcoatGloss}$, the lower the $\alpha_g$.
 
 \paragraph{Task (10\%).} You will implement the \lstinline{DisneyClearcoat} BRDF (Equation~\ref{eq:f_clearcoat})
-\begin{lstlisting}
+\begin{lstlisting}[language=c++]
 // in material.h
 struct DisneyClearcoat {
     Texture<Real> clearcoat_gloss;
@@ -203,7 +203,7 @@ struct DisneyClearcoat {
 \end{lstlisting}
 
 You need to implement the following three functions in \lstinline{materials/disney_clearcoat.inl}:
-\begin{lstlisting}
+\begin{lstlisting}[language=c++]
 Spectrum eval_op::operator()(const DisneyClearcoat &bsdf) const;
 Real pdf_sample_bsdf_op::operator()(const DisneyClearcoat &bsdf) const;
 std::optional<BSDFSampleRecord> sample_bsdf_op::operator()(const DisneyClearcoat &bsdf) const;
@@ -260,7 +260,7 @@ Sometimes we need to compute the Fresnel term solely using either the incoming d
 The normal distribution function $D_g$ and the masking-shadowing term $G_g$ are the same as the metal case.
 
 \paragraph{Task (10\%).} You will implement the \lstinline{DisneyGlass} BRDF (Equation~\ref{eq:f_glass})
-\begin{lstlisting}
+\begin{lstlisting}[language=c++]
 // in material.h
 struct DisneyGlass {
     Texture<Spectrum> base_color;
@@ -272,7 +272,7 @@ struct DisneyGlass {
 \end{lstlisting}
 
 You need to implement the following three functions in \lstinline{materials/disney_glass.inl}:
-\begin{lstlisting}
+\begin{lstlisting}[language=c++]
 Spectrum eval_op::operator()(const DisneyGlass &bsdf) const;
 Real pdf_sample_bsdf_op::operator()(const DisneyGlass &bsdf) const;
 std::optional<BSDFSampleRecord> sample_bsdf_op::operator()(const DisneyGlass &bsdf) const;
@@ -310,7 +310,7 @@ Here the color $C_{\text{sheen}}$ is a blending between the hue and saturation o
 In the 2015 version of the Disney BSDF, the sheen component is applied for both the reflection and transmission. We only apply the sheen for the reflection here, since it is easier to sample and code.
 
 \paragraph{Task (15\%).} You will implement the \lstinline{DisneySheen} BRDF (Equation~\ref{eq:f_sheen})
-\begin{lstlisting}
+\begin{lstlisting}[language=c++]
 // in material.h
 struct DisneySheen {
     Texture<Spectrum> base_color;
@@ -319,7 +319,7 @@ struct DisneySheen {
 \end{lstlisting}
 
 You need to implement the following three functions in \lstinline{materials/disney_sheen.inl}:
-\begin{lstlisting}
+\begin{lstlisting}[language=c++]
 Spectrum eval_op::operator()(const DisneySheen &bsdf) const;
 Real pdf_sample_bsdf_op::operator()(const DisneySheen &bsdf) const;
 std::optional<BSDFSampleRecord> sample_bsdf_op::operator()(const DisneySheen &bsdf) const;
@@ -333,11 +333,11 @@ Try out \lstinline{./lajolla ../scenes/disney_sheen.xml} to see how the material
 Finally, we combine the five components we have and weight them to get our final BSDF:
 \begin{equation}
 \begin{aligned}
-f_{\text{disney}} =& (1 - \text{specularTransmission}) * (1 - \text{metallic}) f_{\text{diffuse}} + \\
-                     (1 - \text{metallic}) f_{\text{sheen}} + \\
-                     (1 - \text{specularTransmission} * (1 - \text{metallic})) \hat{f}_{\text{metal}} + \\
-                     0.25 \text{clearcoat} f_{\text{clearcoat}} + \\
-                     (1 - \text{metallic}) * \text{specularTransmission} f_{\text{glass}}
+f_{\text{disney}} =& (1 - \text{specularTransmission}) \cdot (1 - \text{metallic}) \cdot f_{\text{diffuse}} + \\
+                   & (1 - \text{metallic}) \cdot f_{\text{sheen}} + \\
+                   & (1 - \text{specularTransmission} \cdot (1 - \text{metallic})) \cdot \hat{f}_{\text{metal}} + \\
+                   & 0.25 \cdot \text{clearcoat} \cdot f_{\text{clearcoat}} + \\
+                   & (1 - \text{metallic}) \cdot \text{specularTransmission} \cdot f_{\text{glass}}
 \end{aligned}
 \label{eq:disney_bsdf}
 \end{equation}
@@ -353,7 +353,7 @@ a dielectric specular reflection. We include that to our metal BRDF. To do this 
 \end{equation}
 
 \paragraph{Task (20\%).} You will implement \lstinline{DisneyBSDF} (Equation~\ref{eq:disney_bsdf})
-\begin{lstlisting}
+\begin{lstlisting}[language=c++]
 // in material.h
 struct DisneyBSDF {
     Texture<Spectrum> base_color;
@@ -374,7 +374,7 @@ struct DisneyBSDF {
 \end{lstlisting}
 
 You need to implement the following three functions in \lstinline{materials/disney_bsdf.inl}:
-\begin{lstlisting}
+\begin{lstlisting}[language=c++]
 Spectrum eval_op::operator()(const DisneyBSDF &bsdf) const;
 Real pdf_sample_bsdf_op::operator()(const DisneyBSDF &bsdf) const;
 std::optional<BSDFSampleRecord> sample_bsdf_op::operator()(const DisneyBSDF &bsdf) const;
