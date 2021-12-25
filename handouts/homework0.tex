@@ -668,12 +668,16 @@ Real light_power(const Light &light, const Scene &scene);
 /// rnd_param_w is usually used for choosing a discrete element e.g., choosing a triangle in a mesh light.
 /// rnd_param_uv is usually used for picking a point on that element.
 PointAndNormal sample_point_on_light(const Light &light, 
+                                     const PathVertex &vertex,
                                      const Vector2 &rnd_param_uv,
                                      Real rnd_param_w,
                                      const Scene &scene);
 
 /// Given a point on the light source, compute the sampling density for the function above.
-Real pdf_point_on_light(const Light &light, const PointAndNormal &point_on_light, const Scene &scene);
+Real pdf_point_on_light(const Light &light,
+                        const PointAndNormal &point_on_light,
+                        const PathVertex &vertex,
+                        const Scene &scene);
 
 /// Given a viewing direction pointing outwards from the light, and a point on the light,
 /// compute the emission of the light. We also need the "footprint" of the ray
@@ -783,10 +787,15 @@ All of these quantities can be computed using elementary differential geometry. 
 Finally, a shape also needs to implement some other sampling routines for area light sampling:
 \begin{lstlisting}[language=c++]
 /// Sample a point on the surface
-PointAndNormal sample_point_on_shape(const Shape &shape, const Vector2 &uv, Real w);
+PointAndNormal sample_point_on_shape(const Shape &shape,
+                                     const PathVertex &vertex,
+                                     const Vector2 &uv,
+                                     Real w);
 
 /// Probability density of the operation above
-Real pdf_point_on_shape(const Shape &shape);
+Real pdf_point_on_shape(const Shape &shape,
+                        const PointAndNormal &point_on_shape,
+                        const PathVertex &vertex);
 
 /// Useful for sampling.
 Real surface_area(const Shape &shape);
