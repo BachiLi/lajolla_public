@@ -100,7 +100,8 @@ Spectrum path_tracing(const Scene &scene,
         Real shape_w = next_pcg32_real<Real>(rng);
         int light_id = sample_light(scene, light_w);
         const Light &light = scene.lights[light_id];
-        PointAndNormal point_on_light = sample_point_on_light(light, light_uv, shape_w, scene);
+        PointAndNormal point_on_light =
+            sample_point_on_light(light, vertex, light_uv, shape_w, scene);
 
         // Next, we compute w1*C1/p1. We store C1/p1 in C1.
         Spectrum C1 = make_zero_spectrum();
@@ -122,7 +123,8 @@ Spectrum path_tracing(const Scene &scene,
                 // scale of the scene, which we can obtain through the get_shadow_epsilon() function.
                 Ray shadow_ray{vertex.position, dir_light, 
                                get_shadow_epsilon(scene),
-                               (1 - get_shadow_epsilon(scene)) * distance(point_on_light.position, vertex.position)};
+                               (1 - get_shadow_epsilon(scene)) *
+                                   distance(point_on_light.position, vertex.position)};
                 if (!occluded(scene, shadow_ray)) {
                     // geometry term is cosine at v_{i+1} divided by distance squared
                     // this can be derived by the infinitesimal area of a surface projected on
@@ -152,7 +154,7 @@ Spectrum path_tracing(const Scene &scene,
             // The probability density for light sampling to sample our point is
             // just the probability of sampling a light times the probability of sampling a point
             Real p1 = light_pmf(scene, light_id) *
-                pdf_point_on_light(light, point_on_light, scene);
+                pdf_point_on_light(light, point_on_light, vertex, scene);
 
             // We don't need to continue the computation if G is 0.
             // Also sometimes there can be some numerical issue such that we generate
@@ -273,7 +275,8 @@ Spectrum path_tracing(const Scene &scene,
             assert(light_id >= 0);
             const Light &light = scene.lights[light_id];
             PointAndNormal light_point{bsdf_vertex->position, bsdf_vertex->geometry_normal};
-            Real p1 = light_pmf(scene, light_id) * pdf_point_on_light(light, light_point, scene);
+            Real p1 = light_pmf(scene, light_id) *
+                pdf_point_on_light(light, light_point, vertex, scene);
             Real w2 = (p2*p2) / (p1*p1 + p2*p2);
 
             C2 /= p2;
@@ -291,7 +294,7 @@ Spectrum path_tracing(const Scene &scene,
             // directly drawing the direction bsdf_dir.
             PointAndNormal light_point{Vector3{0, 0, 0}, -dir_bsdf}; // pointing outwards from light
             Real p1 = light_pmf(scene, scene.envmap_light_id) *
-                      pdf_point_on_light(light, light_point, scene);
+                      pdf_point_on_light(light, light_point, vertex, scene);
             Real w2 = (p2*p2) / (p1*p1 + p2*p2);
 
             C2 /= p2;

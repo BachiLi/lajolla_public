@@ -31,7 +31,8 @@ Image3 aux_render(const Scene &scene) {
                     if (scene.options.integrator == Integrator::Depth) {
                         color = Vector3{dist, dist, dist};
                     } else if (scene.options.integrator == Integrator::ShadingNormal) {
-                        color = (vertex->shading_frame.n + Vector3{1, 1, 1}) / Real(2);
+                        // color = (vertex->shading_frame.n + Vector3{1, 1, 1}) / Real(2);
+                        color = vertex->shading_frame.n;
                     } else if (scene.options.integrator == Integrator::MeanCurvature) {
                         Real kappa = vertex->mean_curvature;
                         color = Vector3{kappa, kappa, kappa};

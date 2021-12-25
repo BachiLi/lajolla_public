@@ -4,11 +4,12 @@ Real light_power_op::operator()(const DiffuseAreaLight &light) const {
 
 PointAndNormal sample_point_on_light_op::operator()(const DiffuseAreaLight &light) const {
     const Shape &shape = scene.shapes[light.shape_id];
-    return sample_point_on_shape(shape, rnd_param_uv, rnd_param_w);
+    return sample_point_on_shape(shape, vertex, rnd_param_uv, rnd_param_w);
 }
 
 Real pdf_point_on_light_op::operator()(const DiffuseAreaLight &light) const {
-    return pdf_point_on_shape(scene.shapes[light.shape_id]);
+    return pdf_point_on_shape(
+        scene.shapes[light.shape_id], point_on_light, vertex);
 }
 
 Spectrum emission_op::operator()(const DiffuseAreaLight &light) const {
