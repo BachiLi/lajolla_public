@@ -38,7 +38,7 @@ F_{D90} &= \frac{1}{2} + 2 \text{roughness} |h \cdot \omega_{\text{out}}|^2.
 \end{aligned}
 \end{equation}
 
-When $\text{roughness} = 0$ (smooth materials), at grazing view angle $|n \cdot \omega_{\text{in}}| \approx 0$, and at grazing lighting angle $|n \cdot \omega_{\text{out}}| \approx 0$, thus the BSDF attenuates the diffuse response by a factor of $\frac{1}{2}$ for each $F_D$ term. At high roughness ($\text{roughness} \approx 1$), at retroreflection, $\omega{\text{out}} \approx \omega{\text{in}}$, thus $h \cdot \omega_{\text{out}} \approx 1$, and the BSDF reproduces the peak retroreflection observed in the MERL data by multiplying $2.5$ for each $F_D$ term.
+When $\text{roughness} = 0$ (smooth materials), at grazing view angle $|n \cdot \omega_{\text{in}}| \approx 0$, and at grazing lighting angle $|n \cdot \omega_{\text{out}}| \approx 0$, thus the BSDF attenuates the diffuse response by a factor of $\frac{1}{2}$ for each $F_D$ term (modelling the Fresnel reflection). At high roughness ($\text{roughness} \approx 1$), at retroreflection, $\omega{\text{out}} \approx \omega{\text{in}}$, thus $h \cdot \omega_{\text{out}} \approx 1$, and the BSDF reproduces the peak retroreflection observed in the MERL data by multiplying $2.5$ for each $F_D$ term.
 
 In addition to the base diffuse model, the diffuse component of Disney BSDF also blends it with a subsurface scattering lobe for surfaces with strong multiple scattering inside like skin, milk, or marble. In the 2015 version of the Disney BSDF, they simulate \emph{real} subsurface scattering that requires volumetric path tracing to simulate the scattering, but this is too much work for the first homework. Instead, we follow the 2012 version and use a BRDF approximation of the subsurface scattering by modifying the Lommel-Seeliger law:
 \begin{equation}
@@ -54,6 +54,8 @@ The final diffuse BRDF is:
 	\label{eq:f_diffuse}
 \end{equation}
 where $\text{subsurface}$ is a parameter.
+
+Note that the physical model here is a dielectric coating on top of a diffusive scattering media (similar to the \lstinline{roughplastic} material in lajolla/Mitsuba), but $f_{\text{diffuse}}$ does not model the specular reflection of the dielectric coating. We will include the specular reflection in the final assembly.
 
 \paragraph{Task (10\%).} You will implement the \lstinline{DisneyDiffuse} BRDF (Equation~\ref{eq:f_diffuse})
 \begin{lstlisting}
@@ -77,10 +79,81 @@ For sampling, we will simply use a cosine hemisphere sampling. Look at \lstinlin
 Try out \lstinline{./lajolla ../scenes/disney_diffuse.xml} to see how the material look like. Play with the parameters.
 
 \paragraph{Questions (5\%).} Answer these questions in a text file:
-\begin{itemize}
+\begin{enumerate}
 	\item Compare the two BRDFs with a Lambertian BRDF: what differences do you see? Why?
 	\item Compare the base diffuse BRDF ($f_{\text{baseDiffuse}}$) with the subsurface BRDF ($f_{\text{subsurface}}$) by playing with the subsurface parameter. What differences do you see? Why? In what lighting condition does the base diffuse BRDF differ the most from the subsurface BRDF?
-\end{itemize}
+\end{enumerate}
+
+\section{Metal}
+\begin{figure}
+	\caption{Metal rendering}
+\end{figure}
+
+For specular reflection, Burley uses a standard Cook-Torrance microfacet BRDF~\cite{Cook:1982:RMC}:
+\begin{equation}
+f_{\text{metal}} = \frac{F_m D_m G_m}{4 |n \cdot \omega_{\text{in}}|},\footnote{The $|n \cdot \omega_{\text{out}}|$ term in the denominator cancels out with the cosine.}
+\label{eq:f_metal}
+\end{equation}
+where $F_m$ is the Fresnel reflection, $D_m$ is the probability density of the distribution of a microfacet normal, and $G_m$ is the masking-shadowing term~\cite{Heitz:2014:UMF} that models the occlusion between microfacets.
+
+For the Fresnel term $F_m$, Burley uses the Schlick approximation:
+\begin{equation}
+F_m = \text{baseColor} + (1 - \text{baseColor}) (1 - |n \cdot \omega_{\text{out}}|^5).
+\end{equation}
+The reason why they use an approximation instead of the true Fresnel equation is not just for the performance. For metallic surfaces, or \emph{conductors}, Fresnel equation requires us to have the complex index of refraction of the conductor for each wavelength. This parameter is not only unintuitive, but nor is it physically accurate when we only consider the RGB spectrum.\footnote{See \href{http://renderwonk.com/publications/mam2019/}{``Fresnel Equations Considered Harmful''} by Naty Hoffman. \href{https://www.youtube.com/watch?v=kEcDbl7eS0w}{Here} is his presentation video.} 
+
+For the normal distribution function $D_m$, Burley uses the anisotropic Trowbridge-Reitz distribution~\cite{Trowbridge:1975:AIR}, popularized by Walter et al.~\cite{Walter:2007:MMR} in graphics and it is known as \emph{GGX} (Ground Glass X):
+\begin{equation}
+D_m = \frac{1}{\pi \alpha_x \alpha_y \left(\frac{h_l.x^2}{\alpha_x^2} + \frac{h_l.y^2}{\alpha_y^2} + h_l.z^2\right)^2},
+\end{equation}
+where $h_l$ is the half vector projected to the local frame. Trowbridge-Reitz distribution was found to be fitting the MERL measured data excellently thanks to its heavy tails compared to a Gaussian or a cosine (some materials have even longer tails, and those will be modelled by the clearcoat component later). 
+
+$\alpha_x, \alpha_y$ are parameters for modelling the smoothness of the material. If we directly use these parameters, we need very small $\alpha$ to represent highly specular materials. Burley found that the following mapping is more intuitive:
+\begin{equation}
+\begin{aligned}
+\text{aspect} &= \sqrt{1 - 0.9 \text{anisotropic}} \\
+\alpha_x &= max(\alpha_{\text{min}}, \text{roughness} \cdot \text{roughness} / \text{aspect}) \\
+\alpha_y &= max(\alpha_{\text{min}}, \text{roughness} \cdot \text{roughness} \cdot \text{aspect})
+\end{aligned},
+\end{equation}
+where $\text{anisotropic}$ and $\text{roughness}$ are the parameters.
+
+Given a normal distribution function and a microfacet configuration, it is possible to derive the average occlusion factor $G_m$ given a viewing angle~\cite{Heitz:2014:UMF}. Burley uses the Smith model, which enables a closed-form solution under the assumption that all the microfacets are independently oriented:
+\begin{equation}
+\begin{aligned}
+G_m &= G(\omega_{\text{in}}) G(\omega_{\text{out}}) \\
+G(\omega) &= \frac{1}{1 + \Lambda(\omega)} \\
+\Lambda(\omega) &= \frac{\sqrt{1 + \frac{\left(\omega_l.x \cdot \alpha_x\right)^2 + \left(\omega_l.y \cdot \alpha_y\right)^2}{\omega_l.z^2}} - 1}{2}
+\end{aligned}.
+\end{equation}
+
+Combining all of these, and you will get a nice metallic BRDF.
+
+\paragraph{Task (10\%).} You will implement the \lstinline{Disney} BRDF (Equation~\ref{eq:f_metal})
+\begin{lstlisting}
+// in material.h
+struct DisneyMetal {
+    Texture<Spectrum> base_color;
+    Texture<Real> roughness;
+    Texture<Real> anisotropic;
+};
+\end{lstlisting}
+
+You need to implement the following three functions in \lstinline{materials/disney_metal.inl}:
+\begin{lstlisting}
+Spectrum eval_op::operator()(const DisneyMetal &bsdf) const;
+Real pdf_sample_bsdf_op::operator()(const DisneyMetal &bsdf) const;
+std::optional<BSDFSampleRecord> sample_bsdf_op::operator()(const DisneyMetal &bsdf) const;
+\end{lstlisting}
+
+For sampling, we will use the visible normal sampling developed by Heitz~\cite{Heitz:2018:SGD}, which importance samples $D_m G(\omega_{\text{in}})$. See Heitz's presentation \href{https://jcgt.org/published/0007/04/01/slides.pdf}{slides} for a really nice illustration of the method. This sampling is also used in the \lstinline{roughplastic} material in lajolla, so you might want to look at it as well.
+
+Try out \lstinline{./lajolla ../scenes/disney_metal.xml} to see how the material look like. Play with the parameters.
+
+\paragraph{Questions (5\%).} Answer these question(s) in a text file:
+\begin{enumerate}
+	\item Compare \lstinline{DisneyMetal} with the \lstinline{roughplastic} material. What differences do you see?
+\end{enumerate}
 
 \bibliographystyle{plain}
 \bibliography{refs}
