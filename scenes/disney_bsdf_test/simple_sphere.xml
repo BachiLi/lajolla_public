@@ -12,10 +12,36 @@
 		<bsdf type="diffuse" id="diffmat">
 			<rgb name="reflectance" value="0.5 0.5 0.5"/>
 		</bsdf>
+
+<!-- 		<bsdf type="roughplastic">
+			<rgb name="diffuseReflectance" value="0.0 0.0 0.0"/>
+			<float name="roughness" value="0.5"/>
+		</bsdf> -->
+
+<!-- 		<bsdf type="disneydiffuse">
+			<rgb name="baseColor" value="0.5 0.5 0.5"/>
+			<float name="roughness" value="1.0"/>
+			<float name="subsurface" value="0.0"/>
+		</bsdf> -->
+
+<!-- 		<bsdf type="disneymetal">
+			<rgb name="baseColor" value="0.5 0.5 0.5"/>
+			<float name="roughness" value="0.2"/>
+			<float name="anisotropic" value="0.5"/>
+		</bsdf> -->
+
+<!-- 		<bsdf type="disneyclearcoat">
+			<float name="clearcoatGloss" value="0.5"/>
+		</bsdf> -->
+
+<!-- 		<bsdf type="disneysheen">
+			<rgb name="baseColor" value="0.5 0.5 0.5"/>
+		</bsdf> -->
 	</shape>
 
 	<shape type="sphere">
 		<point name="center" x="0" y="0" z="-10"/>
+		<!-- <point name="center" x="10" y="0" z="0"/> -->
 		<float name="radius" value="0.1"/>
 
 		<emitter type="area">
@@ -31,7 +57,7 @@
 		<string name="fovAxis" value="x"/>
 		<float name="fov" value="45"/>
 		<transform name="toWorld">
-			<lookAt target="0, 0, 0" origin="0, 0, -5" up="0, 1, 0"/>
+			<lookAt target="0, 0, 0" origin="0, 0, -3" up="0, 1, 0"/>
 		</transform>
 
 		<sampler type="independent">
