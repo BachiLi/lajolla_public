@@ -19,7 +19,7 @@ Scene::Scene(const RTCDevice &embree_device,
     // We don't care about build time.
     rtcSetSceneBuildQuality(embree_scene, RTC_BUILD_QUALITY_HIGH);
     rtcSetSceneFlags(embree_scene, RTC_SCENE_FLAG_ROBUST);
-    for (const Shape &shape : shapes) {
+    for (const Shape &shape : this->shapes) {
         register_embree(shape, embree_device, embree_scene);
     }
     rtcCommitScene(embree_scene);
