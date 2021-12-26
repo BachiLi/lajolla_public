@@ -79,6 +79,7 @@ set(SRCS src/3rdparty/miniz.h
          src/load_serialized.cpp
          src/main.cpp
          src/material.cpp
+         src/medium.cpp
          src/parallel.cpp
          src/parse_obj.cpp
          src/parse_scene.cpp

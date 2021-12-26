@@ -1,5 +1,7 @@
 #pragma once
 
+#include "lajolla.h"
+
 // Lajolla uses a random number generator called PCG https://www.pcg-random.org/
 // which is a very lightweight random number generator based on a simple
 // postprocessing of a standard linear congruent generators.
