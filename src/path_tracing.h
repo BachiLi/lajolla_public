@@ -63,7 +63,7 @@ Spectrum path_tracing(const Scene &scene,
     // We iteratively sum up path contributions from paths with different number of vertices
     // If max_depth == -1, we rely on Russian roulette for path termination.
     int max_depth = scene.options.max_depth;
-    for (int num_vertices = 2; max_depth == -1 || num_vertices <= max_depth; num_vertices++) {
+    for (int num_vertices = 3; max_depth == -1 || num_vertices <= max_depth + 1; num_vertices++) {
         // We are at v_i, and all the path contribution on and before has been accounted for.
         // Now we need to somehow generate v_{i+1} to account for paths with more vertices.
         // In path tracing, we generate two vertices:
