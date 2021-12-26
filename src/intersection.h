@@ -27,6 +27,11 @@ struct PathVertex {
     int shape_id = -1;
     int primitive_id = -1; // For triangle meshes. This indicates which triangle it hits.
     int material_id = -1;
+
+    // If the path vertex is inside a medium, these two IDs
+    // are the same.
+    int interior_medium_id = -1;
+    int exterior_medium_id = -1;
 };
 
 /// Intersect a ray with a scene. If the ray doesn't hit anything,

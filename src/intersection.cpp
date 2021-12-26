@@ -41,7 +41,10 @@ std::optional<PathVertex> intersect(const Scene &scene,
     vertex.geometry_normal = normalize(Vector3{rtc_hit.Ng_x, rtc_hit.Ng_y, rtc_hit.Ng_z});
     vertex.shape_id = rtc_hit.geomID;
     vertex.primitive_id = rtc_hit.primID;
-    vertex.material_id = get_material_id(scene.shapes[vertex.shape_id]);
+    const Shape &shape = scene.shapes[vertex.shape_id];
+    vertex.material_id = get_material_id(shape);
+    vertex.interior_medium_id = get_interior_medium_id(shape);
+    vertex.exterior_medium_id = get_exterior_medium_id(shape);
     vertex.st = Vector2{rtc_hit.u, rtc_hit.v};
 
     ShadingInfo shading_info = compute_shading_info(scene.shapes[vertex.shape_id], vertex);
@@ -52,8 +55,6 @@ std::optional<PathVertex> intersect(const Scene &scene,
     // vertex.ray_radius stores approximatedly dp/dx, 
     // we get uv_screen_size (du/dx) using (dp/dx)/(dp/du)
     vertex.uv_screen_size = vertex.ray_radius / shading_info.inv_uv_size;
-
-    // vertex.inv_uv_size = shading_info.inv_uv_size;
 
     // Flip the geometry normal to the same direction as the shading normal
     if (dot(vertex.geometry_normal, vertex.shading_frame.n) < 0) {
