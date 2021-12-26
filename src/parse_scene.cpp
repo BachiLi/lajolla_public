@@ -350,8 +350,36 @@ parse_film(pugi::xml_node node) {
     return std::make_tuple(width, height, filename, filter);
 }
 
+std::tuple<std::string /* ID */, Medium> parse_medium(pugi::xml_node node) {
+    std::string type = node.attribute("type").value();
+    std::string id;
+    if (!node.attribute("id").empty()) {
+        id = node.attribute("id").value();
+    }
+    if (type == "homogeneous") {
+        Vector3 sigma_a{0.5, 0.5, 0.5};
+        Vector3 sigma_s{0.5, 0.5, 0.5};
+        Real scale = 1;
+        for (auto child : node.children()) {
+            std::string name = child.attribute("name").value();
+            if (name == "sigmaA") {
+                sigma_a = parse_color(child);
+            } else if (name == "sigmaS") {
+                sigma_s = parse_color(child);
+            } else if (name == "scale") {
+                scale = std::stof(child.attribute("value").value());
+            }
+        }
+        return std::make_tuple(id, HomogeneousMedium{sigma_a, sigma_s});
+    } else {
+        Error(std::string("Unknown medium type:") + type);
+    }
+}
+
 std::tuple<Camera, std::string /* output filename */, ParsedSampler>
-parse_sensor(pugi::xml_node node) {
+        parse_sensor(pugi::xml_node node,
+                     std::vector<Medium> &media,
+                     std::map<std::string /* name id */, int /* index id */> &medium_map) {
     Real fov = c_default_fov;
     Matrix4x4 to_world = Matrix4x4::identity();
     int width = c_default_res, height = c_default_res;
@@ -359,6 +387,7 @@ parse_sensor(pugi::xml_node node) {
     Filter filter = c_default_filter;
     FovAxis fov_axis = FovAxis::X;
     ParsedSampler sampler;
+    int medium_id = -1;
 
     std::string type = node.attribute("type").value();
     if (type == "perspective") {
@@ -403,6 +432,27 @@ parse_sensor(pugi::xml_node node) {
                     sampler.sample_count = std::stoi(grand_child.attribute("value").value());
                 }
             }
+        } else if (std::string(child.name()) == "ref") {
+            // A reference to a medium
+            pugi::xml_attribute id = child.attribute("id");
+            if (id.empty()) {
+                Error("Medium reference not specified.");
+            }
+            auto it = medium_map.find(id.value());
+            if (it == medium_map.end()) {
+                Error(std::string("Medium reference ") + id.value() + std::string(" not found."));
+            }
+            medium_id = it->second;
+        } else if (std::string(child.name()) == "medium") {
+            Medium m;
+            std::string medium_name;
+            std::tie(medium_name, m) = parse_medium(child);
+            if (!medium_name.empty()) {
+                medium_map[medium_name] = media.size();
+            }
+            std::string name_value = child.attribute("name").value();
+            medium_id = media.size();
+            media.push_back(m);
         }
     }
 
@@ -421,7 +471,8 @@ parse_sensor(pugi::xml_node node) {
         fov = degrees(2 * atan(width / 2));
     }
 
-    return std::make_tuple(Camera(to_world, fov, width, height, filter), filename, sampler);
+    return std::make_tuple(Camera(to_world, fov, width, height, filter, medium_id),
+                           filename, sampler);
 }
 
 std::tuple<std::string /* ID */, Material> parse_bsdf(
@@ -677,32 +728,6 @@ std::tuple<std::string /* ID */, Material> parse_bsdf(
     return std::make_tuple("", Material{});
 }
 
-std::tuple<std::string /* ID */, Medium> parse_medium(pugi::xml_node node) {
-    std::string type = node.attribute("type").value();
-    std::string id;
-    if (!node.attribute("id").empty()) {
-        id = node.attribute("id").value();
-    }
-    if (type == "homogeneous") {
-        Vector3 sigma_a{0.5, 0.5, 0.5};
-        Vector3 sigma_s{0.5, 0.5, 0.5};
-        Real scale = 1;
-        for (auto child : node.children()) {
-            std::string name = child.attribute("name").value();
-            if (name == "sigmaA") {
-                sigma_a = parse_color(child);
-            } else if (name == "sigmaS") {
-                sigma_s = parse_color(child);
-            } else if (name == "scale") {
-                scale = std::stof(child.attribute("value").value());
-            }
-        }
-        return std::make_tuple(id, HomogeneousMedium{sigma_a, sigma_s});
-    } else {
-        Error(std::string("Unknown medium type:") + type);
-    }
-}
-
 Shape parse_shape(pugi::xml_node node,
                   std::vector<Material> &materials,
                   std::map<std::string /* name id */, int /* index id */> &material_map,
@@ -721,7 +746,7 @@ Shape parse_shape(pugi::xml_node node,
             std::string name_value = child.attribute("name").value();
             pugi::xml_attribute id = child.attribute("id");
             if (id.empty()) {
-                Error("Material reference not specified.");
+                Error("Material/medium reference id not specified.");
             }
             if (name_value == "interior") {
                 auto it = medium_map.find(id.value());
@@ -760,9 +785,9 @@ Shape parse_shape(pugi::xml_node node,
             }
             std::string name_value = child.attribute("name").value();
             if (name_value == "interior") {
-                interior_medium_id = materials.size();
+                interior_medium_id = media.size();
             } else if (name_value == "exterior") {
-                exterior_medium_id = materials.size();
+                exterior_medium_id = media.size();
             } else {
                 Error(std::string("Unrecognized medium name: ") + name_value);
             }
@@ -930,7 +955,8 @@ Scene parse_scene(pugi::xml_node node, const RTCDevice &embree_device) {
                   c_default_fov,
                   c_default_res,
                   c_default_res,
-                  c_default_filter);
+                  c_default_filter,
+                  -1 /*medium_id*/);
     std::string filename = c_default_filename;
     std::vector<Material> materials;
     std::map<std::string /* name id */, int /* index id */> material_map;
@@ -947,7 +973,8 @@ Scene parse_scene(pugi::xml_node node, const RTCDevice &embree_device) {
             options = parse_integrator(child);
         } else if (name == "sensor") {
             ParsedSampler sampler;
-            std::tie(camera, filename, sampler) = parse_sensor(child);
+            std::tie(camera, filename, sampler) =
+                parse_sensor(child, media, medium_map);
             options.samples_per_pixel = sampler.sample_count;
         } else if (name == "bsdf") {
             std::string material_name;

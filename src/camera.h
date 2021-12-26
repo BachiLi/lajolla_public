@@ -12,12 +12,15 @@ struct Camera {
     Camera(const Matrix4x4 &cam_to_world,
            Real fov, // in degree
            int width, int height,
-           const Filter &filter);
+           const Filter &filter,
+           int medium_id);
 
     Matrix4x4 sample_to_cam, cam_to_sample;
     Matrix4x4 cam_to_world, world_to_cam;
     int width, height;
     Filter filter;
+
+    int medium_id;
 };
 
 /// Given screen position in [0, 1] x [0, 1],
