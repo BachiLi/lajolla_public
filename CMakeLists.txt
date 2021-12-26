@@ -53,6 +53,7 @@ set(SRCS src/3rdparty/miniz.h
          src/load_serialized.h
          src/material.h
          src/matrix.h
+         src/medium.h
          src/microfacet.h
          src/mipmap.h
          src/parallel.h

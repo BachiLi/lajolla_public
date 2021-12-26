@@ -6,12 +6,14 @@ Scene::Scene(const RTCDevice &embree_device,
              const std::vector<Material> &materials,
              const std::vector<Shape> &shapes,
              const std::vector<Light> &lights,
+             const std::vector<Medium> &media,
              int envmap_light_id,
              const TexturePool &texture_pool,
              const RenderOptions &options,
              const std::string &output_filename) : 
         embree_device(embree_device), camera(camera), materials(materials),
-        shapes(shapes), lights(lights),envmap_light_id(envmap_light_id),
+        shapes(shapes), lights(lights), media(media),
+        envmap_light_id(envmap_light_id),
         texture_pool(texture_pool), options(options),
         output_filename(output_filename) {
     // Register the geometry to Embree

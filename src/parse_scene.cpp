@@ -11,7 +11,6 @@
 const Real c_default_fov = 45.0;
 const int c_default_res = 256;
 const std::string c_default_filename = "image.exr";
-const std::string c_default_material_name = "___default_white";
 const Filter c_default_filter = Box{Real(1)};;
 
 struct ParsedSampler {
@@ -266,6 +265,16 @@ RenderOptions parse_integrator(pugi::xml_node node) {
     std::string type = node.attribute("type").value();
     if (type == "path") {
         options.integrator = Integrator::Path;
+        for (auto child : node.children()) {
+            std::string name = child.attribute("name").value();
+            if (name == "maxDepth") {
+                options.max_depth = std::stoi(child.attribute("value").value());
+            } else if (name == "rrDepth") {
+                options.rr_depth = std::stoi(child.attribute("value").value());
+            }
+        }
+    } else if (type == "volpath") {
+        options.integrator = Integrator::VolPath;
         for (auto child : node.children()) {
             std::string name = child.attribute("name").value();
             if (name == "maxDepth") {
@@ -668,27 +677,70 @@ std::tuple<std::string /* ID */, Material> parse_bsdf(
     return std::make_tuple("", Material{});
 }
 
+std::tuple<std::string /* ID */, Medium> parse_medium(pugi::xml_node node) {
+    std::string type = node.attribute("type").value();
+    std::string id;
+    if (!node.attribute("id").empty()) {
+        id = node.attribute("id").value();
+    }
+    if (type == "homogeneous") {
+        Vector3 sigma_a{0.5, 0.5, 0.5};
+        Vector3 sigma_s{0.5, 0.5, 0.5};
+        Real scale = 1;
+        for (auto child : node.children()) {
+            std::string name = child.attribute("name").value();
+            if (name == "sigmaA") {
+                sigma_a = parse_color(child);
+            } else if (name == "sigmaS") {
+                sigma_s = parse_color(child);
+            } else if (name == "scale") {
+                scale = std::stof(child.attribute("value").value());
+            }
+        }
+        return std::make_tuple(id, HomogeneousMedium{sigma_a, sigma_s});
+    } else {
+        Error(std::string("Unknown medium type:") + type);
+    }
+}
+
 Shape parse_shape(pugi::xml_node node,
                   std::vector<Material> &materials,
-                  std::map<std::string, int> &material_map,
+                  std::map<std::string /* name id */, int /* index id */> &material_map,
                   const std::map<std::string /* name id */, ParsedTexture> &texture_map,
                   TexturePool &texture_pool,
+                  std::vector<Medium> &media,
+                  std::map<std::string /* name id */, int /* index id */> &medium_map,
                   std::vector<Light> &lights,
                   const std::vector<Shape> &shapes) {
     int material_id = -1;
+    int interior_medium_id = -1;
+    int exterior_medium_id = -1;
     for (auto child : node.children()) {
         std::string name = child.name();
         if (name == "ref") {
+            std::string name_value = child.attribute("name").value();
             pugi::xml_attribute id = child.attribute("id");
-            if (!id.empty()) {
+            if (id.empty()) {
+                Error("Material reference not specified.");
+            }
+            if (name_value == "interior") {
+                auto it = medium_map.find(id.value());
+                if (it == medium_map.end()) {
+                    Error(std::string("Medium reference ") + id.value() + std::string(" not found."));
+                }
+                interior_medium_id = it->second;
+            } else if (name_value == "exterior") {
+                auto it = medium_map.find(id.value());
+                if (it == medium_map.end()) {
+                    Error(std::string("Medium reference ") + id.value() + std::string(" not found."));
+                }
+                exterior_medium_id = it->second;
+            } else {
                 auto it = material_map.find(id.value());
                 if (it == material_map.end()) {
-                    Error(std::string("Ref ") + id.value() + std::string(" not found"));
+                    Error(std::string("Material reference ") + id.value() + std::string(" not found."));
                 }
                 material_id = it->second;
-                break;
-            } else {
-                Error("ref not specified");
             }
         } else if (name == "bsdf") {
             Material m;
@@ -699,16 +751,23 @@ Shape parse_shape(pugi::xml_node node,
             }
             material_id = materials.size();
             materials.push_back(m);
-            break;
+        } else if (name == "medium") {
+            Medium m;
+            std::string medium_name;
+            std::tie(medium_name, m) = parse_medium(child);
+            if (!medium_name.empty()) {
+                medium_map[medium_name] = media.size();
+            }
+            std::string name_value = child.attribute("name").value();
+            if (name_value == "interior") {
+                interior_medium_id = materials.size();
+            } else if (name_value == "exterior") {
+                exterior_medium_id = materials.size();
+            } else {
+                Error(std::string("Unrecognized medium name: ") + name_value);
+            }
+            media.push_back(m);
         }
-    }
-    if (material_id == -1) {
-        if (material_map.find(c_default_material_name) == material_map.end()) {
-            material_map[c_default_material_name] = materials.size();
-            materials.push_back(Lambertian{
-                make_constant_spectrum_texture(fromRGB(Vector3{0.5, 0.5, 0.5}))});
-        }
-        material_id = material_map[c_default_material_name];
     }
 
     Shape shape;
@@ -758,11 +817,13 @@ Shape parse_shape(pugi::xml_node node,
                 radius = std::stof(child.attribute("value").value());
             }
         }
-        shape = Sphere{{-1 /*material_id*/, -1 /*area_light_id*/}, center, radius};
+        shape = Sphere{{}, center, radius};
     } else {
         Error(std::string("Unknown shape:") + type);
     }
     set_material_id(shape, material_id);
+    set_interior_medium_id(shape, interior_medium_id);
+    set_exterior_medium_id(shape, exterior_medium_id);
 
     for (auto child : node.children()) {
         std::string name = child.name();
@@ -875,6 +936,8 @@ Scene parse_scene(pugi::xml_node node, const RTCDevice &embree_device) {
     std::map<std::string /* name id */, int /* index id */> material_map;
     TexturePool texture_pool;
     std::map<std::string /* name id */, ParsedTexture> texture_map;
+    std::vector<Medium> media;
+    std::map<std::string /* name id */, int /* index id */> medium_map;
     std::vector<Shape> shapes;
     std::vector<Light> lights;
     int envmap_light_id = -1;
@@ -900,6 +963,8 @@ Scene parse_scene(pugi::xml_node node, const RTCDevice &embree_device) {
                                   material_map,
                                   texture_map,
                                   texture_pool,
+                                  media,
+                                  medium_map,
                                   lights,
                                   shapes);
             shapes.push_back(s);
@@ -937,6 +1002,14 @@ Scene parse_scene(pugi::xml_node node, const RTCDevice &embree_device) {
             } else {
                 Error(std::string("Unknown emitter type:") + type);
             }
+        } else if (name == "medium") {
+            std::string medium_name;
+            Medium m;
+            std::tie(medium_name, m) = parse_medium(child);
+            if (!medium_name.empty()) {
+                medium_map[medium_name] = media.size();
+                media.push_back(m);
+            }
         }
     }
     return Scene{embree_device,
@@ -944,6 +1017,7 @@ Scene parse_scene(pugi::xml_node node, const RTCDevice &embree_device) {
                  materials,
                  shapes,
                  lights,
+                 media,
                  envmap_light_id,
                  texture_pool,
                  options,

@@ -4,6 +4,7 @@
 #include "camera.h"
 #include "light.h"
 #include "material.h"
+#include "medium.h"
 #include "shape.h"
 
 #include <memory>
@@ -15,7 +16,8 @@ enum class Integrator {
     MeanCurvature,
     RayDifferential, // visualize radius & spread
     MipmapLevel,
-    Path
+    Path,
+    VolPath
 };
 
 struct RenderOptions {
@@ -41,7 +43,8 @@ struct Scene {
           const std::vector<Material> &materials,
           const std::vector<Shape> &shapes,
           const std::vector<Light> &lights,
-          int envmap_light_id /* -1 if the scene has no envmap */,
+          const std::vector<Medium> &media,
+          int envmap_light_id, /* -1 if the scene has no envmap */
           const TexturePool &texture_pool,
           const RenderOptions &options,
           const std::string &output_filename);
@@ -59,6 +62,7 @@ struct Scene {
     const std::vector<Material> materials;
     const std::vector<Shape> shapes;
     const std::vector<Light> lights;
+    const std::vector<Medium> media;
     int envmap_light_id;
     const TexturePool texture_pool;
 

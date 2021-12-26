@@ -26,6 +26,9 @@ struct ShadingInfo {
 struct ShapeBase {
     int material_id = -1;
     int area_light_id = -1;
+
+    int interior_medium_id = -1;
+    int exterior_medium_id = -1;
 };
 
 struct Sphere : public ShapeBase {
@@ -79,11 +82,23 @@ inline void set_material_id(Shape &shape, int material_id) {
 inline void set_area_light_id(Shape &shape, int area_light_id) {
     std::visit([&](auto &s) { s.area_light_id = area_light_id; }, shape);
 }
+inline void set_interior_medium_id(Shape &shape, int interior_medium_id) {
+    std::visit([&](auto &s) { s.interior_medium_id = interior_medium_id; }, shape);
+}
+inline void set_exterior_medium_id(Shape &shape, int exterior_medium_id) {
+    std::visit([&](auto &s) { s.exterior_medium_id = exterior_medium_id; }, shape);
+}
 inline int get_material_id(const Shape &shape) {
     return std::visit([&](const auto &s) { return s.material_id; }, shape);
 }
 inline int get_area_light_id(const Shape &shape) {
     return std::visit([&](const auto &s) { return s.area_light_id; }, shape);
+}
+inline int get_interior_medium_id(const Shape &shape) {
+    return std::visit([&](const auto &s) { return s.interior_medium_id; }, shape);
+}
+inline int get_exterior_medium_id(const Shape &shape) {
+    return std::visit([&](const auto &s) { return s.exterior_medium_id; }, shape);
 }
 inline bool is_light(const Shape &shape) {
     return get_area_light_id(shape) >= 0;
