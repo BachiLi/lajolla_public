@@ -44,7 +44,7 @@ Real light_power(const Light &light, const Scene &scene);
 /// rnd_param_w is usually used for choosing a discrete element e.g., choosing a triangle in a mesh light.
 /// rnd_param_uv is usually used for picking a point on that element.
 PointAndNormal sample_point_on_light(const Light &light,
-                                     const PathVertex &vertex,
+                                     const Vector3 &ref_point,
                                      const Vector2 &rnd_param_uv,
                                      Real rnd_param_w,
                                      const Scene &scene);
@@ -53,7 +53,7 @@ PointAndNormal sample_point_on_light(const Light &light,
 /// compute the sampling density for the function above.
 Real pdf_point_on_light(const Light &light,
                         const PointAndNormal &point_on_light,
-                        const PathVertex &vertex,
+                        const Vector3 &ref_point,
                         const Scene &scene);
 
 /// Given a viewing direction pointing outwards from the light, and a point on the light,

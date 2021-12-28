@@ -158,7 +158,7 @@ PointAndNormal sample_point_on_shape_op::operator()(const Sphere &sphere) const 
     const Vector3 &center = sphere.position;
     const Real &r = sphere.radius;
 
-    if (distance_squared(vertex.position, center) < r * r) {
+    if (distance_squared(ref_point, center) < r * r) {
         // If the reference point is inside the sphere, just sample the whole sphere uniformly
         Real z = 1 - 2 * uv.x;
         Real r_ = sqrt(fmax(Real(0), 1 - z * z));
@@ -172,14 +172,14 @@ PointAndNormal sample_point_on_shape_op::operator()(const Sphere &sphere) const 
     // Otherwise sample a ray inside a cone towards the sphere center.
 
     // Build a coordinate system with n pointing towards the sphere
-    Vector3 dir_to_center = normalize(center - vertex.position);
+    Vector3 dir_to_center = normalize(center - ref_point);
     Frame frame(dir_to_center);
 
     // These are not exactly "elevation" and "azimuth": elevation here
     // stands for the extended angle of the cone, and azimuth here stands
     // for the polar coordinate angle on the substended disk.
     // I just don't like the theta/phi naming convention...
-    Real sin_elevation_max_sq = r * r / distance_squared(vertex.position, center);
+    Real sin_elevation_max_sq = r * r / distance_squared(ref_point, center);
     Real cos_elevation_max = sqrt(max(Real(0), 1 - sin_elevation_max_sq));
     // Uniformly interpolate between 1 (angle 0) and max
     Real cos_elevation = (1 - uv[0]) + uv[0] * cos_elevation_max;
@@ -189,7 +189,7 @@ PointAndNormal sample_point_on_shape_op::operator()(const Sphere &sphere) const 
     // Now we have a ray direction and a sphere, we can just ray trace and find
     // the intersection point. Pbrt uses an more clever and numerically robust
     // approach which I will just shamelessly copy here.
-    Real dc = distance(vertex.position, center);
+    Real dc = distance(ref_point, center);
     Real ds = dc * cos_elevation -
         sqrt(max(Real(0), r * r - dc * dc * sin_elevation * sin_elevation));
     Real cos_alpha = (dc * dc + r * r - ds * ds) / (2 * dc * r);
@@ -212,21 +212,21 @@ Real pdf_point_on_shape_op::operator()(const Sphere &sphere) const {
     const Vector3 &center = sphere.position;
     const Real &r = sphere.radius;
 
-    if (distance_squared(vertex.position, center) < r * r) {
+    if (distance_squared(ref_point, center) < r * r) {
         // If the reference point is inside the sphere, just sample the whole sphere uniformly
         return 1 / surface_area_op{}(sphere);
     }
     
-    Real sin_elevation_max_sq = r * r / distance_squared(vertex.position, center);
+    Real sin_elevation_max_sq = r * r / distance_squared(ref_point, center);
     Real cos_elevation_max = sqrt(max(Real(0), 1 - sin_elevation_max_sq));
     // Uniform sampling PDF of a cone.
     Real pdf_solid_angle = 1 / (2 * c_PI * (1 - cos_elevation_max));
     // Convert it back to area measure
     Vector3 p_on_sphere = point_on_shape.position;
     Vector3 n_on_sphere = point_on_shape.normal;
-    Vector3 dir = normalize(p_on_sphere - vertex.position);
+    Vector3 dir = normalize(p_on_sphere - ref_point);
     return pdf_solid_angle * fabs(dot(n_on_sphere, dir)) /
-        distance_squared(vertex.position, p_on_sphere);
+        distance_squared(ref_point, p_on_sphere);
 }
 
 void init_sampling_dist_op::operator()(Sphere &sphere) const {

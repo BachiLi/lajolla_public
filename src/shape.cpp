@@ -16,7 +16,7 @@ struct sample_point_on_shape_op {
     PointAndNormal operator()(const Sphere &sphere) const;
     PointAndNormal operator()(const TriangleMesh &mesh) const;
 
-    const PathVertex &vertex;
+    const Vector3 &ref_point;
     const Vector2 &uv; // for selecting a point on a 2D surface
     const Real &w; // for selecting triangles
 };
@@ -31,7 +31,7 @@ struct pdf_point_on_shape_op {
     Real operator()(const TriangleMesh &mesh) const;
 
     const PointAndNormal &point_on_shape;
-    const PathVertex &vertex;
+    const Vector3 &ref_point;
 };
 
 struct init_sampling_dist_op {
@@ -54,16 +54,16 @@ uint32_t register_embree(const Shape &shape, const RTCDevice &device, const RTCS
 }
 
 PointAndNormal sample_point_on_shape(const Shape &shape,
-                                     const PathVertex &vertex,
+                                     const Vector3 &ref_point,
                                      const Vector2 &uv,
                                      Real w) {
-    return std::visit(sample_point_on_shape_op{vertex, uv, w}, shape);
+    return std::visit(sample_point_on_shape_op{ref_point, uv, w}, shape);
 }
 
 Real pdf_point_on_shape(const Shape &shape,
                         const PointAndNormal &point_on_shape,
-                        const PathVertex &vertex) {
-    return std::visit(pdf_point_on_shape_op{point_on_shape, vertex}, shape);
+                        const Vector3 &ref_point) {
+    return std::visit(pdf_point_on_shape_op{point_on_shape, ref_point}, shape);
 }
 
 Real surface_area(const Shape &shape) {

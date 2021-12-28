@@ -14,7 +14,7 @@ struct sample_point_on_light_op {
     PointAndNormal operator()(const DiffuseAreaLight &light) const;
     PointAndNormal operator()(const Envmap &light) const;
 
-    const PathVertex &vertex;
+    const Vector3 &ref_point;
     const Vector2 &rnd_param_uv;
     const Real &rnd_param_w;
     const Scene &scene;
@@ -25,7 +25,7 @@ struct pdf_point_on_light_op {
     Real operator()(const Envmap &light) const;
 
     const PointAndNormal &point_on_light;
-    const PathVertex &vertex;
+    const Vector3 &ref_point;
     const Scene &scene;
 };
 
@@ -54,18 +54,18 @@ Real light_power(const Light &light, const Scene &scene) {
 }
 
 PointAndNormal sample_point_on_light(const Light &light,
-                                     const PathVertex &vertex,
+                                     const Vector3 &ref_point,
                                      const Vector2 &rnd_param_uv,
                                      Real rnd_param_w,
                                      const Scene &scene) {
-    return std::visit(sample_point_on_light_op{vertex, rnd_param_uv, rnd_param_w, scene}, light);
+    return std::visit(sample_point_on_light_op{ref_point, rnd_param_uv, rnd_param_w, scene}, light);
 }
 
 Real pdf_point_on_light(const Light &light,
                         const PointAndNormal &point_on_light,
-                        const PathVertex &vertex,
+                        const Vector3 &ref_point,
                         const Scene &scene) {
-    return std::visit(pdf_point_on_light_op{point_on_light, vertex, scene}, light);
+    return std::visit(pdf_point_on_light_op{point_on_light, ref_point, scene}, light);
 }
 
 Spectrum emission(const Light &light,

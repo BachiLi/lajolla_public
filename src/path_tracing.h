@@ -101,7 +101,7 @@ Spectrum path_tracing(const Scene &scene,
         int light_id = sample_light(scene, light_w);
         const Light &light = scene.lights[light_id];
         PointAndNormal point_on_light =
-            sample_point_on_light(light, vertex, light_uv, shape_w, scene);
+            sample_point_on_light(light, vertex.position, light_uv, shape_w, scene);
 
         // Next, we compute w1*C1/p1. We store C1/p1 in C1.
         Spectrum C1 = make_zero_spectrum();
@@ -154,7 +154,7 @@ Spectrum path_tracing(const Scene &scene,
             // The probability density for light sampling to sample our point is
             // just the probability of sampling a light times the probability of sampling a point
             Real p1 = light_pmf(scene, light_id) *
-                pdf_point_on_light(light, point_on_light, vertex, scene);
+                pdf_point_on_light(light, point_on_light, vertex.position, scene);
 
             // We don't need to continue the computation if G is 0.
             // Also sometimes there can be some numerical issue such that we generate
@@ -276,7 +276,7 @@ Spectrum path_tracing(const Scene &scene,
             const Light &light = scene.lights[light_id];
             PointAndNormal light_point{bsdf_vertex->position, bsdf_vertex->geometry_normal};
             Real p1 = light_pmf(scene, light_id) *
-                pdf_point_on_light(light, light_point, vertex, scene);
+                pdf_point_on_light(light, light_point, vertex.position, scene);
             Real w2 = (p2*p2) / (p1*p1 + p2*p2);
 
             C2 /= p2;
@@ -294,7 +294,7 @@ Spectrum path_tracing(const Scene &scene,
             // directly drawing the direction bsdf_dir.
             PointAndNormal light_point{Vector3{0, 0, 0}, -dir_bsdf}; // pointing outwards from light
             Real p1 = light_pmf(scene, scene.envmap_light_id) *
-                      pdf_point_on_light(light, light_point, vertex, scene);
+                      pdf_point_on_light(light, light_point, vertex.position, scene);
             Real w2 = (p2*p2) / (p1*p1 + p2*p2);
 
             C2 /= p2;
