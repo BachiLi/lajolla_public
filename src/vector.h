@@ -182,6 +182,14 @@ inline TVector3<T>& operator*=(TVector3<T> &v, const T &s) {
 }
 
 template <typename T>
+inline TVector3<T>& operator*=(TVector3<T> &v0, const TVector3<T> &v1) {
+    v0[0] *= v1[0];
+    v0[1] *= v1[1];
+    v0[2] *= v1[2];
+    return v0;
+}
+
+template <typename T>
 inline TVector3<T> operator/(const TVector3<T> &v, const T &s) {
     T inv_s = T(1) / s;
     return TVector3<T>(v[0] * inv_s, v[1] * inv_s, v[2] * inv_s);
