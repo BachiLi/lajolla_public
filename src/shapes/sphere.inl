@@ -228,7 +228,7 @@ Real pdf_point_on_shape_op::operator()(const Sphere &sphere) const {
     Vector3 n_on_sphere = point_on_shape.normal;
     Vector3 dir = normalize(p_on_sphere - vertex.position);
     return pdf_solid_angle * fabs(dot(n_on_sphere, dir)) /
-        distance_squared(vertex.position, center);
+        distance_squared(vertex.position, p_on_sphere);
 }
 
 void init_sampling_dist_op::operator()(Sphere &sphere) const {
