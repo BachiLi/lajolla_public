@@ -309,7 +309,7 @@ Spectrum path_tracing(const Scene &scene,
         // Update rays/intersection/current_path_throughput/current_pdf
         // Russian roulette heuristics
         Real rr_prob = 1;
-        if (num_vertices + 1 >= scene.options.rr_depth) {
+        if (num_vertices - 1 >= scene.options.rr_depth) {
             rr_prob = min(max((1 / eta_scale) * current_path_throughput), Real(0.95));
             if (next_pcg32_real<Real>(rng) > rr_prob) {
                 // Terminate the path
