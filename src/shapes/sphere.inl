@@ -179,8 +179,7 @@ PointAndNormal sample_point_on_shape_op::operator()(const Sphere &sphere) const 
     // stands for the extended angle of the cone, and azimuth here stands
     // for the polar coordinate angle on the substended disk.
     // I just don't like the theta/phi naming convention...
-    Real sin_elevation_max_sq =
-        sphere.radius * sphere.radius / distance_squared(vertex.position, center);
+    Real sin_elevation_max_sq = r * r / distance_squared(vertex.position, center);
     Real cos_elevation_max = sqrt(max(Real(0), 1 - sin_elevation_max_sq));
     // Uniformly interpolate between 1 (angle 0) and max
     Real cos_elevation = (1 - uv[0]) + uv[0] * cos_elevation_max;
@@ -218,8 +217,7 @@ Real pdf_point_on_shape_op::operator()(const Sphere &sphere) const {
         return 1 / surface_area_op{}(sphere);
     }
     
-    Real sin_elevation_max_sq =
-        sphere.radius * sphere.radius / distance_squared(vertex.position, center);
+    Real sin_elevation_max_sq = r * r / distance_squared(vertex.position, center);
     Real cos_elevation_max = sqrt(max(Real(0), 1 - sin_elevation_max_sq));
     // Uniform sampling PDF of a cone.
     Real pdf_solid_angle = 1 / (2 * c_PI * (1 - cos_elevation_max));
