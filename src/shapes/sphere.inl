@@ -79,7 +79,7 @@ void sphere_intersect_func(const RTCIntersectFunctionNArguments* args) {
 
     if (t >= ray.tnear && t < ray.tfar) {
         // Record the intersection
-        Vector3 p = ray.org + t0 * ray.dir;
+        Vector3 p = ray.org + t * ray.dir;
         Vector3 geometry_normal = p - sphere->position;
         // rtc_hit->Ng doesn't need to be normalized
         rtc_hit->Ng_x = geometry_normal.x;
@@ -96,7 +96,7 @@ void sphere_intersect_func(const RTCIntersectFunctionNArguments* args) {
         rtc_hit->primID = args->primID;
         rtc_hit->geomID = args->geomID;
         rtc_hit->instID[0] = args->context->instID[0];
-        rtc_ray->tfar = t0;
+        rtc_ray->tfar = t;
     }
 }
 
