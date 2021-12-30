@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<scene version="0.5.0">
+	<integrator type="volpath">
+		<integer name="maxDepth" value="-1"/>
+		<integer name="version" value="6"/>
+	</integrator>
+
+	<medium type="heterogeneous" id="smoke">
+		<string name="method" value="woodcock"/>
+
+		<volume name="density" type="gridvolume">
+			<string name="filename" value="colored_density.vol"/>
+		</volume>
+
+		<volume name="albedo" type="gridvolume">
+			<string name="filename" value="albedo.vol"/>
+		</volume>
+		<float name="scale" value="100"/>
+
+		<float name="stepSize" value="0.1"/>
+	</medium>
+
+	<shape type="obj">
+		<string name="filename" value="bounds.obj"/>
+
+		<ref name="interior" id="smoke"/>
+	</shape>
+
+	<shape type="obj">
+		<string name="filename" value="plane.obj"/>
+
+		<bsdf type="diffuse">
+			<rgb name="reflectance" value=".2, .2, .3"/>
+		</bsdf>
+		<transform name="toWorld">
+			<translate y=".48"/>
+		</transform>
+	</shape>
+
+	<sensor type="perspective">
+		<float name="focusDistance" value="1.25668"/>
+		<float name="fov" value="45.8402"/>
+		<string name="fovAxis" value="x"/>
+		<transform name="toWorld">
+			<scale x="-1"/>
+
+			<lookat target="-0.166029, 0.148984, -0.537402" origin="-0.61423, 0.154197, -1.43132" up="-0.000640925, -0.999985, -0.0055102"/>
+		</transform>
+
+		<sampler type="independent">
+			<integer name="sampleCount" value="64"/>
+		</sampler>
+
+		<film type="hdrfilm">
+			<integer name="height" value="576"/>
+			<integer name="width" value="768"/>
+
+			<rfilter type="gaussian"/>
+		</film>
+	</sensor>
+
+	<shape type="sphere">
+		<point name="center" x="0" y="-2" z="-1"/>
+		<float name="radius" value="1"/>
+
+		<emitter type="area">
+			<spectrum name="radiance" value="16"/>
+		</emitter>
+	</shape>
+</scene>
