@@ -201,6 +201,11 @@ inline TVector3<T> operator/(const T &s, const TVector3<T> &v) {
 }
 
 template <typename T>
+inline TVector3<T> operator/(const TVector3<T> &v0, const TVector3<T> &v1) {
+    return TVector3<T>(v0[0] / v1[0], v0[1] / v1[1], v0[2] / v1[2]);
+}
+
+template <typename T>
 inline TVector3<T>& operator/=(TVector3<T> &v, const T &s) {
     T inv_s = T(1) / s;
     v *= inv_s;
