@@ -29,6 +29,10 @@ std::variant<GridVolume<Real>, GridVolume<Vector3>>
 
     int type;
     fs.read((char*)&type, sizeof(int));
+    if (type != EFloat32) {
+        Error(std::string("Unsupported volume format (only support Float32). Filename:") +
+              filename.string());
+    }
 
     int xres, yres, zres;
     fs.read((char*)&xres, sizeof(int));
@@ -56,8 +60,8 @@ std::variant<GridVolume<Real>, GridVolume<Vector3>>
     fs.read((char*)&ymax, sizeof(float));
     fs.read((char*)&zmax, sizeof(float));
 
-    std::vector<float> raw_data(xres * yres * zres * channels);
-    fs.read((char*)&raw_data[0], sizeof(float) * xres * yres * zres * channels);
+    std::vector<float> raw_data(xres * yres * zres * channels, 0.f);
+    fs.read((char*)raw_data.data(), sizeof(float) * xres * yres * zres * channels);
 
     if (target_channel == 1) {
         std::vector<Real> data(xres * yres * zres);
@@ -68,13 +72,13 @@ std::variant<GridVolume<Real>, GridVolume<Vector3>>
         }
         return GridVolume<Real>{
             Vector3i{xres, yres, zres},
-            Vector2{xmin, xmax},
-            Vector2{ymin, ymax},
-            Vector2{zmin, zmax},
+            Vector3{xmin, ymin, zmin}, // pmin
+            Vector3{xmax, ymax, zmax}, // pmax
             data,
             max_data,
             Real(1)}; // scale
     } else {
+        assert(target_channel == 3);
         std::vector<Spectrum> data(xres * yres * zres);
         Spectrum max_data = make_zero_spectrum();
         for (int i = 0; i < xres * yres * zres; i++) {

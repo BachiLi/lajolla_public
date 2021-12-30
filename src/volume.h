@@ -1,7 +1,10 @@
 #pragma once
 
 #include "lajolla.h"
+#include "ray.h"
+#include "spectrum.h"
 #include "vector.h"
+#include <variant>
 #include <vector>
 
 template <typename T>
@@ -39,18 +42,22 @@ template <typename T>
 T eval_volume_op<T>::operator()(const GridVolume<T> &v) const {
     // Trilinear interpolation
     Vector3 pn = (p - v.p_min) / (v.p_max - v.p_min);
-    pn.x = std::clamp(pn.x * Real(v.resolution.x), Real(0), Real(v.resolution.x));
-    pn.y = std::clamp(pn.y * Real(v.resolution.y), Real(0), Real(v.resolution.y));
-    pn.z = std::clamp(pn.z * Real(v.resolution.z), Real(0), Real(v.resolution.z));
-    int x0 = std::clamp(int(pn.x * v.resolution.x), 0, v.resolution.x-1);
-    int y0 = std::clamp(int(pn.y * v.resolution.y), 0, v.resolution.y-1);
-    int z0 = std::clamp(int(pn.z * v.resolution.z), 0, v.resolution.z-1);
+    if (pn.x < 0 || pn.x > 1 || pn.y < 0 || pn.y > 1 || pn.z < 0 || pn.z > 1) {
+        return make_zero_spectrum();
+    }
+    pn.x *= Real(v.resolution.x - 1);
+    pn.y *= Real(v.resolution.y - 1);
+    pn.z *= Real(v.resolution.z - 1);
+    int x0 = std::clamp(int(pn.x), 0, v.resolution.x-1);
+    int y0 = std::clamp(int(pn.y), 0, v.resolution.y-1);
+    int z0 = std::clamp(int(pn.z), 0, v.resolution.z-1);
     int x1 = std::clamp(x0 + 1, 0, v.resolution.x - 1);
     int y1 = std::clamp(y0 + 1, 0, v.resolution.y - 1);
     int z1 = std::clamp(z0 + 1, 0, v.resolution.z - 1);
     Real dx = pn.x - x0;
     Real dy = pn.y - y0;
     Real dz = pn.z - z0;
+    assert(dx >= 0 && dx <= 1 && dy >= 0 && dy <= 1 && dz >= 0 && dz <= 1);
     T v000 = v.data[(z0 * v.resolution.y + y0) * v.resolution.x + x0];
     T v001 = v.data[(z0 * v.resolution.y + y0) * v.resolution.x + x1];
     T v010 = v.data[(z0 * v.resolution.y + y1) * v.resolution.x + x0];
@@ -85,6 +92,55 @@ T max_value_op<T>::operator()(const GridVolume<T> &v) const {
 }
 
 template <typename T>
+struct set_scale_op {
+    void operator()(ConstantVolume<T> &v) const;
+    void operator()(GridVolume<T> &v) const;
+
+    Real scale;
+};
+template <typename T>
+void set_scale_op<T>::operator()(ConstantVolume<T> &v) const {
+    v.value *= scale;
+}
+template <typename T>
+void set_scale_op<T>::operator()(GridVolume<T> &v) const {
+    v.scale = scale;
+}
+
+template <typename T>
+struct intersect_op {
+    bool operator()(const ConstantVolume<T> &v) const;
+    bool operator()(const GridVolume<T> &v) const;
+
+    const Ray &ray;
+};
+template <typename T>
+bool intersect_op<T>::operator()(const ConstantVolume<T> &v) const {
+    return true;
+}
+template <typename T>
+bool intersect_op<T>::operator()(const GridVolume<T> &v) const {
+    // https://github.com/mmp/pbrt-v3/blob/master/src/core/geometry.h#L1388
+    Real t0 = 0, t1 = ray.tfar;
+    for (int i = 0; i < 3; i++) {
+        Real tnear = (v.p_min[i] - ray.org[i]) / ray.dir[i];
+        Real tfar = (v.p_max[i] - ray.org[i]) / ray.dir[i];
+
+        // Update parametric interval from slab intersection $t$ values
+        if (tnear > tfar) {
+            std::swap(tnear, tfar);
+        }
+
+        t0 = tnear > t0 ? tnear : t0;
+        t1 = tfar < t1 ? tfar : t1;
+        if (t0 > t1) {
+            return false;
+        }
+    }
+    return true;
+}
+
+template <typename T>
 T lookup(const Volume<T> &volume, const Vector3 &p) {
     return std::visit(eval_volume_op<T>{p}, volume);
 }
@@ -92,6 +148,16 @@ T lookup(const Volume<T> &volume, const Vector3 &p) {
 template <typename T>
 T get_max_value(const Volume<T> &volume) {
     return std::visit(max_value_op<T>{}, volume);
+}
+
+template <typename T>
+void set_scale(Volume<T> &v, Real scale) {
+    std::visit(set_scale_op<T>{scale}, v);
+}
+
+template <typename T>
+bool intersect(const Volume<T> &v, const Ray &ray) {
+    return std::visit(intersect_op<T>{ray}, v);
 }
 
 template <typename T>

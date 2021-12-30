@@ -40,6 +40,8 @@ set(SRCS src/3rdparty/miniz.h
          src/materials/disney_clearcoat.inl
          src/materials/disney_sheen.inl
          src/materials/disney_bsdf.inl
+         src/media/homogeneous.inl
+         src/media/heterogeneous.inl
          src/shapes/sphere.inl
          src/shapes/triangle_mesh.inl
          src/camera.h
@@ -60,7 +62,9 @@ set(SRCS src/3rdparty/miniz.h
          src/parse_obj.h
          src/parse_scene.h
          src/path_tracing.h
+         src/phase_function.h
          src/vol_path_tracing.h
+         src/volume.h
          src/point_and_normal.h
          src/ray.h
          src/render.h
@@ -83,10 +87,12 @@ set(SRCS src/3rdparty/miniz.h
          src/parallel.cpp
          src/parse_obj.cpp
          src/parse_scene.cpp
+         src/phase_function.cpp
          src/render.cpp
          src/scene.cpp
          src/shape.cpp
          src/table_dist.cpp
-         src/transform.cpp)
+         src/transform.cpp
+         src/volume.cpp)
 
 add_executable(lajolla ${SRCS})

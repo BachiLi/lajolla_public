@@ -25,6 +25,10 @@ inline Spectrum sqrt(const Spectrum &s) {
                    sqrt(max(s[2], Real(0)))};
 }
 
+inline Spectrum exp(const Spectrum &s) {
+    return Vector3{exp(s[0]), exp(s[1]), exp(s[2])};
+}
+
 inline Real luminance(const Spectrum &s) {
     return s.x * Real(0.212671) + s.y * Real(0.715160) + s.z * Real(0.072169);
 }

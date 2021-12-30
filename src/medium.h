@@ -1,21 +1,31 @@
 #pragma once
 
+#include "phase_function.h"
 #include "spectrum.h"
+#include "volume.h"
 #include <variant>
 
-struct Ray;
-struct pcg32_state;
+struct Scene;
 
-struct HomogeneousMedium {
+struct MediumBase {
+    PhaseFunction phase_function;
+};
+
+struct HomogeneousMedium : public MediumBase {
     Spectrum sigma_a, sigma_s;
 };
 
-using Medium = std::variant<HomogeneousMedium>;
+struct HeterogeneousMedium : public MediumBase {
+    VolumeSpectrum albedo, density;
+};
 
-/// Given a ray, sample a distance along the ray direction that is smaller or equal then the 
-/// maxt of the ray, based on the transmittance of the medium.
-/// Some medium sampling algorithms require an indefinitely long stream of 
-/// random numbers, so we pass in a PCG random number generator instead
-/// of just a few random numbers. Stratification for transmittance sampling
-/// is an unsolved research problem.
-Real sample_distance(const Medium &m, const Ray &ray, pcg32_state &rng);
+using Medium = std::variant<HomogeneousMedium, HeterogeneousMedium>;
+
+/// the maximum of sigma_t = sigma_s + sigma_a over the whole space
+Spectrum get_majorant(const Medium &medium, const Ray &ray);
+Spectrum get_sigma_s(const Medium &medium, const Vector3 &p);
+Spectrum get_sigma_a(const Medium &medium, const Vector3 &p);
+
+inline PhaseFunction get_phase_function(const Medium &medium) {
+    return std::visit([&](const auto &m) { return m.phase_function; }, medium);
+}

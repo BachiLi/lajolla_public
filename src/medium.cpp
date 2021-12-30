@@ -1,14 +1,37 @@
 #include "medium.h"
 
-struct sample_distance_op {
-    Real operator()(const HomogeneousMedium &m);
+struct get_majorant_op {
+    Spectrum operator()(const HomogeneousMedium &m);
+    Spectrum operator()(const HeterogeneousMedium &m);
 
     const Ray &ray;
-    pcg32_state &rng;
+};
+
+struct get_sigma_s_op {
+    Spectrum operator()(const HomogeneousMedium &m);
+    Spectrum operator()(const HeterogeneousMedium &m);
+
+    const Vector3 &p;
+};
+
+struct get_sigma_a_op {
+    Spectrum operator()(const HomogeneousMedium &m);
+    Spectrum operator()(const HeterogeneousMedium &m);
+
+    const Vector3 &p;
 };
 
 #include "media/homogeneous.inl"
+#include "media/heterogeneous.inl"
 
-Real sample_distance(const Medium &m, const Ray &ray, pcg32_state &rng) {
-    return std::visit(sample_distance_op{ray, rng}, m);
+Spectrum get_majorant(const Medium &medium, const Ray &ray) {
+    return std::visit(get_majorant_op{ray}, medium);
+}
+
+Spectrum get_sigma_s(const Medium &medium, const Vector3 &p) {
+    return std::visit(get_sigma_s_op{p}, medium);
+}
+
+Spectrum get_sigma_a(const Medium &medium, const Vector3 &p) {
+    return std::visit(get_sigma_a_op{p}, medium);
 }

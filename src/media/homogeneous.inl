@@ -1,4 +1,11 @@
-Real sample_distance_op::operator()(const HomogeneousMedium &m) {
-	// Homework 2: implement this!
-	return 0;
+Spectrum get_majorant_op::operator()(const HomogeneousMedium &m) {
+    return m.sigma_a + m.sigma_s;
+}
+
+Spectrum get_sigma_s_op::operator()(const HomogeneousMedium &m) {
+    return m.sigma_s;
+}
+
+Spectrum get_sigma_a_op::operator()(const HomogeneousMedium &m) {
+    return m.sigma_a;
 }

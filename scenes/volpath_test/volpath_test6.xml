@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<scene version="0.5.0">
+	<integrator type="volpath">
+		<integer name="maxDepth" value="-1"/>
+		<integer name="version" value="6"/>
+	</integrator>
+
+	<medium type="homogeneous" id="medium1">
+		<rgb name="sigmaA" value="1 0.5 0.4"/>
+		<rgb name="sigmaS" value="1 0.6 1.2"/>
+		<float name="scale" value="0.05"/>
+	</medium>
+
+	<medium type="homogeneous" id="medium2">
+		<rgb name="sigmaA" value="1.0 1.5 1.5"/>
+		<rgb name="sigmaS" value="0.5 0.75 0.25"/>
+		<float name="scale" value="200"/>
+	</medium>
+
+	<shape type="sphere">
+		<point name="center" x="0.7" y="0" z="0"/>
+		<float name="radius" value="0.5"/>
+
+		<ref name="interior" id="medium1"/>
+		<ref name="exterior" id="medium2"/>
+	</shape>
+
+	<shape type="sphere">
+		<point name="center" x="-0.7" y="0" z="0"/>
+		<float name="radius" value="0.5"/>
+
+		<ref name="exterior" id="medium2"/>
+
+		<bsdf type="diffuse">
+			<rgb name="reflectance" value="0.8 0.2 0.3"/>
+		</bsdf>
+	</shape>
+
+	<shape type="sphere">
+		<point name="center" x="1" y="1" z="-1"/>
+		<float name="radius" value="0.25"/>
+
+		<emitter type="area">
+			<spectrum name="radiance" value="100"/>
+		</emitter>
+
+		<ref name="exterior" id="medium2"/>
+
+		<bsdf type="diffuse">
+			<rgb name="reflectance" value="0.0 0.0 0.0"/>
+		</bsdf>
+	</shape>
+
+	<sensor type="perspective">
+		<string name="fovAxis" value="x"/>
+		<float name="fov" value="45"/>
+		<transform name="toWorld">
+			<lookAt target="0, 0, 0" origin="0, 0, -4" up="0, 1, 0"/>
+		</transform>
+
+		<sampler type="independent">
+			<integer name="sampleCount" value="64"/>
+		</sampler>
+
+		<film type="hdrfilm" id="film">
+			<integer name="width" value="512"/>
+			<integer name="height" value="512"/>
+			<string name="pixelFormat" value="rgb"/>
+			<boolean name="banner" value="false"/>
+
+			<rfilter type="gaussian"/>
+		</film>
+
+		<ref id="medium1"/>
+	</sensor>
+</scene>

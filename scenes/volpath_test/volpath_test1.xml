@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<scene version="0.5.0">
+	<integrator type="volpath">
+		<integer name="maxDepth" value="1"/>
+		<integer name="version" value="1"/>
+	</integrator>
+
+	<medium type="homogeneous" id="medium">
+		<rgb name="sigmaA" value="0.5 0.5 0.5"/>
+		<rgb name="sigmaS" value="0.0 0.0 0.0"/>
+		<float name="scale" value="3"/>
+	</medium>
+
+	<shape type="sphere">
+		<point name="center" x="0" y="0" z="0"/>
+		<float name="radius" value="1.0"/>
+
+		<emitter type="area">
+			<spectrum name="radiance" value="1"/>
+		</emitter>
+
+		<bsdf type="diffuse">
+			<rgb name="reflectance" value="0.0 0.0 0.0"/>
+		</bsdf>
+
+		<ref name="exterior" id="medium"/>
+	</shape>
+
+	<sensor type="perspective">
+		<string name="fovAxis" value="x"/>
+		<float name="fov" value="45"/>
+		<transform name="toWorld">
+			<lookAt target="0, 0, 0" origin="0, 0, -3" up="0, 1, 0"/>
+		</transform>
+
+		<sampler type="independent">
+			<integer name="sampleCount" value="64"/>
+		</sampler>
+
+		<film type="hdrfilm" id="film">
+			<integer name="width" value="512"/>
+			<integer name="height" value="512"/>
+			<string name="pixelFormat" value="rgb"/>
+			<boolean name="banner" value="false"/>
+
+			<rfilter type="gaussian"/>
+		</film>
+
+		<ref id="medium"/>
+	</sensor>
+</scene>

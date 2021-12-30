@@ -254,6 +254,8 @@ Spectrum parse_color(pugi::xml_node node) {
     } else if (type == "srgb") {
         Vector3 srgb = parse_srgb(node.attribute("value").value());
         return fromRGB(sRGB_to_RGB(srgb));
+    } else if (type == "float") {
+        return make_const_spectrum(std::stof(node.attribute("value").value()));
     } else {
         Error(std::string("Unknown color type:") + type);
         return make_zero_spectrum();
@@ -281,6 +283,8 @@ RenderOptions parse_integrator(pugi::xml_node node) {
                 options.max_depth = std::stoi(child.attribute("value").value());
             } else if (name == "rrDepth") {
                 options.rr_depth = std::stoi(child.attribute("value").value());
+            } else if (name == "version") {
+                options.vol_path_version = std::stoi(child.attribute("value").value());
             }
         }
     } else if (type == "direct") {
@@ -350,7 +354,39 @@ parse_film(pugi::xml_node node) {
     return std::make_tuple(width, height, filename, filter);
 }
 
-std::tuple<std::string /* ID */, Medium> parse_medium(pugi::xml_node node) {
+VolumeSpectrum parse_volume_spectrum(pugi::xml_node node) {
+    std::string type = node.attribute("type").value();
+    if (type == "constvolume") {
+        Spectrum value = make_zero_spectrum();
+        for (auto child : node.children()) {
+            std::string name = child.attribute("name").value();
+            if (name == "value") {
+                value = parse_color(child);
+            }
+        }
+        return ConstantVolume<Spectrum>{value};
+    } else if (type == "gridvolume") {
+        std::string filename;
+        for (auto child : node.children()) {
+            std::string name = child.attribute("name").value();
+            if (name == "filename") {
+                filename = child.attribute("value").value();
+            }
+        }
+        if (filename.empty()) {
+            Error("Empty filename for a gridvolume.");
+        }
+        return load_volume_from_file<Spectrum>(filename);
+    } else {
+        Error(std::string("Unknown volume type:") + type);
+    }
+    return ConstantVolume<Spectrum>{make_zero_spectrum()};
+}
+
+std::tuple<std::string /* ID */, Medium> parse_medium(
+        pugi::xml_node node) {
+    PhaseFunction phase_func = IsotropicPhase{};
+
     std::string type = node.attribute("type").value();
     std::string id;
     if (!node.attribute("id").empty()) {
@@ -370,7 +406,26 @@ std::tuple<std::string /* ID */, Medium> parse_medium(pugi::xml_node node) {
                 scale = std::stof(child.attribute("value").value());
             }
         }
-        return std::make_tuple(id, HomogeneousMedium{sigma_a, sigma_s});
+        return std::make_tuple(id,
+            HomogeneousMedium{{phase_func}, sigma_a * scale, sigma_s * scale});
+    } else if (type == "heterogeneous") {
+        VolumeSpectrum albedo = ConstantVolume<Spectrum>{make_const_spectrum(1)};
+        VolumeSpectrum density = ConstantVolume<Spectrum>{make_const_spectrum(1)};
+        Real scale = 1;
+        for (auto child : node.children()) {
+            std::string name = child.attribute("name").value();
+            if (name == "albedo") {
+                albedo = parse_volume_spectrum(child);
+            } else if (name == "density") {
+                density = parse_volume_spectrum(child);
+            } else if (name == "scale") {
+                scale = std::stof(child.attribute("value").value());
+            }
+        }
+        // scale only applies to density!!
+        set_scale(density, scale);
+        return std::make_tuple(id,
+            HeterogeneousMedium{{phase_func}, albedo, density});
     } else {
         Error(std::string("Unknown medium type:") + type);
     }

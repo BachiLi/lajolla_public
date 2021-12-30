@@ -6,6 +6,7 @@
 #include "material.h"
 #include "medium.h"
 #include "shape.h"
+#include "volume.h"
 
 #include <memory>
 #include <vector>
@@ -25,6 +26,7 @@ struct RenderOptions {
     int samples_per_pixel = 4;
     int max_depth = -1;
     int rr_depth = 5;
+    int vol_path_version = 0;
 };
 
 /// Bounding sphere
@@ -92,9 +94,9 @@ inline const Light &get_envmap(const Scene &scene) {
 }
 
 inline Real get_shadow_epsilon(const Scene &scene) {
-    return min(scene.bounds.radius * Real(1e-4), Real(0.01));
+    return min(scene.bounds.radius * Real(1e-5), Real(0.01));
 }
 
 inline Real get_intersection_epsilon(const Scene &scene) {
-    return min(scene.bounds.radius * Real(1e-4), Real(0.01));
+    return min(scene.bounds.radius * Real(1e-5), Real(0.01));
 }

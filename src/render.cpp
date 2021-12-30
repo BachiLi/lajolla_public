@@ -108,6 +108,21 @@ Image3 vol_path_render(const Scene &scene) {
     int num_tiles_x = (w + tile_size - 1) / tile_size;
     int num_tiles_y = (h + tile_size - 1) / tile_size;
 
+    auto f = vol_path_tracing;
+    if (scene.options.vol_path_version == 1) {
+        f = vol_path_tracing_1;
+    } else if (scene.options.vol_path_version == 2) {
+        f = vol_path_tracing_2;
+    } else if (scene.options.vol_path_version == 3) {
+        f = vol_path_tracing_3;
+    } else if (scene.options.vol_path_version == 4) {
+        f = vol_path_tracing_4;
+    } else if (scene.options.vol_path_version == 5) {
+        f = vol_path_tracing_5;
+    } else if (scene.options.vol_path_version == 6) {
+        f = vol_path_tracing;
+    }
+
     ProgressReporter reporter(num_tiles_x * num_tiles_y);
     parallel_for([&](const Vector2i &tile) {
         // Use a different rng stream for each thread.
@@ -121,7 +136,7 @@ Image3 vol_path_render(const Scene &scene) {
                 Spectrum radiance = make_zero_spectrum();
                 int spp = scene.options.samples_per_pixel;
                 for (int s = 0; s < spp; s++) {
-                    radiance += vol_path_tracing(scene, x, y, rng);
+                    radiance += f(scene, x, y, rng);
                 }
                 img(x, y) = radiance / Real(spp);
             }
