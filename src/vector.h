@@ -266,6 +266,11 @@ inline T max(const TVector3<T> &v) {
 }
 
 template <typename T>
+inline T max(const TVector3<T> &v0, const TVector3<T> &v1) {
+    return Vector3{max(v0.x, v1.x), max(v0.y, v1.y), max(v0.z, v1.z)};
+}
+
+template <typename T>
 inline bool isnan(const TVector2<T> &v) {
     return isnan(v[0]) || isnan(v[1]);
 }
