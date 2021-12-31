@@ -285,6 +285,8 @@ RenderOptions parse_integrator(pugi::xml_node node) {
                 options.rr_depth = std::stoi(child.attribute("value").value());
             } else if (name == "version") {
                 options.vol_path_version = std::stoi(child.attribute("value").value());
+            } else if (name == "maxNullCollisions") {
+                options.max_null_collisions = std::stoi(child.attribute("value").value());
             }
         }
     } else if (type == "direct") {
