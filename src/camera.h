@@ -20,7 +20,7 @@ struct Camera {
     int width, height;
     Filter filter;
 
-    int medium_id;
+    int medium_id; // for participating media rendering in homework 2
 };
 
 /// Given screen position in [0, 1] x [0, 1],

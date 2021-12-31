@@ -34,7 +34,7 @@ We use \href{https://cmake.org/}{CMake} as our build system. To build, on a Unix
 
 On Windows, latest visual studios support directly using CMake as project files.\footnote{\url{https://docs.microsoft.com/en-us/cpp/build/cmake-projects-in-visual-studio?view=msvc-170}} Alternatively, you can use CMake's graphical user interface downloaded from CMake's website. However, we have received reports that lajolla can crash on Windows machines. You might want to consider using Windows Subsystems for Linux to use a Unix-like system for building and running lajolla (or you can help us fix issues on Windows and get extra points!). 
 
-Once lajolla is built, you can try to render some images in the \lstinline{scenes} directory. Try
+Once lajolla is built, you can try to render some images in the \lstinline{scenes} directory. Type
 \begin{lstlisting}[language=bash]
   ./lajolla ../scenes/cbox/cbox.xml
 \end{lstlisting}
@@ -109,23 +109,23 @@ We are still left with Q2: what is the radiance $L$? In this class, we are mostl
 \begin{equation}
     L(\mathbf{p}, \mathbf{\omega}) = L_i(\mathbf{p}', -\mathbf{\omega}),
 \end{equation}
-where $\mathbf{p}'$ is the point the direction $\mathbf{\omega}$ intersect with the scene. Then -- what is $L_i$? An object is lit by a light source. However, as photons scatter between objects, a photon can first hit object A before it hits object B. Therefore, we need to recursively consider all objects in the scene:
+where $\mathbf{p}'$ is the point the direction $\mathbf{\omega}$ intersect with the scene. Then -- what is $L_i$? An object is lit by a light source. However, as photons scatter between objects, a photon can first hit object A before it hits object B. Therefore, we need to recursively consider all objects in the scene (Figure~\ref{fig:pathtracing}):
 \begin{equation}
-    L_i(\mathbf{p}, \mathbf{\omega}) = L_e(\mathbf{p}, \mathbf{\omega}) + \int_{\Omega} f(\mathbf{p}, \mathbf{\omega}, \mathbf{\omega}') |\mathbf{n}_{\mathbf{p}} \cdot \mathbf{\omega}'| L_i(\mathbf{p}', -\mathbf{\omega}') \mathrm{d} \mathbf{\omega},
+    L_i(\mathbf{p}, \mathbf{\omega}) = L_e(\mathbf{p}, \mathbf{\omega}) + \int_{\Omega} f(\mathbf{p}, \mathbf{\omega}, \mathbf{\omega}') |\mathbf{n}_{\mathbf{p}} \cdot \mathbf{\omega}'| L_i(\mathbf{p}', -\mathbf{\omega}') \mathrm{d} \mathbf{\omega}',
     \label{eq:rendering_equation}
 \end{equation}
-where $L_e$ is the \emph{emission} at $\mathbf{p}$ towards direction $\mathbf{\omega}$, $\Omega$ is a spherical domain around point $\mathbf{p}$, $f$ is the reflectance of the object at point $p$ from direction $\mathbf{\omega}'$ to $\mathbf{\omega}$, $\mathbf{p}'$ is the point intersected by the ray $(\mathbf{p}, \mathbf{\omega}')$, and $n_{p}$. $f$ is often called the Bidirectional Scattering Distribution Function (BSDF) -- when the material is transmissive, it's called the Bidirectional Transmission Distribution Function (BTDF), and when it is reflective, it's called the Bidirectional Reflectance Distribution Function (BRDF) (I know, it's confusing). See Figure~\ref{fig:pathtracing} for an illustration. The measure $\mathrm{d} \mathbf{\omega}_{\bot}'$ is the \emph{solid angle}: the infinitesimal area on a unit sphere. Equation~\ref{eq:rendering_equation} is often called the \emph{rendering equation}~\cite{Kajiya:1986:RE}.
+where $L_e$ is the \emph{emission} at $\mathbf{p}$ towards direction $\mathbf{\omega}$, $\Omega$ is a spherical domain around point $\mathbf{p}$, $f$ is the reflectance of the object at point $p$ from direction $\mathbf{\omega}'$ to $\mathbf{\omega}$, $\mathbf{p}'$ is the point intersected by the ray $(\mathbf{p}, \mathbf{\omega}')$, and $n_{p}$. $f$ is often called the Bidirectional Scattering Distribution Function (BSDF) -- when the material is transmissive, it's called the Bidirectional Transmission Distribution Function (BTDF), and when it is reflective, it's called the Bidirectional Reflectance Distribution Function (BRDF) (I know, it's confusing). The measure $\mathrm{d} \mathbf{\omega}'$ is the \emph{solid angle}: the infinitesimal area on a unit sphere. Equation~\ref{eq:rendering_equation} is often called the \emph{rendering equation}~\cite{Kajiya:1986:RE}.
 
-This recursive integral, combined with the integral discretization (Equation~\ref{eq:discretization}), gives us an rendering algorithm. We start from a pixel $(x, y)$, and sample a pixel offset $(x', y')$ to estimate the pixel filter integral (Equation~\ref{eq:pixel_filter}). Next, to estimate $L_i$, we sample a direction $\mathrm{d}'$, hit point $\mathbf{p}'$, multiply by $f$, and add $L_e$ whenever we hit a light source. In lajolla, the \lstinline{path_tracing} function in \lstinline{path_tracing.h} implements a slightly more sophisticated version of this. In below we describe those improvements.
+This recursive integral, combined with the integral discretization (Equation~\ref{eq:discretization}), gives us a rendering algorithm. We start from a pixel $(x, y)$, and sample a pixel offset $(x', y')$ to estimate the pixel filter integral (Equation~\ref{eq:pixel_filter}). Next, to estimate $L_i$, we sample a direction $\mathrm{d}'$, hit point $\mathbf{p}'$, multiply by $f$, and add $L_e$ whenever we hit a light source. In lajolla, the \lstinline{path_tracing} function in \lstinline{path_tracing.h} implements a slightly more sophisticated version of this. In below we describe those improvements.
 
 \subsection{Importance sampling}
 The naive algorithm above is correct, but can be inefficient. Consider a special case of the rendering equation, where we only recurse once:
 \begin{equation}
-    L_i(\mathbf{p}, \mathbf{d}) = L_e(\mathbf{p}, \mathbf{\omega}) + \int_{\Omega} f(\mathbf{p}, \mathbf{\omega}, \mathbf{\omega}') |\mathbf{n}_{\mathbf{p}} \cdot \mathbf{\omega}'| L_e(\mathbf{p}', -\mathbf{\omega}') \mathrm{d} \mathbf{\omega}.
+    L_i(\mathbf{p}, \mathbf{d}) = L_e(\mathbf{p}, \mathbf{\omega}) + \int_{\Omega} f(\mathbf{p}, \mathbf{\omega}, \mathbf{\omega}') |\mathbf{n}_{\mathbf{p}} \cdot \mathbf{\omega}'| L_e(\mathbf{p}', -\mathbf{\omega}') \mathrm{d} \mathbf{\omega}'.
 \end{equation}
 The only difference is that instead of $L_i$ in the integral that recursively integrates over all the other surfaces, we only consider the light source contribution $L_e$. Remember that we approximate the integral using a discrete sum. Suppose we randomly sample a direction on a sphere:
 \begin{equation}
-  \int_{\Omega} f(\mathbf{p}, \mathbf{\omega}, \mathbf{\omega}') |\mathbf{n}_{\mathbf{p}} \cdot \mathbf{\omega}'| L_e(\mathbf{p}', -\mathbf{\omega}') \mathrm{d} \mathbf{\omega} \approx \frac{1}{N} \frac{1}{\frac{1}{4 \pi}} \sum_{i}^{N} f(\mathbf{p}, \mathbf{\omega}, \mathbf{\omega}_i') |\mathbf{n}_{\mathbf{p}} \cdot \mathbf{\omega}'| L_e(\mathbf{p}', -\mathbf{\omega}_i').
+  \int_{\Omega} f(\mathbf{p}, \mathbf{\omega}, \mathbf{\omega}') |\mathbf{n}_{\mathbf{p}} \cdot \mathbf{\omega}'| L_e(\mathbf{p}', -\mathbf{\omega}') \mathrm{d} \mathbf{\omega} \approx \frac{1}{N} \frac{1}{\frac{1}{4 \pi}} \sum_{i}^{N} f(\mathbf{p}, \mathbf{\omega}, \mathbf{\omega}_i') |\mathbf{n}_{\mathbf{p}} \cdot \mathbf{\omega}_i'| L_e(\mathbf{p}', -\mathbf{\omega}_i').
 \end{equation}
 The $\frac{1}{\frac{1}{4\pi}}$ factor accounts for the uniform measure on a unit sphere. The variance of this sum can be really high if $N$ is not large enough: firstly, not every surface in the scene emits light, so only a small fraction of samples would have non-zero $L_e$. Secondly, our sampling does not take the BSDF $f$ into consideration: $f$ can have high variation between different samples.
 
@@ -133,12 +133,13 @@ Fortunately, there is a way to make this sampling more efficient. The key is to 
 \begin{equation}
     \int_{\Omega} f(\mathbf{p}, \mathbf{\omega}, \mathbf{\omega}') |\mathbf{n}_{\mathbf{p}} \cdot \mathbf{\omega}'| L_e(\mathbf{p}', -\mathbf{\omega}') \mathrm{d} \mathbf{\omega} =
     \int_{E} f(\mathbf{p}, \mathbf{\omega}, \mathbf{\omega}'(\mathbf{p}')) |\mathbf{n}_{\mathbf{p}} \cdot \mathbf{\omega}'| L_e(\mathbf{p}', -\mathbf{\omega}') G(\mathbf{p}, \mathbf{p}') \mathrm{d} \mathbf{p}',
+    \label{eq:next_event_estimation}
 \end{equation}
-where $E$ is the area of all light sources, and $G$ is the Jacobian of the variable reparametrization (often called the \emph{geometry term}). Using some geometry insights, we can derive that $G(\mathbf{p}, \mathbf{p}') = \frac{|\mathbf{n}_{\mathbf{p}'} \cdot \mathbf{d}'|}{\|\mathbf{p} - \mathbf{p}'\|^2} V(\mathbf{p}, \mathbf{p}')$, where $V(\mathbf{p}, \mathbf{p}')$ is the \emph{visibility function} where $V=1$ if $\mathbf{p}$ can see $\mathbf{p}'$ and $V=1$ if they are occluded. Intuitively, $G$ is the area ratio of an infinitesimal area projected onto an unit sphere.
+where $E$ is the area of all light sources, and $G$ is the Jacobian of the variable reparametrization (often called the \emph{geometry term}). Using some geometry insights, we can derive that $G(\mathbf{p}, \mathbf{p}') = \frac{|\mathbf{n}_{\mathbf{p}'} \cdot \mathbf{d}'|}{\|\mathbf{p} - \mathbf{p}'\|^2} V(\mathbf{p}, \mathbf{p}')$, where $V(\mathbf{p}, \mathbf{p}')$ is the \emph{visibility function} where $V=1$ if $\mathbf{p}$ can see $\mathbf{p}'$ and $V=0$ if they are occluded. Intuitively, $G$ is the area ratio of an infinitesimal area projected onto an unit sphere.
 
 When the light source is visible for most of the time, the discretization of the second integral is much more efficient at locating lights since we focus on the domain $E$ instead of the whole spherical domain.
 
-We can similarly account for the BSDF $f$ and the cosine $|\mathbf{n}_{\mathbf{p}} \cdot \mathbf{\omega}'|$ using a similar change of variable trick. This change of variable is often called \emph{importance sampling}.
+We can similarly account for the BSDF $f$ and the cosine $|\mathbf{n}_{\mathbf{p}} \cdot \mathbf{\omega}'|$ using a similar change of variable trick. This change of variable is often called \emph{importance sampling}. The particular change of variable trick above (Equation~\ref{eq:next_event_estimation}) is called the \emph{next event estimation}.
 
 In general, for a (potentially multi-dimensional) integral $\int g(x) \mathrm{d}x$, we can rewrite it using a change of variable $y = T(x)$, where $T$ is an invertible function. This gives us $\int g(T^{-1}(y)) \frac{1}{|\frac{\mathrm{d}y}{\mathrm{d}x}|} \mathrm{d}y$, where $|\frac{\mathrm{d}y}{\mathrm{d}x}|$ is the Jacobian of the mapping $T$. If we discretize the new integral using uniform samples $y_i$, then we can see the new discretization as drawing samples $x_i = T^{-1}(y_i)$, evaluate $g(x_i)$, then weight them with the inverse of the Jacobian $|\frac{\mathrm{d}y}{\mathrm{d}x}|$ (as opposed to drawing $x_i$ as uniform samples and weight them with $1$). The Jacobian can be seen as the \emph{probability density function} of the samples $x_i = T^{-1}(y_i)$ (since the probability density function needs to integrate to $1$, we are essentially applying a change of variable for that integral too). 
 
@@ -146,12 +147,12 @@ In lajolla, the \lstinline{sample_light} and \lstinline{sample_point_on_light} f
 
 \subsection{Multiple importance sampling}
 
-If we have multiple change of variables we want to apply (e.g., sampling from lights and sampling from BSDFs), how do we combine them? One (inefficient) way to do this is to combine them by averaging the results. For example, for an integral $\int g(x) \mathrm{d}x$, we can apply $y = T_1(x)$ and $z = T_2(x)$, and evaluate $\frac{g(x(y_i))}{
-\frac{\mathrm{d}T_1}{\mathrm{d}x}|}$ and $\frac{g(x(z_i))}{|\frac{\mathrm{d}T_2}{\mathrm{d}x}|}$. We can approximate the integral as
+If we have multiple change of variables we want to apply (e.g., sampling from lights and sampling from BSDFs), how do we combine them? One (inefficient) way to do this is to combine them by averaging the results. For example, for an integral $\int g(x) \mathrm{d}x$, we can apply $y = T_1(x)$ and $z = T_2(x)$, and evaluate $\frac{g(x(y_i))}{\left|
+\frac{\mathrm{d}T_1}{\mathrm{d}x}\right|}$ and $\frac{g(x(z_i))}{\left|\frac{\mathrm{d}T_2}{\mathrm{d}x}\right|}$. We can approximate the integral as
 \begin{equation}
 \frac{1}{N} \sum
-\frac{1}{2} \frac{g(x(y_i))}{|\frac{\mathrm{d}T_1}{\mathrm{d}x}(x(y_i))|} + 
-\frac{1}{2} \frac{g(x(z_i))}{|\frac{\mathrm{d}T_2}{\mathrm{d}x}(x(z_i))|}.
+\frac{1}{2} \frac{g(x(y_i))}{\left|\frac{\mathrm{d}T_1}{\mathrm{d}x}(x(y_i))\right|} + 
+\frac{1}{2} \frac{g(x(z_i))}{\left|\frac{\mathrm{d}T_2}{\mathrm{d}x}(x(z_i))\right|}.
 \end{equation}
 
 This is, however, not a great idea. If one of our sampling transformations has high variance, even if the other one achieves zero variance, this resulting estimator would still have a very high variance.
@@ -159,20 +160,20 @@ This is, however, not a great idea. If one of our sampling transformations has h
 Eric Veach made a breakthrough in physically-based rendering by figuring out how we combine different estimators~\cite{Veach:1995:OCS}. The idea is to apply higher weight for the \emph{better} estimator. How do we know which estimator is better? We look at the Jacobian $|\frac{\mathrm{d}T}{\mathrm{d}x}(x)|$, or equivalently the probability density: if the Jacobian is high, that means that our sampling strategy has high sampling density around $x_i$ -- which means it's more efficient around that area. We can weigh the samples using the corresponding Jacobian:
 \begin{equation}
 \frac{1}{N} \sum
-\frac{|\frac{\mathrm{d}T_1}{\mathrm{d}x}(x(y_i))|}{|\frac{\mathrm{d}T_1}{\mathrm{d}x}(x(y_i))| + |\frac{\mathrm{d}T_2}{\mathrm{d}x}(x(y_i))|}
-\frac{g(x(y_i))}{|\frac{\mathrm{d}T_1}{\mathrm{d}x}(x(y_i))|} + 
-\frac{|\frac{\mathrm{d}T_2}{\mathrm{d}x}(x(z_i))|}{|\frac{\mathrm{d}T_1}{\mathrm{d}x}(x(z_i))| + |\frac{\mathrm{d}T_2}{\mathrm{d}x}(x(z_i))|}
-\frac{g(x(z_i))}{|\frac{\mathrm{d}T_2}{\mathrm{d}x}(x(z_i))|}.
+\frac{\left|\frac{\mathrm{d}T_1}{\mathrm{d}x}(x(y_i))\right|}{\left|\frac{\mathrm{d}T_1}{\mathrm{d}x}(x(y_i))\right| + \left|\frac{\mathrm{d}T_2}{\mathrm{d}x}(x(y_i))\right|}
+\frac{g(x(y_i))}{\left|\frac{\mathrm{d}T_1}{\mathrm{d}x}(x(y_i))\right|} + 
+\frac{\left|\frac{\mathrm{d}T_2}{\mathrm{d}x}(x(z_i))\right|}{\left|\frac{\mathrm{d}T_1}{\mathrm{d}x}(x(z_i))\right| + \left|\frac{\mathrm{d}T_2}{\mathrm{d}x}(x(z_i))\right|}
+\frac{g(x(z_i))}{\left|\frac{\mathrm{d}T_2}{\mathrm{d}x}(x(z_i))\right|}.
 \end{equation}
-Note that there are four different Jacobians here: $|\frac{\mathrm{d}T_1}{\mathrm{d}x}(x(y_i))|$, $|\frac{\mathrm{d}T_2}{\mathrm{d}x}(x(y_i))|$, $|\frac{\mathrm{d}T_1}{\mathrm{d}x}(x(z_i))|$, and $|\frac{\mathrm{d}T_2}{\mathrm{d}x}(x(z_i))|$.
+Note that there are four different Jacobians here: $\left|\frac{\mathrm{d}T_1}{\mathrm{d}x}(x(y_i))\right|$, $\left|\frac{\mathrm{d}T_2}{\mathrm{d}x}(x(y_i))\right|$, $\left|\frac{\mathrm{d}T_1}{\mathrm{d}x}(x(z_i))\right|$, and $\left|\frac{\mathrm{d}T_2}{\mathrm{d}x}(x(z_i))\right|$.
 
 Alternatively, Veach also proposed another weight called the \emph{power heuristics} that put even more emphasis on strategies with high Jacobian values:
 \begin{equation}
 \frac{1}{N} \sum
-\frac{|\frac{\mathrm{d}T_1}{\mathrm{d}x}(x(y_i))|^2}{|\frac{\mathrm{d}T_1}{\mathrm{d}x}(x(y_i))|^2 + |\frac{\mathrm{d}T_2}{\mathrm{d}x}(x(y_i))|^2}
+\frac{\left|\frac{\mathrm{d}T_1}{\mathrm{d}x}(x(y_i))\right|^2}{\left|\frac{\mathrm{d}T_1}{\mathrm{d}x}(x(y_i))\right|^2 + \left|\frac{\mathrm{d}T_2}{\mathrm{d}x}(x(y_i))\right|^2}
 \frac{g(x(y_i))}{|\frac{\mathrm{d}T_1}{\mathrm{d}x}(x(y_i))|} + 
-\frac{|\frac{\mathrm{d}T_2}{\mathrm{d}x}(x(z_i))|^2}{|\frac{\mathrm{d}T_1}{\mathrm{d}x}(x(z_i))|^2 + |\frac{\mathrm{d}T_2}{\mathrm{d}x}(x(z_i))|^2}
-\frac{g(x(z_i))}{|\frac{\mathrm{d}T_2}{\mathrm{d}x}(x(z_i))|}.
+\frac{\left|\frac{\mathrm{d}T_2}{\mathrm{d}x}(x(z_i))\right|^2}{\left|\frac{\mathrm{d}T_1}{\mathrm{d}x}(x(z_i))\right|^2 + \left|\frac{\mathrm{d}T_2}{\mathrm{d}x}(x(z_i))\right|^2}
+\frac{g(x(z_i))}{\left|\frac{\mathrm{d}T_2}{\mathrm{d}x}(x(z_i))\right|}.
 \end{equation}
 
 Veach made more justification of the method in his paper (which I highly recommend you to read!). However, note that these are ultimately ``heuristics'', and they can be suboptimal in certain cases. Finding better multiple importance sampling weights is an active research area.
@@ -187,7 +188,7 @@ We notice that we are essentially tracing \emph{light paths} with a different nu
 \begin{equation}
     f_d(\mathbf{D}) = k(x', y') f(\mathbf{p}_1, \mathbf{\omega}_0(x', y'), \mathbf{\omega}_1) f(\mathbf{p}_2, \mathbf{\omega}_1, \mathbf{\omega}_2) \dots L_e(\mathbf{p}_N, \mathbf{d}_N).
 \end{equation}
-(I might have get some signs wrong but don't worry about it.)
+(I might have got some signs wrong but don't worry about it.)
 
 We can then rewrite the rendering integral as
 \begin{equation}
@@ -212,12 +213,15 @@ struct Camera {
     Camera(const Matrix4x4 &cam_to_world,
            Real fov, // in degree
            int width, int height,
-           const Filter &filter);
+           const Filter &filter,
+           int medium_id);
 
     Matrix4x4 sample_to_cam, cam_to_sample;
     Matrix4x4 cam_to_world, world_to_cam;
     int width, height;
     Filter filter;
+
+    int medium_id; // for participating media rendering in homework 2
 };
 \end{lstlisting}
 The matrices transform a 2D pixel location $(x, y)$ to a ray direction $\omega$. The \lstinline{sample_primary} function implements the functionality for sampling a ray given a screen position.
@@ -254,7 +258,7 @@ Ray sample_primary(const Camera &camera,
     \label{fig:pixel_filter_comp}
 \end{figure}
 
-A crucial component of the camera is the \emph{pixel filter}, which corresponds to the $k$ kernel above. As we have emphasized: \textbf{a pixel is not a little square}. It is a reconstruction from a discrete sampling of a continuous underlying signal. The choice of the reconstruction filter/kernel can have a significant impact on the quality of the reconstruction. A naive box filter can suffer from severe \emph{aliasing} effects, since its Fourier transform is a sinc function that can have negative weights in the frequency domain and high-frequency energy. Lajolla currently supports three different filters (Figure~\ref{fig:pixel_filter_comp} \footnotetext{In this particular case, a proper texture prefiltering should give a better result, but checkerboard texture filtering has not been implemented in lajolla.}):
+A crucial component of the camera is the \emph{pixel filter}, which corresponds to the $k$ kernel above. As we have emphasized: \textbf{a pixel is not a little square}. It is a reconstruction from a discrete sampling of a continuous underlying signal. The choice of the reconstruction filter/kernel can have a significant impact on the quality of the reconstruction. A naive box filter can suffer from severe \emph{aliasing} effects, since its Fourier transform is a sinc function that can have negative weights in the frequency domain and high-frequency energy. Lajolla currently supports three different filters (Figure~\ref{fig:pixel_filter_comp}):\footnotetext{In this particular case, a proper texture prefiltering should give a better result, but checkerboard texture filtering has not been implemented in lajolla.}
 
 \begin{lstlisting}[language=c++]
 struct Box {
