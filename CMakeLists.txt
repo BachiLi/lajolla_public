@@ -42,6 +42,8 @@ set(SRCS src/3rdparty/miniz.h
          src/materials/disney_bsdf.inl
          src/media/homogeneous.inl
          src/media/heterogeneous.inl
+         src/phase_functions/isotropic.inl
+         src/phase_functions/henyeygreenstein.inl
          src/shapes/sphere.inl
          src/shapes/triangle_mesh.inl
          src/camera.h

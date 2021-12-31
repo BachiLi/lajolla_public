@@ -41,6 +41,7 @@ struct Frame {
     Vector3 x, y, n;
 };
 
+/// Flip the frame to opposite direction.
 inline Frame operator-(const Frame &frame) {
     return Frame(-frame.x, -frame.y, -frame.n);
 }

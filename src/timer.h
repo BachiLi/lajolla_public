@@ -5,6 +5,8 @@
 #include <chrono>
 #include <ctime>
 
+/// For measuring how long an operation takes.
+/// C++ chrono unfortunately makes the whole type system very complicated.
 struct Timer {
     std::chrono::time_point<std::chrono::system_clock> last;
 };

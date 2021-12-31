@@ -3,6 +3,8 @@
 #include "lajolla.h"
 #include <mutex>
 
+/// For printing how much work is done for an operation.
+/// The operations are thread-safe so we can safely use this in multi-thread environment.
 class ProgressReporter {
     public:
     ProgressReporter(uint64_t total_work) : total_work(total_work), work_done(0) {

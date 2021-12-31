@@ -7,6 +7,9 @@
 #include <variant>
 #include <vector>
 
+/// For representing participating media data.
+/// Will be used in homework 2. Can think of this as a 3D texture.
+
 template <typename T>
 struct ConstantVolume {
     T value;

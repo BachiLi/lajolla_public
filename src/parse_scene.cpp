@@ -385,6 +385,25 @@ VolumeSpectrum parse_volume_spectrum(pugi::xml_node node) {
     return ConstantVolume<Spectrum>{make_zero_spectrum()};
 }
 
+PhaseFunction parse_phase_function(pugi::xml_node node) {
+    std::string type = node.attribute("type").value();
+    if (type == "isotropic") {
+        return IsotropicPhase{};
+    } else if (type == "hg") {
+        Real g = 0;
+        for (auto child : node.children()) {
+            std::string name = child.attribute("name").value();
+            if (name == "g") {
+                g = std::stof(child.attribute("value").value());
+            }
+        }
+        return HenyeyGreenstein{g};
+    } else {
+        Error(std::string("Unrecognized phase function:") + type);
+    }
+    return IsotropicPhase{};
+}
+
 std::tuple<std::string /* ID */, Medium> parse_medium(
         pugi::xml_node node) {
     PhaseFunction phase_func = IsotropicPhase{};
@@ -406,6 +425,8 @@ std::tuple<std::string /* ID */, Medium> parse_medium(
                 sigma_s = parse_color(child);
             } else if (name == "scale") {
                 scale = std::stof(child.attribute("value").value());
+            } else if (std::string(child.name()) == "phase") {
+                phase_func = parse_phase_function(child);
             }
         }
         return std::make_tuple(id,
@@ -422,6 +443,8 @@ std::tuple<std::string /* ID */, Medium> parse_medium(
                 density = parse_volume_spectrum(child);
             } else if (name == "scale") {
                 scale = std::stof(child.attribute("value").value());
+            } else if (std::string(child.name()) == "phase") {
+                phase_func = parse_phase_function(child);
             }
         }
         // scale only applies to density!!
