@@ -116,3 +116,8 @@ add_executable(test_image src/tests/image.cpp)
 target_link_libraries(test_image lajolla_lib)
 add_test(image test_image)
 set_tests_properties(image PROPERTIES PASS_REGULAR_EXPRESSION "SUCCESS")
+
+add_executable(test_intersection src/tests/intersection.cpp)
+target_link_libraries(test_intersection lajolla_lib)
+add_test(intersection test_intersection)
+set_tests_properties(intersection PROPERTIES PASS_REGULAR_EXPRESSION "SUCCESS")
