@@ -131,3 +131,8 @@ add_executable(test_matrix src/tests/matrix.cpp)
 target_link_libraries(test_matrix lajolla_lib)
 add_test(matrix test_matrix)
 set_tests_properties(matrix PROPERTIES PASS_REGULAR_EXPRESSION "SUCCESS")
+
+add_executable(test_mipmap src/tests/mipmap.cpp)
+target_link_libraries(test_mipmap lajolla_lib)
+add_test(mipmap test_mipmap)
+set_tests_properties(mipmap PROPERTIES PASS_REGULAR_EXPRESSION "SUCCESS")
