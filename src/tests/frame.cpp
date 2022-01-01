@@ -1,5 +1,5 @@
 #include "../frame.h"
-#include <iostream>
+#include <cstdio>
 
 int main(int argc, char *argv[]) {
     Frame f(normalize(Vector3{0.3, 0.4, 0.5}));

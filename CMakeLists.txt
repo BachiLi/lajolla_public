@@ -111,3 +111,8 @@ add_executable(test_frame src/tests/frame.cpp)
 target_link_libraries(test_frame lajolla_lib)
 add_test(frame test_frame)
 set_tests_properties(frame PROPERTIES PASS_REGULAR_EXPRESSION "SUCCESS")
+
+add_executable(test_image src/tests/image.cpp)
+target_link_libraries(test_image lajolla_lib)
+add_test(image test_image)
+set_tests_properties(image PROPERTIES PASS_REGULAR_EXPRESSION "SUCCESS")

@@ -1,6 +1,5 @@
 #include "../filter.h"
 #include <cstdio>
-#include <iostream>
 
 Real compute_determinant(const Filter &f, const Vector2 &rnd_param) {
     Real eps = Real(1e-6);
