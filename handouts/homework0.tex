@@ -121,7 +121,7 @@ This recursive integral, combined with the integral discretization (Equation~\re
 \subsection{Importance sampling}
 The naive algorithm above is correct, but can be inefficient. Consider a special case of the rendering equation, where we only recurse once:
 \begin{equation}
-    L_i(\mathbf{p}, \mathbf{d}) = L_e(\mathbf{p}, \mathbf{\omega}) + \int_{\Omega} f(\mathbf{p}, \mathbf{\omega}, \mathbf{\omega}') |\mathbf{n}_{\mathbf{p}} \cdot \mathbf{\omega}'| L_e(\mathbf{p}', -\mathbf{\omega}') \mathrm{d} \mathbf{\omega}'.
+    L_i(\mathbf{p}, \omega) = L_e(\mathbf{p}, \mathbf{\omega}) + \int_{\Omega} f(\mathbf{p}, \mathbf{\omega}, \mathbf{\omega}') |\mathbf{n}_{\mathbf{p}} \cdot \mathbf{\omega}'| L_e(\mathbf{p}', -\mathbf{\omega}') \mathrm{d} \mathbf{\omega}'.
 \end{equation}
 The only difference is that instead of $L_i$ in the integral that recursively integrates over all the other surfaces, we only consider the light source contribution $L_e$. Remember that we approximate the integral using a discrete sum. Suppose we randomly sample a direction on a sphere:
 \begin{equation}
@@ -135,7 +135,7 @@ Fortunately, there is a way to make this sampling more efficient. The key is to 
     \int_{E} f(\mathbf{p}, \mathbf{\omega}, \mathbf{\omega}'(\mathbf{p}')) |\mathbf{n}_{\mathbf{p}} \cdot \mathbf{\omega}'| L_e(\mathbf{p}', -\mathbf{\omega}') G(\mathbf{p}, \mathbf{p}') \mathrm{d} \mathbf{p}',
     \label{eq:next_event_estimation}
 \end{equation}
-where $E$ is the area of all light sources, and $G$ is the Jacobian of the variable reparametrization (often called the \emph{geometry term}). Using some geometry insights, we can derive that $G(\mathbf{p}, \mathbf{p}') = \frac{|\mathbf{n}_{\mathbf{p}'} \cdot \mathbf{d}'|}{\|\mathbf{p} - \mathbf{p}'\|^2} V(\mathbf{p}, \mathbf{p}')$, where $V(\mathbf{p}, \mathbf{p}')$ is the \emph{visibility function} where $V=1$ if $\mathbf{p}$ can see $\mathbf{p}'$ and $V=0$ if they are occluded. Intuitively, $G$ is the area ratio of an infinitesimal area projected onto an unit sphere.
+where $E$ is the area of all light sources, and $G$ is the Jacobian of the variable reparametrization (often called the \emph{geometry term}). Using some geometry insights, we can derive that $G(\mathbf{p}, \mathbf{p}') = \frac{|\mathbf{n}_{\mathbf{p}'} \cdot \mathbf{\omega}'|}{\|\mathbf{p} - \mathbf{p}'\|^2} V(\mathbf{p}, \mathbf{p}')$, where $V(\mathbf{p}, \mathbf{p}')$ is the \emph{visibility function} where $V=1$ if $\mathbf{p}$ can see $\mathbf{p}'$ and $V=0$ if they are occluded. Intuitively, $G$ is the area ratio of an infinitesimal area projected onto an unit sphere.
 
 When the light source is visible for most of the time, the discretization of the second integral is much more efficient at locating lights since we focus on the domain $E$ instead of the whole spherical domain.
 
@@ -186,7 +186,7 @@ lajolla uses the power heuristics for combining different strategies.
 \end{equation}
 We notice that we are essentially tracing \emph{light paths} with a different number of vertices. For light paths with two vertices: one at the camera position and one at a light source, we only need to compute $L_e$. For light paths with three vertices, we need to account for one scattering event and multiply $f$. If we define a light path with a sequence of directions: $\mathbf{D} = ((x', y'), \mathbf{\omega}_1, \mathbf{\omega}_2, \dots)$, then we can define a \emph{path contribution function} $f_d$ to compute the contribution of that single light path. From above, we can see that
 \begin{equation}
-    f_d(\mathbf{D}) = k(x', y') f(\mathbf{p}_1, \mathbf{\omega}_0(x', y'), \mathbf{\omega}_1) f(\mathbf{p}_2, \mathbf{\omega}_1, \mathbf{\omega}_2) \dots L_e(\mathbf{p}_N, \mathbf{d}_N).
+    f_d(\mathbf{D}) = k(x', y') f(\mathbf{p}_1, \mathbf{\omega}_0(x', y'), \mathbf{\omega}_1) f(\mathbf{p}_2, \mathbf{\omega}_1, \mathbf{\omega}_2) \dots L_e(\mathbf{p}_N, \mathbf{\omega}_N).
 \end{equation}
 (I might have got some signs wrong but don't worry about it.)
 
@@ -292,12 +292,13 @@ Vector2 sample_op::operator()(const Box &filter) const {
 
 Vector2 sample_op::operator()(const Tent &filter) const {
     // See comments in code for more explanation.
+    Real h = filter.width / 2;
     Real x = rnd_param[0] < 0.5 ? 
-        filter.width * sqrt(max(2 * rnd_param[0], Real(0))) - filter.width / 2 :
-        (filter.width / 2) - filter.width * sqrt(max(2 - 2 * rnd_param[0], Real(0)));
-    Real y = rnd_param[0] < 0.5 ? 
-        filter.width * sqrt(max(2 * rnd_param[1], Real(0))) - filter.width / 2 :
-        (filter.width / 2) - filter.width * sqrt(max(2 - 2 * rnd_param[1], Real(0)));
+        h * (sqrt(2 * rnd_param[0]) - 1) :
+        h * (1 - sqrt(1 - 2 * (rnd_param[0] - Real(0.5))));
+    Real y = rnd_param[1] < 0.5 ? 
+        h * (sqrt(2 * rnd_param[1]) - 1) :
+        h * (1 - sqrt(1 - 2 * (rnd_param[1] - Real(0.5))));
     return Vector2{x, y};
 }
 
