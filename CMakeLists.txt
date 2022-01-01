@@ -100,5 +100,14 @@ add_library(lajolla_lib STATIC ${SRCS})
 add_executable(lajolla src/main.cpp)
 target_link_libraries(lajolla lajolla_lib)
 
+enable_testing()
+
 add_executable(test_filter src/tests/filter.cpp)
 target_link_libraries(test_filter lajolla_lib)
+add_test(filter test_filter)
+set_tests_properties(filter PROPERTIES PASS_REGULAR_EXPRESSION "SUCCESS")
+
+add_executable(test_frame src/tests/frame.cpp)
+target_link_libraries(test_frame lajolla_lib)
+add_test(frame test_frame)
+set_tests_properties(frame PROPERTIES PASS_REGULAR_EXPRESSION "SUCCESS")
