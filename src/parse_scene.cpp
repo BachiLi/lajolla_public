@@ -335,7 +335,7 @@ parse_film(pugi::xml_node node) {
                 }
                 filter = Box{filter_width};
             } else if (filter_type == "tent") {
-                Real filter_width = Real(1);
+                Real filter_width = Real(2);
                 for (auto grand_child : child.children()) {
                     if (std::string(grand_child.attribute("name").value()) == "width") {
                         filter_width = std::stof(grand_child.attribute("value").value());
