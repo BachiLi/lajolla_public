@@ -121,3 +121,8 @@ add_executable(test_intersection src/tests/intersection.cpp)
 target_link_libraries(test_intersection lajolla_lib)
 add_test(intersection test_intersection)
 set_tests_properties(intersection PROPERTIES PASS_REGULAR_EXPRESSION "SUCCESS")
+
+add_executable(test_materials src/tests/materials.cpp)
+target_link_libraries(test_materials lajolla_lib)
+add_test(materials test_materials)
+set_tests_properties(materials PROPERTIES PASS_REGULAR_EXPRESSION "SUCCESS")
