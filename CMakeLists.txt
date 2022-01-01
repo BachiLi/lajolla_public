@@ -126,3 +126,8 @@ add_executable(test_materials src/tests/materials.cpp)
 target_link_libraries(test_materials lajolla_lib)
 add_test(materials test_materials)
 set_tests_properties(materials PROPERTIES PASS_REGULAR_EXPRESSION "SUCCESS")
+
+add_executable(test_matrix src/tests/matrix.cpp)
+target_link_libraries(test_matrix lajolla_lib)
+add_test(matrix test_matrix)
+set_tests_properties(matrix PROPERTIES PASS_REGULAR_EXPRESSION "SUCCESS")
