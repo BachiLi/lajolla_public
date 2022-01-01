@@ -83,7 +83,6 @@ set(SRCS src/3rdparty/miniz.h
          src/intersection.cpp
          src/light.cpp
          src/load_serialized.cpp
-         src/main.cpp
          src/material.cpp
          src/medium.cpp
          src/parallel.cpp
@@ -97,4 +96,9 @@ set(SRCS src/3rdparty/miniz.h
          src/transform.cpp
          src/volume.cpp)
 
-add_executable(lajolla ${SRCS})
+add_library(lajolla_lib STATIC ${SRCS})
+add_executable(lajolla src/main.cpp)
+target_link_libraries(lajolla lajolla_lib)
+
+add_executable(test_filter src/tests/filter.cpp)
+target_link_libraries(test_filter lajolla_lib)
