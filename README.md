@@ -32,3 +32,5 @@ We use [pcg](https://www.pcg-random.org/) for random number generation.
 We use [stb_image](https://github.com/nothings/stb) and [tinyexr](https://github.com/syoyo/tinyexr) for reading & writing images.
 
 We use [miniz](https://github.com/richgel999/miniz) for compression & decompression.
+
+Many scenes in the scenes folder are directly downloaded from [http://www.mitsuba-renderer.org/download.html](http://www.mitsuba-renderer.org/download.html). Scenes courtesy of Wenzel Jakob, Cornell Program of Computer Graphics, Marko Dabrovic, Eric Veach, Jonas Pilo, and Bernhard Vogl.
