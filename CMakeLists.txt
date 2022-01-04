@@ -100,6 +100,10 @@ add_library(lajolla_lib STATIC ${SRCS})
 add_executable(lajolla src/main.cpp)
 target_link_libraries(lajolla lajolla_lib)
 
+set(THREADS_PREFER_PTHREAD_FLAG ON)
+find_package(Threads REQUIRED)
+target_link_libraries(lajolla Threads::Threads)
+
 enable_testing()
 
 add_executable(test_filter src/tests/filter.cpp)
