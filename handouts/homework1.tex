@@ -415,7 +415,7 @@ Finally, we combine the five components we have and weigh them to get our final 
 f_{\text{disney}} =& (1 - \text{specularTransmission}) \cdot (1 - \text{metallic}) \cdot f_{\text{diffuse}} + \\
                    & (1 - \text{metallic}) \cdot f_{\text{sheen}} + \\
                    & (1 - \text{specularTransmission} \cdot (1 - \text{metallic})) \cdot \hat{f}_{\text{metal}} + \\
-                   & \text{clearcoat} \cdot f_{\text{clearcoat}} + \\
+                   & 0.25 \cdot \text{clearcoat} \cdot f_{\text{clearcoat}} + \\
                    & (1 - \text{metallic}) \cdot \text{specularTransmission} \cdot f_{\text{glass}}
 \end{aligned}
 \label{eq:disney_bsdf}
@@ -479,7 +479,7 @@ For importance sampling, ignore the sheen component since it is relatively weak 
 \text{diffuseWeight} &= (1 - \text{metallic}) \cdot (1 - \text{specularTransmission}) \\
 \text{metalWeight} &= (1 - \text{specularTransmission} \cdot (1 - \text{metallic})) \\
 \text{glassWeight} &= (1 - \text{metallic}) \cdot \text{specularTransmission} \\
-\text{clearcoatWeight} &= \text{clearcoat}
+\text{clearcoatWeight} &= 0.25 \cdot \text{clearcoat}
 \end{aligned}
 \end{equation}
 However, when the ray is from inside the object ($\omega_{\text{in}} \cdot n_g \leq 0$), we set all weights
