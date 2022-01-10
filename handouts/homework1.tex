@@ -20,6 +20,72 @@ A Disney BSDF is made of five components: a \textbf{diffuse} lobe that captures 
 
 \paragraph{Notation and convention.} In the following, $\omega_{\text{in}}$ is the \emph{incoming} direction of the BSDF (usually represent the view direction), and $\omega_{\text{out}}$ is the \emph{outgoing} direction of the BSDF (usually represent the light direction), both pointing \emph{outwards} from the surface. $n$ is the shading normal, $n_g$ is the geometry normal, $h$ is the half-vector $h = \frac{\omega_{\text{in}} + \omega_{\text{out}}}{\|\omega_{\text{in}} + \omega_{\text{out}}\|}$. All of our BSDF include the cosine term $|n \cdot \omega_{\text{out}}|$. $\eta$ is the ratio of index of refraction of the medium below divided by the medium above the surface $\frac{\text{IOR}_{\text{internal}}}{\text{IOR}_{\text{external}}}$. All parameters of Disney BSDF are normalized within $[0, 1]$.
 
+\paragraph{Variant-based material systems.} As mentioned in homework 0, lajolla applies variant-based polymorphism instead of object-oriented polymorphism. The material \lstinline{struct}s in lajolla looks like the following:
+\begin{lstlisting}[language=c++]
+struct DisneyDiffuse {
+    Texture<Spectrum> base_color;
+    Texture<Real> roughness;
+    Texture<Real> subsurface;
+};
+\end{lstlisting}
+They are aggregated to a \lstinline{Material} type using variant.
+\begin{lstlisting}[language=c++]
+using Material = std::variant<Lambertian,
+                              RoughPlastic,
+                              RoughDielectric,
+                              DisneyDiffuse,
+                              DisneyMetal,
+                              DisneyGlass,
+                              DisneyClearcoat,
+                              DisneySheen,
+                              DisneyBSDF>;
+\end{lstlisting}
+Each material needs to implement the following operators:
+\begin{lstlisting}[language=c++]
+struct eval_op {
+    Spectrum operator()(const Lambertian &bsdf) const;
+    Spectrum operator()(const RoughPlastic &bsdf) const;
+    Spectrum operator()(const RoughDielectric &bsdf) const;
+    Spectrum operator()(const DisneyDiffuse &bsdf) const;
+    // ...
+
+    const Vector3 &dir_in;
+    const Vector3 &dir_out;
+    const PathVertex &vertex;
+    const TexturePool &texture_pool;
+    const TransportDirection &dir;
+};
+
+struct pdf_sample_bsdf_op {
+    Real operator()(const Lambertian &bsdf) const;
+    Real operator()(const RoughPlastic &bsdf) const;
+    Real operator()(const RoughDielectric &bsdf) const;
+    Real operator()(const DisneyDiffuse &bsdf) const;
+    // ...
+
+    const Vector3 &dir_in;
+    const Vector3 &dir_out;
+    const PathVertex &vertex;
+    const TexturePool &texture_pool;
+    const TransportDirection &dir;
+};
+
+struct sample_bsdf_op {
+    std::optional<BSDFSampleRecord> operator()(const Lambertian &bsdf) const;
+    std::optional<BSDFSampleRecord> operator()(const RoughPlastic &bsdf) const;
+    std::optional<BSDFSampleRecord> operator()(const RoughDielectric &bsdf) const;
+    std::optional<BSDFSampleRecord> operator()(const DisneyDiffuse &bsdf) const;
+    // ...
+
+    const Vector3 &dir_in;
+    const PathVertex &vertex;
+    const TexturePool &texture_pool;
+    const Vector2 &rnd_param_uv;
+    const Real &rnd_param_w;
+    const TransportDirection &dir;
+};
+\end{lstlisting}
+
 \section{Diffuse}
 \begin{figure}
 	\centering
@@ -420,6 +486,8 @@ However, when the ray is from inside the object ($\omega_{\text{in}} \cdot n_g \
 to $0$ and only leave the glass lobes (note that glass still both reflect and refract).
 
 When implementing, add one component at a time. Don't rush and put everything in there at once. Do sanity check with only enabling one component at a time. Note that even if everything other than the base color is set to zero, there is still a specular component from the dielectric specular response of the modified metal lobe. 
+
+Also recall from homework 0: you might need to rescale your random number $w$ for selecting reflection/refraction.
 
 Try out the scene \lstinline{scenes/disney_bsdf_test/disney_bsdf.xml} to see how the material look like. Play with the parameters.
 
