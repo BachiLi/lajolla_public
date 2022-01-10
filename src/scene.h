@@ -52,21 +52,8 @@ struct Scene {
           const RenderOptions &options,
           const std::string &output_filename);
     ~Scene();
-    Scene(const Scene& t) :
-        embree_device(t.embree_device), embree_scene(t.embree_scene),
-        camera(t.camera), materials(t.materials),
-        shapes(t.shapes), lights(t.lights), media(t.media),
-        envmap_light_id(t.envmap_light_id),
-        texture_pool(t.texture_pool), options(t.options),
-        output_filename(t.output_filename), light_dist(t.light_dist), bounds(t.bounds)
-    {
-
-        rtcRetainScene(t.embree_scene);
-    }
-    Scene& operator=(const Scene& t) {
-        rtcRetainScene(t.embree_scene);
-        return *this;
-    }
+    Scene(const Scene& t);
+    Scene& operator=(const Scene& t) = delete;
 
     RTCDevice embree_device;
     RTCScene embree_scene;
