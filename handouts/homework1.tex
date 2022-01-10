@@ -85,12 +85,12 @@ std::optional<BSDFSampleRecord> sample_bsdf_op::operator()(const DisneyDiffuse &
 
 For sampling, we will simply use a cosine hemisphere sampling. Look at \lstinline{materials/lambertian.inl} to see how it is done. Feel free to copy-paste the code and modify anything. Also notice how the Lambertian BRDF implementation handles the discrepancy between geometry normals and shading normals.
 
-Try out \lstinline{scenes/simple_sphere.xml} (you'll need to modify the scene file to use the \lstinline{DisneyDiffuse} material) and \lstinline{scenes/disney_diffuse.xml} to see how the material look like. Play with the parameters.
+Try out the scene \lstinline{scenes/disney_bsdf_test/simple_sphere.xml} (you'll need to modify the scene file to use the \lstinline{DisneyDiffuse} material) and \lstinline{scenes/disney_bsdf_test/disney_diffuse.xml} to see how the material look like. Play with the parameters.
 
 \paragraph{Questions (5\%).} Answer these questions in a text file:
 \begin{enumerate}
 	\item Compare the two BRDFs with a Lambertian BRDF: what differences do you see? Why?
-	\item Compare the base diffuse BRDF ($f_{\text{baseDiffuse}}$) with the subsurface BRDF ($f_{\text{subsurface}}$) by playing with the subsurface parameter. What differences do you see? Why? In what lighting condition does the base diffuse BRDF differ the most from the subsurface BRDF?
+	\item Compare the base diffuse BRDF ($f_{\text{baseDiffuse}}$) with the subsurface BRDF ($f_{\text{subsurface}}$) by playing with the subsurface parameter. What differences do you see? Why? In what lighting condition does the base diffuse BRDF differ the most from the subsurface BRDF? (Play with the light position in \lstinline{simple_sphere.xml} for your experimentation)
 \end{enumerate}
 
 \section{Metal}
@@ -159,7 +159,7 @@ std::optional<BSDFSampleRecord> sample_bsdf_op::operator()(const DisneyMetal &bs
 
 For sampling, we will use the visible normal sampling developed by Heitz~\cite{Heitz:2018:SGD}, which importance samples $\frac{D_m G(\omega_{\text{in}})}{4 |n \cdot \omega_{\text{in}}|}$. See Heitz's presentation \href{https://jcgt.org/published/0007/04/01/slides.pdf}{slides} for a really nice illustration of the method. This sampling is also used in the \lstinline{roughplastic} material in lajolla, so you might want to look at it as well.
 
-Try out \lstinline{./lajolla ../scenes/simple_sphere.xml} and \lstinline{./lajolla ../scenes/disney_metal.xml} to see how the material look like. Play with the parameters.
+Try out the scene \lstinline{scenes/disney_bsdf_test/simple_sphere.xml} and the scene \lstinline{scenes/disney_bsdf_test/disney_metal.xml} to see how the material look like. Play with the parameters.
 
 \paragraph{Questions (5\%).} Answer these question(s) in a text file:
 \begin{enumerate}
@@ -228,7 +228,7 @@ h^l_z &= \cos(h_{\text{elevation}})
 \end{aligned}.
 \end{equation}
 
-Try out \lstinline{./lajolla ../scenes/simple_sphere.xml} and \lstinline{./lajolla ../scenes/disney_clearcoat.xml} to see how the material look like. Play with the parameters.
+Try out the scene \lstinline{scenes/disney_bsdf_test/simple_sphere.xml} and the scene \lstinline{scenes/disney_bsdf_test/disney_clearcoat.xml} to see how the material look like. Play with the parameters.
 
 \paragraph{Questions (5\%).} Answer these question(s) in a text file:
 \begin{enumerate}
@@ -288,7 +288,7 @@ std::optional<BSDFSampleRecord> sample_bsdf_op::operator()(const DisneyGlass &bs
 
 Lajolla already has an implementation of a dielectric glass in \lstinline{roughdielectric}. The only two differences are 1) the reflectance/transmittance color are handled differently and 2) the BSDF in \lstinline{roughdielectric} is isotropic. I suggest you start by copy-pasting or referencing the code from \lstinline{roughdielectric} and modify it.
 
-Try out \lstinline{./lajolla ../scenes/disney_glass.xml} to see how the material look like. Play with the parameters.
+Try out the scene \lstinline{scenes/disney_bsdf_test/disney_glass.xml} to see how the material look like. Play with the parameters.
 
 \paragraph{Questions (5\%).} Answer these question(s) in a text file:
 \begin{enumerate}
@@ -335,7 +335,7 @@ std::optional<BSDFSampleRecord> sample_bsdf_op::operator()(const DisneySheen &bs
 
 For sampling we will simply apply a cosine hemisphere sampling.
 
-Try out \lstinline{./lajolla ../scenes/simple_sphere.xml} and \lstinline{./lajolla ../scenes/disney_sheen.xml} to see how the material look like. Play with the parameters.
+Try out \lstinline{scenes/disney_bsdf_test/simple_sphere.xml} and \lstinline{scenes/disney_bsdf_test/disney_sheen.xml} to see how the material look like. Play with the parameters.
 
 \paragraph{Questions (5\%).} Answer these question(s) in a text file:
 \begin{enumerate}
@@ -363,6 +363,20 @@ a dielectric specular reflection. We include that in our metal BRDF. To do this,
 	C_0 &= \text{specular} \cdot R_0(\eta) (1 - \text{metallic}) K_s + \text{metallic} \cdot \text{baseColor} \\
 	K_s &= (1 - \text{specularTint}) + \text{specularTint} \cdot C_{\text{tint}}
 \end{aligned}
+\end{equation}
+
+One complication when combining the glass BSDF and other BRDFs is that now we need to define the
+behavior of the BRDF when the ray is \emph{inside} the object. The Disney BSDF technical notes do
+not specify this. \href{https://github.com/mmp/pbrt-v3/issues/313}{Experiments} show that removing
+all lobes except for the glass lobe when ray is inside the object (note that the glass still reflect
+inside the object) gives more visually pleasing results. Therefore we define:
+\begin{equation}
+\begin{aligned}
+	f_{\text{diffuse}} = 0 \text{ if } \omega_{\text{in}} \cdot n_g \leq 0
+	f_{\text{metal}} = 0 \text{ if } \omega_{\text{in}} \cdot n_g \leq 0
+	f_{\text{clearcoat}} = 0 \text{ if } \omega_{\text{in}} \cdot n_g \leq 0
+	f_{\text{sheen}} = 0 \text{ if } \omega_{\text{in}} \cdot n_g \leq 0
+\end{aligned}.
 \end{equation}
 
 \paragraph{Task (20\%).} You will implement \lstinline{DisneyBSDF} (Equation~\ref{eq:disney_bsdf})
@@ -393,7 +407,7 @@ Real pdf_sample_bsdf_op::operator()(const DisneyBSDF &bsdf) const;
 std::optional<BSDFSampleRecord> sample_bsdf_op::operator()(const DisneyBSDF &bsdf) const;
 \end{lstlisting}
 
-For importance sampling, ignore the sheen component since it is relatively weak compared to other lobes. Randomly choose between a diffuse lobe, a metal lobe, a clearcoat lobe, and a glass lobe based on the following weights:
+For importance sampling, ignore the sheen component since it is relatively weak compared to other lobes. Randomly choose between a diffuse lobe, a metal lobe, a clearcoat lobe, and the glass lobes based on the following weights:
 \begin{equation}
 \begin{aligned}
 \text{diffuseWeight} &= (1 - \text{metallic}) \cdot (1 - \text{specularTransmission}) \\
@@ -402,10 +416,12 @@ For importance sampling, ignore the sheen component since it is relatively weak 
 \text{clearcoatWeight} &= \text{clearcoat}
 \end{aligned}
 \end{equation}
+However, when the ray is from inside the object ($\omega_{\text{in}} \cdot n_g \leq 0$), we set all weights
+to $0$ and only leave the glass lobes (note that glass still both reflect and refract).
 
 When implementing, add one component at a time. Don't rush and put everything in there at once. Do sanity check with only enabling one component at a time. Note that even if everything other than the base color is set to zero, there is still a specular component from the dielectric specular response of the modified metal lobe. 
 
-Try out \lstinline{./lajolla ../scenes/disney_bsdf.xml} to see how the material look like. Play with the parameters.
+Try out the scene \lstinline{scenes/disney_bsdf_test/disney_bsdf.xml} to see how the material look like. Play with the parameters.
 
 \paragraph{Task (5\%).} Render an image that is not in the test scenes with your Disney BSDF! Play with textures and geometry to make it look interesting. Have fun!
 
