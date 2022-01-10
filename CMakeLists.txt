@@ -96,9 +96,17 @@ set(SRCS src/3rdparty/miniz.h
          src/transform.cpp
          src/volume.cpp)
 
+
+
 add_library(lajolla_lib STATIC ${SRCS})
 add_executable(lajolla src/main.cpp)
 target_link_libraries(lajolla lajolla_lib)
+if(MSVC)
+  add_custom_command(TARGET lajolla POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy_directory
+      "${PROJECT_SOURCE_DIR}/embree/bin"
+      $<TARGET_FILE_DIR:lajolla>)
+endif()
 
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
