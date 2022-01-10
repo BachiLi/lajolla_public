@@ -16,7 +16,7 @@ We will implement the Disney BSDF with slight simplifications: first, we won't i
 
 A Disney BSDF is made of five components: a \textbf{diffuse} lobe that captures the base diffusive color of the surface, a \textbf{metallic} lobe that features major specular highlights, a \textbf{clearcoat} lobe that models the heavy tails of the specularity, a \textbf{sheen} lobe that addresses retroreflection, and a \textbf{glass} lobe that handles transmission. We will first implement each individual component; then we will combine all of them into a single material. 
 
-\paragraph{Submission and grading.} Please send our teaching assistant Yan Xiao (yax010@ucsd.edu) a zip file including your code, and a text file (readme.txt) answering the questions below. We will grade your code by comparing individual ray queries with our reference code for the BSDF evaluation, we will check if your sampling code is consistent with the PDF, and we will eyeball your rendering to make sure everything looks fine. For the questions, as long as you say something plausible, you will get full scores.
+\paragraph{Submission and grading.} Please upload a zip file to Canvas including your code, and a text file (readme.txt) answering the questions below. We will grade your code by comparing individual ray queries with our reference code for the BSDF evaluation, we will check if your sampling code is consistent with the PDF, and we will eyeball your rendering to make sure everything looks fine. For the questions, as long as you say something plausible, you will get full scores.
 
 \paragraph{Notation and convention.} In the following, $\omega_{\text{in}}$ is the \emph{incoming} direction of the BSDF (usually represent the view direction), and $\omega_{\text{out}}$ is the \emph{outgoing} direction of the BSDF (usually represent the light direction), both pointing \emph{outwards} from the surface. $n$ is the shading normal, $n_g$ is the geometry normal, $h$ is the half-vector $h = \frac{\omega_{\text{in}} + \omega_{\text{out}}}{\|\omega_{\text{in}} + \omega_{\text{out}}\|}$. All of our BSDF include the cosine term $|n \cdot \omega_{\text{out}}|$. $\eta$ is the ratio of index of refraction of the medium below divided by the medium above the surface $\frac{\text{IOR}_{\text{internal}}}{\text{IOR}_{\text{external}}}$. All parameters of Disney BSDF are normalized within $[0, 1]$.
 
@@ -45,7 +45,7 @@ When $\text{roughness} = 0$ (smooth materials), at grazing view angle $|n \cdot 
 In addition to the base diffuse model, the diffuse component of Disney BSDF also blends it with a subsurface scattering lobe for surfaces with strong multiple scattering inside like skin, milk, or marble. In the 2015 version of the Disney BSDF, they simulate \emph{real} subsurface scattering that requires volumetric path tracing to simulate the scattering, but this is too much work for the first homework. Instead, we follow the 2012 version and use a BRDF approximation of the subsurface scattering by modifying the Lommel-Seeliger law:
 \begin{equation}
 	f_{\text{subsurface}} = \frac{1.25 \text{baseColor}}{\pi} \left(
-	F_{SS}(\omega_{\text{in}}) F_{SS}(\omega_{\text{out}}) \left(\frac{1}{|n \cdot \omega_{\text{in}}| + |n \cdot \omega_{\text{out}}|} - 0.5 \right) + 0.5 \right),
+	F_{SS}(\omega_{\text{in}}) F_{SS}(\omega_{\text{out}}) \left(\frac{1}{|n \cdot \omega_{\text{in}}| + |n \cdot \omega_{\text{out}}|} - 0.5 \right) + 0.5 \right) |n \cdot \omega_{\text{out}}|,
 \end{equation} 
 where
 \begin{equation}
@@ -183,7 +183,7 @@ where
 \begin{equation}
 \begin{aligned}
 F_c &= R_0(\eta = 1.5) + (1 - R_0(\eta = 1.5)) (1 - |n \cdot \omega_{\text{out}}|^5) \\
-D_c &= \frac{1}{\pi \alpha_g \left|\frac{{h^l_x}^2}{\alpha_g^2} + \frac{{h^l_y}^2}{\alpha_g^2} + {h^l_z}^2\right|} \\
+D_c &= \frac{\alpha_g^2}{\pi \log(\alpha_g^2) \left( 1 + (\alpha_g^2 - 1) \left(h^l_z\right)^2 \right)} \\
 G_c &= G_{c}(\omega_{\text{in}}) G_{c}(\omega_{\text{out}}) \\
 G_{c}(\omega_{\text{in}}) &= \frac{1}{1 + \Lambda_c(\omega)} \\
 \Lambda_c(\omega) &= \frac{\sqrt{1 + \frac{\left(\omega_l.x \cdot 0.25\right)^2 + \left(\omega_l.y \cdot 0.25\right)^2}{\omega_l.z^2}} - 1}{2}
