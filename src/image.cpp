@@ -38,7 +38,11 @@ Image1 imread1(const fs::path &filename) {
           extension == ".hdr" ||
           extension == ".pic") {
         int w, h, n;
+#ifdef _WINDOWS
+        float* data = stbi_loadf(filename.string().c_str(), &w, &h, &n, 1);
+#else
         float *data = stbi_loadf(filename.c_str(), &w, &h, &n, 1);
+#endif
         img = Image1(w, h);
         if (data == nullptr) {
             Error(std::string("Failure when loading image: ") + filename.string());
@@ -52,7 +56,11 @@ Image1 imread1(const fs::path &filename) {
         int width;
         int height;
         const char* err = nullptr;
+#ifdef _WINDOWS
+        int ret = LoadEXR(&data, &width, &height, filename.string().c_str(), &err);
+#else
         int ret = LoadEXR(&data, &width, &height, filename.c_str(), &err);
+#endif
         if (ret != TINYEXR_SUCCESS) {
             std::cerr << "OpenEXR error: " << err << std::endl;
             FreeEXRErrorMessage(err);
@@ -81,7 +89,11 @@ Image3 imread3(const fs::path &filename) {
           extension == ".hdr" ||
           extension == ".pic") {
         int w, h, n;
-        float *data = stbi_loadf(filename.c_str(), &w, &h, &n, 3);
+#ifdef _WINDOWS
+        float* data = stbi_loadf(filename.string().c_str(), &w, &h, &n, 3);
+#else
+        float* data = stbi_loadf(filename.c_str(), &w, &h, &n, 3);
+#endif
         img = Image3(w, h);
         if (data == nullptr) {
             Error(std::string("Failure when loading image: ") + filename.string());
@@ -98,7 +110,11 @@ Image3 imread3(const fs::path &filename) {
         int width;
         int height;
         const char* err = nullptr;
+#ifdef _WINDOWS
+        int ret = LoadEXR(&data, &width, &height, filename.string().c_str(), &err);
+#else
         int ret = LoadEXR(&data, &width, &height, filename.c_str(), &err);
+#endif
         if (ret != TINYEXR_SUCCESS) {
             std::cerr << "OpenEXR error: " << err << std::endl;
             FreeEXRErrorMessage(err);
@@ -116,7 +132,11 @@ Image3 imread3(const fs::path &filename) {
 }
 
 void imwrite(const fs::path &filename, const Image3 &image) {
+#ifdef _WINDOWS
+    if (ends_with(filename.string(), ".pfm")) {
+#else
     if (ends_with(filename, ".pfm")) {
+#endif
         std::ofstream ofs(filename.c_str(), std::ios::binary);
         ofs << "PF" << std::endl;
         ofs << image.width << " " << image.height << std::endl;
@@ -126,14 +146,23 @@ void imwrite(const fs::path &filename, const Image3 &image) {
         std::transform(image.data.cbegin(), image.data.cend(), data.begin(),
             [] (const Vector3 &v) {return Vector3f(v.x, v.y, v.z);});
         ofs.write((const char *)data.data(), data.size() * sizeof(Vector3f));
+#ifdef _WINDOWS
+    } else if (ends_with(filename.string(), ".exr")) {
+#else
     } else if (ends_with(filename, ".exr")) {
+#endif
         // Convert image to float
         vector<Vector3f> data(image.data.size());
         std::transform(image.data.cbegin(), image.data.cend(), data.begin(),
             [] (const Vector3 &v) {return Vector3f(v.x, v.y, v.z);});
         const char* err = nullptr;
+#ifdef _WINDOWS
+        int ret = SaveEXR((float*)data.data(),
+            image.width, image.height, 3, 1 /* write as fp16 */, filename.string().c_str(), &err);
+#else
         int ret = SaveEXR((float*)data.data(),
             image.width, image.height, 3, 1 /* write as fp16 */, filename.c_str(), &err);
+#endif
         if (ret != TINYEXR_SUCCESS) {
             std::cerr << "OpenEXR error: " << err << std::endl;
             FreeEXRErrorMessage(err);
