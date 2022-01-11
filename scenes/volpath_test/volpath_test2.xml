@@ -7,8 +7,8 @@
 	</integrator>
 
 	<medium type="homogeneous" id="medium">
-		<rgb name="sigmaA" value="0.5 0.5 0.5"/>
-		<rgb name="sigmaS" value="1 1 1"/>
+		<rgb name="sigmaA" value="0.1 0.1 0.1"/>
+		<rgb name="sigmaS" value="0.7 0.7 0.7"/>
 		<float name="scale" value="1"/>
 	</medium>
 
@@ -35,7 +35,7 @@
 		</transform>
 
 		<sampler type="independent">
-			<integer name="sampleCount" value="64"/>
+			<integer name="sampleCount" value="1024"/>
 		</sampler>
 
 		<film type="hdrfilm" id="film">

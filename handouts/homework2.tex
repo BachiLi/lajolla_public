@@ -17,7 +17,7 @@ Participating media are volumes with many infinitesimal particles absorbing and 
 \frac{\mathrm{d}}{\mathrm{d}t} L(\mathbf{p}(t), \omega) = -(\sigma_a(\mathbf{p}(t)) + \sigma_s(\mathbf{p}(t))) L(\mathbf{p}(t), \omega) + \sigma_a L_e(\mathbf{p}(t), \omega) + \sigma_s(\mathbf{p}(t)) \int_{S^2} \rho(\mathbf{p}(t), \omega, \omega') L(\mathbf{p}(t), \omega') \mathrm{d}\omega',
 \label{eq:rte}
 \end{equation}
-where $L$ is the radiance, $\sigma_a$ is the \emph{absorption coefficient}, $\sigma_s$ is the \emph{scattering coefficient}, $L_e$ is the (volumetric) emission, $\rho$ is the \emph{phase function} that is skin to BSDF in surface rendering, and $S^2$ is the spherical domain.
+where $L$ is the radiance, $\sigma_a$ is the \emph{absorption coefficient}, $\sigma_s$ is the \emph{scattering coefficient}, $L_e$ is the (volumetric) emission, $\rho$ is the \emph{phase function} that is akin to BSDF in surface rendering, and $S^2$ is the spherical domain.
 
 This looks a bit scary, so let's break it down. From now on we'll drop the arguments for $\sigma_a$ and $\sigma_s$, but in general they can still be spatially varying. The radiative transfer equation is made of four components: \textbf{absorption}, \textbf{emission}, \textbf{in-scattering}, and \textbf{out-scattering}. Absorption and emission handles particles that absorb and emit lights:
 \begin{equation}
@@ -117,15 +117,11 @@ struct PathVertex {
 };
 \end{lstlisting}
 
-\section{Single absorption-only homogeneous volume}
+\section{Single monochromatic absorption-only homogeneous volume}
 \begin{figure}
 \includegraphics[width=\linewidth]{imgs/absorption_medium.pdf}
 \caption{The setup of our first volumetric renderer.}
 \label{fig:volpath1_illustration}
-\end{figure}
-\begin{figure}
-\caption{Our first volume rendering.}
-\label{fig:volpath1}
 \end{figure}
 
 Our first volume renderer will make four assumptions:
@@ -133,25 +129,26 @@ Our first volume renderer will make four assumptions:
     \item There is only a single, homogeneous ($\sigma_a$ and $\sigma_s$ are constants over space) volume.
     \item The volume does not scatter light: $\sigma_s = 0$.
     \item The surfaces in the scene only emit lights (with intensity $L_e$) and do not reflect/transmit lights.
+    \item The volume is monochromatic: the three color channels of $\sigma_s$ and $\sigma_a$ have the same values.
 \end{itemize}
 
 Under these assumptions, the radiative transfer equation becomes
 \begin{equation}
-\frac{\mathrm{d}}{\mathrm{d}t} L_a(\mathbf{p}(t), \omega) = -\sigma_a L_a(\mathbf{p}(t), \omega),
+\frac{\mathrm{d}}{\mathrm{d}t} L_1(\mathbf{p}(t), \omega) = -\sigma_a L_1(\mathbf{p}(t), \omega),
 \end{equation}
-and we know $L_a(\mathbf{p}(t_{\text{hit}}), \omega) = L_e$ where $t_{\text{hit}}$ is the distance between the origin of the ray and the emissive surface. 
+and we know $L_1(\mathbf{p}(t_{\text{hit}}), \omega) = L_e(\mathbf{p}(t_{\text{hit}}))$ where $t_{\text{hit}}$ is the distance between the origin of the ray and the emissive surface. 
 
 This ordinary differential equation has a simple closed form:
 \begin{equation}
-L_a(\mathbf{p}(0), \omega) = \exp\left(-\sigma_a t_{\text{hit}} \right) L_e.
+L_1(\mathbf{p}(0), \omega) = \exp\left(-\sigma_a t_{\text{hit}} \right) L_e(\mathbf{p}(t_{\text{hit}})).
 \end{equation}
 Figure~\ref{fig:volpath1_illustration} illustrates the setup. In volume rendering the exponential term
 $\exp\left(-\sigma_a t_{\text{hit}} \right)$ is often called the ``transmittance''.
 
-Our rendering algorithm is as follows (in Python-style pseudo code).
+Our rendering algorithm (that generates a sample for a pixel) is as follows (in Python-style pseudo code).
 \begin{lstlisting}[language=python]
-def L(screen_pos):
-  camera_ray = sample_primary(camera, screen_pos)
+def L(screen_pos, rng):
+  camera_ray = sample_primary(camera, screen_pos, rng)
   isect = intersect(scene, camera_ray)
   if isect:
     transmittance = exp(-sigma_a * t)
@@ -162,6 +159,109 @@ def L(screen_pos):
   return 0
 \end{lstlisting}
 
-\paragraph{Task (15\%).} You will implement the algorithm above in the \lstinline{vol_path_tracing_1} function in \lstinline{vol_path_tracing.h}. You might want to first look at the surface path tracing code in \lstinline{path_tracing.h} to understand lajolla's API better. 
+\begin{figure}
+\centering
+\includegraphics[width=0.5\linewidth]{imgs/volpath_1.png}
+\caption{How Figure~\ref{fig:volpath1_illustration} would be rendered like.}
+\label{fig:volpath1}
+\end{figure}
+
+\paragraph{Task (10\%).} You will implement the algorithm above in the \lstinline{vol_path_tracing_1} function in \lstinline{vol_path_tracing.h}. You might want to first look at the surface path tracing code in \lstinline{path_tracing.h} to understand lajolla's API better. Test your rendering on the scene \lstinline{scenes/volpath_test/volpath_test1.xml}. You should get an image that looks like Figure~\ref{fig:volpath1}.
+
+\paragraph{Question(s) (5\%).} Change the absorption parameters to zero in \lstinline{scenes/volpath_test/volpath_test1.xml}. What do you see? Why?
+
+\section{Single monochromatic homogeneous volume with absorption and single-scattering, no surface lighting}
+\begin{figure}
+\includegraphics[width=\linewidth]{imgs/single_scattering.pdf}
+\caption{The setup of our second volumetric renderer. Light can now scatter inside the medium once and we need to account for the phase function $rho$ and the extra transmittance $\exp{-\sigma_t t'}$ We need to integrate over the ray to account for all scattering.}
+\label{fig:volpath2_illustration}
+\end{figure}
+
+Our next renderer adds single scattering to the volume. We still assume:
+\begin{itemize}
+    \item There is only a single, homogeneous ($\sigma_a$ and $\sigma_s$ are constants over space) volume.
+    \item The surfaces in the scene only emit lights (with intensity $L_e$) and do not reflect/transmit lights.
+    \item The volume is monochromatic: the three color channels of $\sigma_s$ and $\sigma_a$ have the same values.
+\end{itemize}
+
+Now we need to solve the full radiative transfer equation (Equation~\ref{eq:rte}), except the spherical integral only recurse once:
+\begin{equation}
+L_{s1} = \int_{\mathcal{M}} \rho(\mathbf{p}(t), \omega, \omega') L_e(\mathbf{p}', \omega) \exp\left(-\sigma_t \left\| \mathbf{p}(t) - \mathbf{p}' \right\|\right) \frac{\left| \omega' \cdot \mathbf{n}_{\mathbf{p}'} \right|}{{\left\| \mathbf{p}(t) - \mathbf{p}' \right\|}^2} \text{visible}(\mathbf{p}(t), \mathbf{p}') \mathrm{d}\mathbf{p}',
+\end{equation}
+instead of integrating over the sphere $S^2$, we apply a change of variable to integrate over the scene manifold $\mathcal{M}$ over all points on surfaces $\mathbf{p}'$. $\frac{\left| \omega' \cdot \mathbf{n}_{\mathbf{p}'} \right|}{{\left\| \mathbf{p}(t) - \mathbf{p}' \right\|}^2} \text{visible}(\mathbf{p}(t), \mathbf{p}')$ is the Jacobian of the transformation and $\omega' = \frac{\mathbf{p}' - \mathbf{p}(t)}{\left\| \mathbf{p}' - \mathbf{p}(t) \right\|}$. $\exp\left(-\sigma_t \left\| \mathbf{p}(t) - \mathbf{p}' \right\|\right)$ is the transmittance between $\mathbf{p}(t)$ and $\mathbf{p}'(t)$ that represents energy loss due to absorption and out-scattering (hence it uses the extinction coefficient $\sigma_t = \sigma_a + \sigma_s$ instead of $\sigma_a$ or $\sigma_s$). $s1$ stands for ``scattering once''.
+
+The radiative transfer equation is then
+\begin{equation}
+\frac{\mathrm{d}}{\mathrm{d}t} L_2(\mathbf{p}(t), \omega) = -\sigma_t L_2(\mathbf{p}(t), \omega) + \sigma_a L_e(\mathbf{p}(t), \omega) + \sigma_s L_{s1}.
+\label{eq:rte_single_scattering}
+\end{equation}
+
+We no longer have a simple closed-form solution and have to resort to Monte Carlo sampling. To make the differential equation more familiar to us who are more used to Monte Carlo rendering, let's convert the equation above into an integral:
+\begin{equation}
+L_2(\mathbf{p}(0), \omega) = \int_{0}^{t_{\text{hit}}} \exp\left(-\sigma_t t \right) \sigma_s L_{s1} \mathrm{d}t + \exp\left(-\sigma_t t_{\text{hit}} \right) L_e(\mathbf{p}(t_{\text{hit}}))
+\label{eq:rte_single_scattering_integral_form}
+\end{equation}
+
+To sample this integral, we importance sample the transmittance $\exp\left(-sigma_t t\right)$. To do this we need to sample $t$ such that $p(t) \propto \exp\left(-\sigma_t t\right)$. This can be done by standard inverse tranform sampling. We first integrate $\exp\left(-\sigma_t t \right)$:
+\begin{equation}
+\int_{0}^{t} \exp\left(-\sigma_t s\right) \mathrm{d}s = -\frac{exp(-\sigma_t * t)}{\sigma_t} + \frac{1}{\sigma_t}.
+\end{equation}
+We thus know that $p(t) = \sigma_t\exp\left(-\sigma_t t\right)$ (setting $t \rightarrow \infty$ we can get our normalization factor). Integrating $p(t)$ to get the CDF we get
+\begin{equation}
+T_{\text{exp}}^{-1}(t) = -\exp\left(-\sigma_t * t\right) + 1 = u.
+\end{equation}
+Inverting $T_{\text{exp}}^{-1}$ we get
+\begin{equation}
+t = \frac{\log\left(1 - u\right)}{-\sigma_t}.
+\end{equation}
+
+Now, note that our integral is only in $[0, t_{\text{hit}}]$. Our sampling above can generate $t > t_{\text{hit}}$. In this case, we hit a surface and account for the surface emission $L_e(\mathbf{p}(t_{\text{hit}}))$ in Equation~\ref{eq:rte_single_scattering_integral_form}. We need to account for the probability of that happen:
+\begin{equation}
+P(t \geq t_{\text{hit}}) = \int_{t_{\text{hit}}^{\infty} \sigma_t\exp\left(-\sigma_t t\right)} = \exp\left(-sigma_t * t_{\text{hit}}\right)
+\end{equation}
+
+Thus our rendering algorithm (that generate a sample for a pixel) looks like this:
+\begin{lstlisting}[language=python]
+def L(screen_pos, rng):
+  camera_ray = sample_primary(camera, screen_pos, rng)
+  isect = intersect(scene, camera_ray)
+  if isect:
+    u = next(rng) # u \in [0, 1]
+    t = (1 - u) / sigma_t
+    if t < isect.t_hit:
+        trans_pdf = exp(-sigma_t * t) * sigma_t
+        transmittance = exp(-sigma_t * t)
+        # compute L_s1 using Monte Carlo sampling
+        p = camera_ray.org + t * camera_ray.dir
+        # Equation 7
+        L_s1_estimate, L_s1_pdf = L_s1(p, sample_point_on_light(rng))
+        return (transmittance / trans_pdf) * (L_s1_estimate / L_s1_pdf)
+    else:
+        # hit a surface, account for surface emission
+        trans_pdf = exp(-sigma_t * isect.t_hit)
+        transmittance = exp(-sigma_t * isect.t_hit)
+        Le = 0
+        if is_light(isect):
+          Le = isect.Le
+        return (transmittance / trans_pdf) * Le
+  return 0
+\end{lstlisting}
+
+\begin{figure}
+\centering
+\includegraphics[width=0.5\linewidth]{imgs/volpath_2.png}
+\caption{How Figure~\ref{fig:volpath2_illustration} would be rendered like. Now there is scattering, the area surrounding the solid sphere can have non-zero radiance.}
+\label{fig:volpath2}
+\end{figure}
+
+\paragraph{Task (10\%).} You will implement the algorithm above in the \lstinline{vol_path_tracing_2} function in \lstinline{vol_path_tracing.h}. For evaluating the phase function $\rho$, use the \lstinline{eval} function in \lstinline{phase_function.h}.
+Test your rendering on the scene \lstinline{scenes/volpath_test/volpath_test2.xml}. You should get an image that looks like Figure~\ref{fig:volpath2}. Note that the rendered image will be a bit noisy even a high sampling count. This is expected, since we are not importance sampling the geometry term $\frac{\left| \omega' \cdot \mathbf{n}_{\mathbf{p}'} \right|}{{\left\| \mathbf{p}(t) - \mathbf{p}' \right\|}^2} \text{visible}(\mathbf{p}(t), \mathbf{p}')$ along $t$. Such importance sampling scheme is called the \emph{equiangular sampling}~\cite{Kulla:2012:IST} (or \emph{track-length estimator} in nuclear engineering~\cite{Rief:1984:TLE}). Equiangular sampling is out of the scope for this homework, but you're free to implement it!
+
+\paragraph{Question(s) (5\%).} Play with the parameters $\sigma_s$ and $\sigma_a$, how do they affect the final image? (Note that we assume monochromatic volumes, so don't set the parameters to be different for each channel.)
+
+\paragraph{Bonus (25\%).} Implement the \emph{equiangular sampling}~\cite{Kulla:2012:IST} sampling strategy. Potentially combine it with the transmittance sampling using multiple importance sampling. (I do not recommend you implement this until you've finished the whole homework.)
+
+\bibliographystyle{plain}
+\bibliography{refs}
 
 \end{document}
