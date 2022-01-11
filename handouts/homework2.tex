@@ -166,7 +166,7 @@ def L(screen_pos, rng):
 \label{fig:volpath1}
 \end{figure}
 
-\paragraph{Task (10\%).} You will implement the algorithm above in the \lstinline{vol_path_tracing_1} function in \lstinline{vol_path_tracing.h}. You might want to first look at the surface path tracing code in \lstinline{path_tracing.h} to understand lajolla's API better. Test your rendering on the scene \lstinline{scenes/volpath_test/volpath_test1.xml}. You should get an image that looks like Figure~\ref{fig:volpath1}.
+\paragraph{Task (10\%).} You will implement the algorithm above in the \lstinline{vol_path_tracing_1} function in \lstinline{vol_path_tracing.h}. You might want to first look at the surface path tracing code in \lstinline{path_tracing.h} to understand lajolla's API better. Test your rendering using the scene \lstinline{scenes/volpath_test/volpath_test1.xml}. You should get an image that looks like Figure~\ref{fig:volpath1}.
 
 \paragraph{Ray differentials.} In the surface path tracer, lajolla uses ray differential for texture lookup. Determining ray differentials for volumetric scattering is actually an unsolved problem. For this homework, we will just disable ray differentials by setting it to 0:
 \begin{lstlisting}[language=c++]
@@ -180,11 +180,11 @@ RayDifferential ray_diff = RayDifferential{Real(0), Real(0)};
 \section{Single monochromatic homogeneous volume with absorption and single-scattering, no surface lighting}
 \begin{figure}
 \includegraphics[width=\linewidth]{imgs/single_scattering.pdf}
-\caption{The setup of our second volumetric renderer. Light can now scatter inside the medium once and we need to account for the phase function $rho$ and the extra transmittance $\exp{-\sigma_t t'}$ We need to integrate over the ray to account for all scattering.}
+\caption{The setup of our second volumetric renderer. Light can now scatter inside the medium once and we need to account for the phase function $\rho$ and the extra transmittance $\exp{-\sigma_t t'}$ We need to integrate over the ray to account for all scattering.}
 \label{fig:volpath2_illustration}
 \end{figure}
 
-Our next renderer adds single scattering to the volume. We still assume:
+Our next renderer adds single scattering to the volume (Figure~\ref{fig:volpath2_illustration}). We still assume:
 \begin{itemize}
     \item There is only a single, homogeneous ($\sigma_a$ and $\sigma_s$ are constants over space) volume.
     \item The surfaces in the scene only emit lights (with intensity $L_e$) and do not reflect/transmit lights.
@@ -258,12 +258,12 @@ def L(screen_pos, rng):
 \begin{figure}
 \centering
 \includegraphics[width=0.5\linewidth]{imgs/volpath_2.png}
-\caption{How Figure~\ref{fig:volpath2_illustration} would be rendered like. Now there is scattering, the area surrounding the solid sphere can have non-zero radiance.}
+\caption{How a scene like the setup in Figure~\ref{fig:volpath2_illustration} would be rendered like. Now there is scattering, the area surrounding the solid sphere can have non-zero radiance.}
 \label{fig:volpath2}
 \end{figure}
 
 \paragraph{Task (10\%).} You will implement the algorithm above in the \lstinline{vol_path_tracing_2} function in \lstinline{vol_path_tracing.h}. For evaluating the phase function $\rho$, use the \lstinline{eval} function in \lstinline{phase_function.h}.
-Test your rendering on the scene \lstinline{scenes/volpath_test/volpath_test2.xml}. You should get an image that looks like Figure~\ref{fig:volpath2}. Note that the rendered image will be a bit noisy even a high sampling count. This is expected, since we are not importance sampling the geometry term $\frac{\left| \omega' \cdot \mathbf{n}_{\mathbf{p}'} \right|}{{\left\| \mathbf{p}(t) - \mathbf{p}' \right\|}^2} \text{visible}(\mathbf{p}(t), \mathbf{p}')$ along $t$. Such importance sampling scheme is called the \emph{equiangular sampling}~\cite{Kulla:2012:IST} (or \emph{track-length estimator} in nuclear engineering~\cite{Rief:1984:TLE}). Equiangular sampling is out of the scope for this homework, but you're free to implement it!
+Test your rendering using the scene \lstinline{scenes/volpath_test/volpath_test2.xml}. You should get an image that looks like Figure~\ref{fig:volpath2}. Note that the rendered image will be a bit noisy even a high sampling count. This is expected, since we are not importance sampling the geometry term $\frac{\left| \omega' \cdot \mathbf{n}_{\mathbf{p}'} \right|}{{\left\| \mathbf{p}(t) - \mathbf{p}' \right\|}^2} \text{visible}(\mathbf{p}(t), \mathbf{p}')$ along $t$. Such importance sampling scheme is called the \emph{equiangular sampling}~\cite{Kulla:2012:IST} (or \emph{track-length estimator} in nuclear engineering~\cite{Rief:1984:TLE}). Equiangular sampling is out of the scope for this homework, but you're free to implement it!
 
 \paragraph{Question(s) (5\%).} Play with the parameters $\sigma_s$ and $\sigma_a$, how do they affect the final image? Why? (Note that we assume monochromatic volumes, so don't set the parameters to be different for each channel.)
 
@@ -370,7 +370,7 @@ def L(screen_pos, rng):
 \end{figure}
 
 \paragraph{Task (10\%).} You will implement the algorithm above in the \lstinline{vol_path_tracing_3} function in \lstinline{vol_path_tracing.h}. For sampling the phase function $\rho$, use the \lstinline{sample_phase_function} and \lstinline{pdf_sample_phase} functions in \lstinline{phase_function.h}.
-Test your rendering on the scene \lstinline{scenes/volpath_test/volpath_test3.xml}. You should get an image that looks like Figure~\ref{fig:volpath3}. Again, the image can be a bit noisy since we have not implemented next event estimation.
+Test your rendering using the scene \lstinline{scenes/volpath_test/volpath_test3.xml}. You should get an image that looks like Figure~\ref{fig:volpath3}. Again, the image can be a bit noisy since we have not implemented next event estimation.
 
 \paragraph{Question(s) (5\%).} Play with the parameters $\sigma_s$, $\sigma_a$ of different volumes, and change \lstinline{max_depth}, how do they affect the final image? Why?
 
