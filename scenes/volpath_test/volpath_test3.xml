@@ -2,7 +2,7 @@
 
 <scene version="0.5.0">
 	<integrator type="volpath">
-		<integer name="maxDepth" value="-1"/>
+		<integer name="maxDepth" value="6"/>
 		<integer name="version" value="3"/>
 	</integrator>
 
@@ -19,8 +19,8 @@
 	</medium>
 
 	<shape type="sphere">
-		<point name="center" x="0" y="0" z="0"/>
-		<float name="radius" value="1"/>
+		<point name="center" x="-0.5" y="-0.5" z="0"/>
+		<float name="radius" value="0.75"/>
 
 		<ref name="interior" id="medium1"/>
 		<ref name="exterior" id="medium2"/>
@@ -28,10 +28,10 @@
 
 	<shape type="sphere">
 		<point name="center" x="1" y="1" z="-1"/>
-		<float name="radius" value="0.25"/>
+		<float name="radius" value="1"/>
 
 		<emitter type="area">
-			<spectrum name="radiance" value="100"/>
+			<spectrum name="radiance" value="10"/>
 		</emitter>
 
 		<ref name="exterior" id="medium2"/>
@@ -49,7 +49,7 @@
 		</transform>
 
 		<sampler type="independent">
-			<integer name="sampleCount" value="8192"/>
+			<integer name="sampleCount" value="1024"/>
 		</sampler>
 
 		<film type="hdrfilm" id="film">

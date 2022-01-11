@@ -2,11 +2,11 @@
 
 \begin{document}
 
-\header{1}{Volumetric Path Tracing}
+\header{2}{Volumetric Path Tracing (tentative draft)}
 
 \begin{figure}[h]
     \includegraphics[width=\linewidth]{imgs/colored_smoke.png}
-    \caption{A heterogeneous volume with spectrally varying density over space, rendered with multiple-scattering. Smoke data generated using Wenzel Jakob's \href{http://www.mitsuba-renderer.org/misc.html}{fsolver}.}
+    \caption{A heterogeneous volume with spectrally varying density over space, rendered with multiple-scattering. Smoke data are generated using Wenzel Jakob's \href{http://www.mitsuba-renderer.org/misc.html}{fsolver}.}
     \label{fig:gallery}
 \end{figure}
 
@@ -168,6 +168,13 @@ def L(screen_pos, rng):
 
 \paragraph{Task (10\%).} You will implement the algorithm above in the \lstinline{vol_path_tracing_1} function in \lstinline{vol_path_tracing.h}. You might want to first look at the surface path tracing code in \lstinline{path_tracing.h} to understand lajolla's API better. Test your rendering on the scene \lstinline{scenes/volpath_test/volpath_test1.xml}. You should get an image that looks like Figure~\ref{fig:volpath1}.
 
+\paragraph{Ray differentials.} In the surface path tracer, lajolla uses ray differential for texture lookup. Determining ray differentials for volumetric scattering is actually an unsolved problem. For this homework, we will just disable ray differentials by setting it to 0:
+\begin{lstlisting}[language=c++]
+RayDifferential ray_diff = RayDifferential{Real(0), Real(0)};
+\end{lstlisting}
+
+\paragraph{Environment maps.} Throughout the homework, we will assume there is no environment map in the scene. 
+
 \paragraph{Question(s) (5\%).} Change the absorption parameters to zero in \lstinline{scenes/volpath_test/volpath_test1.xml}. What do you see? Why?
 
 \section{Single monochromatic homogeneous volume with absorption and single-scattering, no surface lighting}
@@ -182,23 +189,24 @@ Our next renderer adds single scattering to the volume. We still assume:
     \item There is only a single, homogeneous ($\sigma_a$ and $\sigma_s$ are constants over space) volume.
     \item The surfaces in the scene only emit lights (with intensity $L_e$) and do not reflect/transmit lights.
     \item The volume is monochromatic: the three color channels of $\sigma_s$ and $\sigma_a$ have the same values.
+    \item Light only scatter (changes direction) once in the volume.
 \end{itemize}
 
 Now we need to solve the full radiative transfer equation (Equation~\ref{eq:rte}), except the spherical integral only recurse once:
 \begin{equation}
-L_{s1} = \int_{\mathcal{M}} \rho(\mathbf{p}(t), \omega, \omega') L_e(\mathbf{p}', \omega) \exp\left(-\sigma_t \left\| \mathbf{p}(t) - \mathbf{p}' \right\|\right) \frac{\left| \omega' \cdot \mathbf{n}_{\mathbf{p}'} \right|}{{\left\| \mathbf{p}(t) - \mathbf{p}' \right\|}^2} \text{visible}(\mathbf{p}(t), \mathbf{p}') \mathrm{d}\mathbf{p}',
+L_{\text{scatter}1}(\mathbf{p}, \omega) = \int_{\mathcal{M}} \rho(\mathbf{p}(t), \omega, \omega') L_e(\mathbf{p}', \omega) \exp\left(-\sigma_t \left\| \mathbf{p}(t) - \mathbf{p}' \right\|\right) \frac{\left| \omega' \cdot \mathbf{n}_{\mathbf{p}'} \right|}{{\left\| \mathbf{p}(t) - \mathbf{p}' \right\|}^2} \text{visible}(\mathbf{p}(t), \mathbf{p}') \mathrm{d}\mathbf{p}',
 \end{equation}
 instead of integrating over the sphere $S^2$, we apply a change of variable to integrate over the scene manifold $\mathcal{M}$ over all points on surfaces $\mathbf{p}'$. $\frac{\left| \omega' \cdot \mathbf{n}_{\mathbf{p}'} \right|}{{\left\| \mathbf{p}(t) - \mathbf{p}' \right\|}^2} \text{visible}(\mathbf{p}(t), \mathbf{p}')$ is the Jacobian of the transformation and $\omega' = \frac{\mathbf{p}' - \mathbf{p}(t)}{\left\| \mathbf{p}' - \mathbf{p}(t) \right\|}$. $\exp\left(-\sigma_t \left\| \mathbf{p}(t) - \mathbf{p}' \right\|\right)$ is the transmittance between $\mathbf{p}(t)$ and $\mathbf{p}'(t)$ that represents energy loss due to absorption and out-scattering (hence it uses the extinction coefficient $\sigma_t = \sigma_a + \sigma_s$ instead of $\sigma_a$ or $\sigma_s$). $s1$ stands for ``scattering once''.
 
 The radiative transfer equation is then
 \begin{equation}
-\frac{\mathrm{d}}{\mathrm{d}t} L_2(\mathbf{p}(t), \omega) = -\sigma_t L_2(\mathbf{p}(t), \omega) + \sigma_a L_e(\mathbf{p}(t), \omega) + \sigma_s L_{s1}.
+\frac{\mathrm{d}}{\mathrm{d}t} L_2(\mathbf{p}(t), \omega) = -\sigma_t L_2(\mathbf{p}(t), \omega) + \sigma_a L_e(\mathbf{p}(t), \omega) + \sigma_s L_{\text{scatter}1}(\mathbf{p}, \omega).
 \label{eq:rte_single_scattering}
 \end{equation}
 
 We no longer have a simple closed-form solution and have to resort to Monte Carlo sampling. To make the differential equation more familiar to us who are more used to Monte Carlo rendering, let's convert the equation above into an integral:
 \begin{equation}
-L_2(\mathbf{p}(0), \omega) = \int_{0}^{t_{\text{hit}}} \exp\left(-\sigma_t t \right) \sigma_s L_{s1} \mathrm{d}t + \exp\left(-\sigma_t t_{\text{hit}} \right) L_e(\mathbf{p}(t_{\text{hit}}))
+L_2(\mathbf{p}(0), \omega) = \int_{0}^{t_{\text{hit}}} \exp\left(-\sigma_t t \right) \sigma_s L_{\text{scatter}1}(\mathbf{p}, \omega) \mathrm{d}t + \exp\left(-\sigma_t t_{\text{hit}} \right) L_e(\mathbf{p}(t_{\text{hit}}))
 \label{eq:rte_single_scattering_integral_form}
 \end{equation}
 
@@ -257,9 +265,115 @@ def L(screen_pos, rng):
 \paragraph{Task (10\%).} You will implement the algorithm above in the \lstinline{vol_path_tracing_2} function in \lstinline{vol_path_tracing.h}. For evaluating the phase function $\rho$, use the \lstinline{eval} function in \lstinline{phase_function.h}.
 Test your rendering on the scene \lstinline{scenes/volpath_test/volpath_test2.xml}. You should get an image that looks like Figure~\ref{fig:volpath2}. Note that the rendered image will be a bit noisy even a high sampling count. This is expected, since we are not importance sampling the geometry term $\frac{\left| \omega' \cdot \mathbf{n}_{\mathbf{p}'} \right|}{{\left\| \mathbf{p}(t) - \mathbf{p}' \right\|}^2} \text{visible}(\mathbf{p}(t), \mathbf{p}')$ along $t$. Such importance sampling scheme is called the \emph{equiangular sampling}~\cite{Kulla:2012:IST} (or \emph{track-length estimator} in nuclear engineering~\cite{Rief:1984:TLE}). Equiangular sampling is out of the scope for this homework, but you're free to implement it!
 
-\paragraph{Question(s) (5\%).} Play with the parameters $\sigma_s$ and $\sigma_a$, how do they affect the final image? (Note that we assume monochromatic volumes, so don't set the parameters to be different for each channel.)
+\paragraph{Question(s) (5\%).} Play with the parameters $\sigma_s$ and $\sigma_a$, how do they affect the final image? Why? (Note that we assume monochromatic volumes, so don't set the parameters to be different for each channel.)
 
 \paragraph{Bonus (25\%).} Implement the \emph{equiangular sampling}~\cite{Kulla:2012:IST} sampling strategy. Potentially combine it with the transmittance sampling using multiple importance sampling. (I do not recommend you implement this until you've finished the whole homework.)
+
+\section{Multiple monochromatic homogeneous volumes with absorption and multiple-scattering using only phase function sampling, no surface lighting}
+\begin{figure}
+\includegraphics[width=\linewidth]{imgs/multiple_scattering.pdf}
+\caption{Setup of our third volumetric renderer.}
+\label{fig:volpath3_illustration}
+\end{figure}
+Our next volumetric path tracer would start to be a bit complicated. This time we will consider multiple scattering between multiple volumes (Figure~\ref{fig:volpath3_illustration}). We make the following assumptions:
+\begin{itemize}
+    \item There are multiple homogeneous ($\sigma_a$ and $\sigma_s$ are constants over space) volumes.
+    \item The surfaces in the scene only emit lights (with intensity $L_e$) and do not reflect/transmit lights.
+    \item The volume is monochromatic: the three color channels of $\sigma_s$ and $\sigma_a$ have the same values.
+    \item Light can scatter (changes direction) multiple times in the volume, but we only sample the scattering by sampling the phase function $\rho$.
+\end{itemize}
+
+Under this assumption, our volumetric integral becomes:
+\begin{equation}
+L_3(\mathbf{p}(0), \omega) = \int_{0}^{t_{\text{hit}}} \exp\left(-\sigma_t t \right) \sigma_s L_{\text{scatter}}(\mathbf{p}, \omega) \mathrm{d}t + \exp\left(-\sigma_t t_{\text{hit}} \right) L_e(\mathbf{p}(t_{\text{hit}})),
+\label{eq:rte_multiple_scattering_integral_form}
+\end{equation}
+
+where $L_{\text{scatter}}$ is recursive:
+\begin{equation}
+L_{\text{scatter}}(\mathbf{p}, \omega) = \int_{S^2} \rho(\mathbf{p}(t), \omega, \omega') L_3(\mathbf{p}(t), \omega') \mathrm{d}\omega'.
+\end{equation}
+
+Our strategy of sampling the integral $L_3$ is as follows: we first generate a distance $t$ by sampling the transmittance as previous. If $t < t_{\text{hit}}$, we need to evaluate $L_{\text{scatter}}$. We do so by sampling the phase function $\rho$ for a direction $\omega'$. We then sample the next distance for evaluating the $L_3$ inside the $S^2$ integral. If we hit a surface ($t' \geq t'_{\text{hit}}$ for some distance $t'$ along our sampling), we include the emission $L_e$ and terminate.
+
+\paragraph{Number of bounces.} We use the \lstinline{scene.options.max_depth} parameter to control the number of bounces. If \lstinline{max_depth = -1}, then we can bounce infinite amount of time. Otherwise, a light path can have at most \lstinline{max_depth + 1} vertices, including the camera vertex and the light vertex. \lstinline{max_depth = 2} corresponds to the single scattering case in the previous section.
+
+\paragraph{Index-matched surfaces.} Sometimes we will hit surfaces that have no materials assigned (\lstinline{material_id = -1}). For these surfaces, we need to pass through them. Passing through an index-matched surface counts as one bounce.
+
+\paragraph{Russian roulette.} We use the \lstinline{scene.options.rr_depth} to control the Russian roulette behavior. We initialize Russian roulette when a light path has \lstinline{rr_depth + 1} vertices.
+
+The pseudo code looks like this:
+\begin{lstlisting}[language=python]
+def L(screen_pos, rng):
+  ray = sample_primary(camera, screen_pos, rng)
+  current_medium = camera.medium
+
+  current_path_throughput = 1
+  radiance = 0
+  bounces = 0
+  while True
+    scatter = False
+    isect = intersect(scene, ray)
+    # isect might not intersect a surface, but we might be in a volume
+    transmittance = 1
+    trans_pdf = 1
+    if current_medium:
+      # sample t s.t. p(t) ~ exp(-sigma_t * t)
+      # compute transmittance and trans_pdf
+      # if t < t_hit, set scatter = True
+      # ...
+      ray.org = ray.org + t * ray.dir
+    
+    current_path_throughput *= (transmittance / trans_pdf)
+    if not scatter:
+      # reach a surface, include emission
+      radiance += current_path_throughput * Le(isect)
+
+    if bounces == max_depth - 1 and max_depth != -1:
+      # reach maximum bounces
+      break
+
+    if not scatter and isect:
+      if isect.material_id == -1:
+        # index-matching interface, skip through it
+        current_medium = update_medium(ray, isect)
+        continue
+
+    # sample next direct & update path throughput
+    if scatter:
+      next_dir = sample_phase_function(-ray.dir, rng)
+      current_path_throughput *=
+        (phase_function(-ray.dir, next_dir) / sample_phase_pdf(-ray.dir, next_dir)) * sigma_s
+    else:
+      # Hit a surface -- don't need to deal with this yet
+      break
+    
+    # Russian roulette
+    rr_prob = 1
+    if (bounces >= rr_depth):
+      rr_prob = min(current_path_throughput, 0.95)
+      if next(rng) > rr_prob:
+        break
+      else:
+        current_path_throughput /= rr_prob
+    
+    bounces += 1
+
+  return radiance
+\end{lstlisting}
+
+\begin{figure}
+\centering
+\includegraphics[width=0.5\linewidth]{imgs/volpath_3.png}
+\caption{How Figure~\ref{fig:volpath3_illustration} would be rendered like. Left top is a light source, and bottom right is an volume with index-matched interface.}
+\label{fig:volpath3}
+\end{figure}
+
+\paragraph{Task (10\%).} You will implement the algorithm above in the \lstinline{vol_path_tracing_3} function in \lstinline{vol_path_tracing.h}. For sampling the phase function $\rho$, use the \lstinline{sample_phase_function} and \lstinline{pdf_sample_phase} functions in \lstinline{phase_function.h}.
+Test your rendering on the scene \lstinline{scenes/volpath_test/volpath_test3.xml}. You should get an image that looks like Figure~\ref{fig:volpath3}. Again, the image can be a bit noisy since we have not implemented next event estimation.
+
+\paragraph{Question(s) (5\%).} Play with the parameters $\sigma_s$, $\sigma_a$ of different volumes, and change \lstinline{max_depth}, how do they affect the final image? Why?
+
 
 \bibliographystyle{plain}
 \bibliography{refs}
