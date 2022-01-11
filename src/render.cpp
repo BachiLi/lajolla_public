@@ -136,7 +136,11 @@ Image3 vol_path_render(const Scene &scene) {
                 Spectrum radiance = make_zero_spectrum();
                 int spp = scene.options.samples_per_pixel;
                 for (int s = 0; s < spp; s++) {
-                    radiance += f(scene, x, y, rng);
+                    Spectrum L = f(scene, x, y, rng);
+                    if (isfinite(L)) {
+                        // Hacky: exclude NaNs in the rendering.
+                        radiance += L;
+                    }
                 }
                 img(x, y) = radiance / Real(spp);
             }
