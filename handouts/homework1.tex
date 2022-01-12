@@ -175,7 +175,7 @@ where $F_m$ is the Fresnel reflection, $D_m$ is the probability density of the d
 
 For the Fresnel term $F_m$, Burley uses the Schlick approximation:
 \begin{equation}
-F_m = \text{baseColor} + (1 - \text{baseColor}) (1 - |n \cdot \omega_{\text{out}}|)^5.
+F_m = \text{baseColor} + (1 - \text{baseColor}) (1 - |h \cdot \omega_{\text{out}}|)^5.
 \end{equation}
 The reason why they use an approximation instead of the true Fresnel equation is not just for the performance. For metallic surfaces, or \emph{conductors}, Fresnel equation requires us to have the complex index of refraction of the conductor for each wavelength. This parameter is not only unintuitive, but nor is it physically accurate when we only consider the RGB spectrum.\footnote{See \href{http://renderwonk.com/publications/mam2019/}{``Fresnel Equations Considered Harmful''} by Naty Hoffman. \href{https://www.youtube.com/watch?v=kEcDbl7eS0w}{Here} is his presentation video.} 
 
