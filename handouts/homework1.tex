@@ -177,7 +177,9 @@ For the Fresnel term $F_m$, Burley uses the Schlick approximation:
 \begin{equation}
 F_m = \text{baseColor} + (1 - \text{baseColor}) (1 - |h \cdot \omega_{\text{out}}|)^5.
 \end{equation}
-The reason why they use an approximation instead of the true Fresnel equation is not just for the performance. For metallic surfaces, or \emph{conductors}, Fresnel equation requires us to have the complex index of refraction of the conductor for each wavelength. This parameter is not only unintuitive, but nor is it physically accurate when we only consider the RGB spectrum.\footnote{See \href{http://renderwonk.com/publications/mam2019/}{``Fresnel Equations Considered Harmful''} by Naty Hoffman. \href{https://www.youtube.com/watch?v=kEcDbl7eS0w}{Here} is his presentation video.} 
+Note that the Fresnel term depends on the micronormal 
+$h = \frac{\omega_{\text{in}} + \omega_{\text{out}}}{\left| \omega_{\text{in}} + \omega_{\text{out}} \right|}$ 
+instead of the macro shading normal $n$. The reason why they use an approximation instead of the true Fresnel equation is not just for the performance. For metallic surfaces, or \emph{conductors}, Fresnel equation requires us to have the complex index of refraction of the conductor for each wavelength. This parameter is not only unintuitive, but nor is it physically accurate when we only consider the RGB spectrum.\footnote{See \href{http://renderwonk.com/publications/mam2019/}{``Fresnel Equations Considered Harmful''} by Naty Hoffman. \href{https://www.youtube.com/watch?v=kEcDbl7eS0w}{Here} is his presentation video.} 
 
 For the normal distribution function $D_m$, Burley uses the anisotropic Trowbridge-Reitz distribution~\cite{Trowbridge:1975:AIR}, popularized by Walter et al.~\cite{Walter:2007:MMR} in graphics and it is known as \emph{GGX} (Ground Glass X):
 \begin{equation}
@@ -248,7 +250,7 @@ f_{\text{clearcoat}} = \frac{F_c D_c G_c}{4 |n \cdot \omega_{\text{in}}|},
 where
 \begin{equation}
 \begin{aligned}
-F_c &= R_0(\eta = 1.5) + (1 - R_0(\eta = 1.5)) (1 - |n \cdot \omega_{\text{out}}|^5) \\
+F_c &= R_0(\eta = 1.5) + (1 - R_0(\eta = 1.5)) \left(1 - |h \cdot \omega_{\text{out}}|\right)^5 \\
 D_c &= \frac{\alpha_g^2}{\pi \log(\alpha_g^2) \left( 1 + (\alpha_g^2 - 1) \left(h^l_z\right)^2 \right)} \\
 G_c &= G_{c}(\omega_{\text{in}}) G_{c}(\omega_{\text{out}}) \\
 G_{c}(\omega_{\text{in}}) &= \frac{1}{1 + \Lambda_c(\omega)} \\
@@ -372,7 +374,7 @@ Try out the scene \lstinline{scenes/disney_bsdf_test/disney_glass.xml} to see ho
 Materials such as clothes often exhibit strong responses at grazing angles. To compensate for this, Burley adds another component called the \emph{sheen} BRDF. Anything related to grazing angles can be done by hacking the Fresnel response (just like $f_{\text{diffuse}}$). The sheen BRDF is again a modified Schlick Fresnel:
 \begin{equation}
 \begin{aligned}
-f_{\text{sheen}} &= C_{\text{sheen}} (1 - |h \cdot out|)^5 |n \cdot \omega_{\text{out}}| \\
+f_{\text{sheen}} &= C_{\text{sheen}} (1 - |h \cdot \omega_{\text{out}}|)^5 |n \cdot \omega_{\text{out}}| \\
 C_{\text{sheen}} &= \left(1 - \text{sheenTint}\right) + \text{sheenTint} \cdot C_{\text{tint}} \\
 C_{\text{tint}} &= \text{baseColor} / \text{luminance}(\text{baseColor}) \text{ if } \text{luminance}(\text{baseColor}) > 0 \text{ else } 1
 \end{aligned}.
