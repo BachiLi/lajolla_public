@@ -244,7 +244,7 @@ TriangleMesh load_serialized(const fs::path &filename,
     }
 
     mesh.indices.resize(triangle_count);
-    for (int i = 0; i < triangle_count; i++) {
+    for (size_t i = 0; i < triangle_count; i++) {
         int i0, i1, i2;
         zs.read(&i0, sizeof(int));
         zs.read(&i1, sizeof(int));

@@ -63,12 +63,12 @@ inline int insert_image3(TexturePool &pool, const std::string &texture_name, con
 }
 
 inline const Mipmap1 &get_img1(const TexturePool &pool, int texture_id) {
-    assert(texture_id >= 0 && texture_id < pool.image1s.size());
+    assert(texture_id >= 0 && texture_id < (int)pool.image1s.size());
     return pool.image1s[texture_id];
 }
 
 inline const Mipmap3 &get_img3(const TexturePool &pool, int texture_id) {
-    assert(texture_id >= 0 && texture_id < pool.image3s.size());
+    assert(texture_id >= 0 && texture_id < (int)pool.image3s.size());
     return pool.image3s[texture_id];
 }
 

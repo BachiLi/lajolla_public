@@ -42,3 +42,6 @@ build/
 
 # obj files in scenes directory
 !scenes/**/*.obj
+
+#vscode related
+.vscode

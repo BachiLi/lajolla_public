@@ -1,6 +1,7 @@
 #pragma once
 
 #include "lajolla.h"
+#include <math.h>
 #include <cmath>
 
 template <typename T>

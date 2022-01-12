@@ -79,14 +79,14 @@ inline Vector3 integrate_XYZ(const std::vector<std::pair<Real, Real>> &data) {
     for (Real wavelength = wavelength_beg; wavelength <= wavelength_end; wavelength += Real(1)) {
         // assume the spectrum data is sorted by wavelength
         // move data_pos such that wavelength is between two data or at one end
-        while(data_pos < data.size() - 1 &&
+        while(data_pos < (int)data.size() - 1 &&
                !((data[data_pos].first <= wavelength &&
                   data[data_pos + 1].first > wavelength) ||
                  data[0].first > wavelength)) {
             data_pos += 1;
         }
         Real measurement = 0;
-        if (data_pos < data.size() - 1 && data[0].first <= wavelength) {
+        if (data_pos < (int)data.size() - 1 && data[0].first <= wavelength) {
             Real curr_data = data[data_pos].second;
             Real next_data = data[std::min(data_pos + 1, (int)data.size() - 1)].second;
             Real curr_wave = data[data_pos].first;
