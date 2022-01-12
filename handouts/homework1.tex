@@ -326,10 +326,11 @@ For the Fresnel $F_g$, Burley found that the Schlick approximation was very inac
 \begin{equation}
 \begin{aligned}
 F_g &= R_s^2 + R_p^2 \\
-R_s &= \frac{n \cdot \omega_{\text{in}} - \eta n \cdot \omega_{\text{out}}}{n \cdot \omega_{\text{in}} + \eta n \cdot \omega_{\text{out}}} \\
-R_p &= \frac{\eta n \cdot \omega_{\text{in}} - n \cdot \omega_{\text{out}}}{\eta n \cdot \omega_{\text{in}} + n \cdot \omega_{\text{out}}}
+R_s &= \frac{h \cdot \omega_{\text{in}} - \eta h \cdot \omega_{\text{out}}}{h \cdot \omega_{\text{in}} + \eta h \cdot \omega_{\text{out}}} \\
+R_p &= \frac{\eta h \cdot \omega_{\text{in}} - h \cdot \omega_{\text{out}}}{\eta h \cdot \omega_{\text{in}} + h \cdot \omega_{\text{out}}}
 \end{aligned}
 \end{equation}
+again, note that we use the half-vector $h$ instead of the normal $n$, due to the microfacet assumption.
 
 Sometimes we need to compute the Fresnel term solely using either the incoming direction or the outgoing direction. This can be done by using the Snell-Descartes law to convert $n \cdot \omega$ to the other one.
 
