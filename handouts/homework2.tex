@@ -166,7 +166,7 @@ def L(screen_pos, rng):
 \label{fig:volpath1}
 \end{figure}
 
-\paragraph{Task (10\%).} You will implement the algorithm above in the \lstinline{vol_path_tracing_1} function in \lstinline{vol_path_tracing.h}. You might want to first look at the surface path tracing code in \lstinline{path_tracing.h} to understand lajolla's API better. Test your rendering using the scene \lstinline{scenes/volpath_test/volpath_test1.xml}. You should get an image that looks like Figure~\ref{fig:volpath1}.
+\paragraph{Task (12\%).} You will implement the algorithm above in the \lstinline{vol_path_tracing_1} function in \lstinline{vol_path_tracing.h}. You might want to first look at the surface path tracing code in \lstinline{path_tracing.h} to understand lajolla's API better. Test your rendering using the scene \lstinline{scenes/volpath_test/volpath_test1.xml}. You should get an image that looks like Figure~\ref{fig:volpath1}.
 
 \paragraph{Ray differentials.} In the surface path tracer, lajolla uses ray differential for texture lookup. Determining ray differentials for volumetric scattering is actually an unsolved problem. For this homework, we will just disable ray differentials by setting it to 0:
 \begin{lstlisting}[language=c++]
@@ -262,7 +262,7 @@ def L(screen_pos, rng):
 \label{fig:volpath2}
 \end{figure}
 
-\paragraph{Task (10\%).} You will implement the algorithm above in the \lstinline{vol_path_tracing_2} function in \lstinline{vol_path_tracing.h}. For evaluating the phase function $\rho$, use the \lstinline{eval} function in \lstinline{phase_function.h}.
+\paragraph{Task (12\%).} You will implement the algorithm above in the \lstinline{vol_path_tracing_2} function in \lstinline{vol_path_tracing.h}. For evaluating the phase function $\rho$, use the \lstinline{eval} function in \lstinline{phase_function.h}.
 Test your rendering using the scene \lstinline{scenes/volpath_test/volpath_test2.xml}. You should get an image that looks like Figure~\ref{fig:volpath2}. Note that the rendered image will be a bit noisy even a high sampling count. This is expected, since we are not importance sampling the geometry term $\frac{\left| \omega' \cdot \mathbf{n}_{\mathbf{p}'} \right|}{{\left\| \mathbf{p}(t) - \mathbf{p}' \right\|}^2} \text{visible}(\mathbf{p}(t), \mathbf{p}')$ along $t$. Such importance sampling scheme is called the \emph{equiangular sampling}~\cite{Kulla:2012:IST} (or \emph{track-length estimator} in nuclear engineering~\cite{Rief:1984:TLE}). Equiangular sampling is out of the scope for this homework, but you're free to implement it!
 
 \paragraph{Question(s) (5\%).} Play with the parameters $\sigma_s$ and $\sigma_a$, how do they affect the final image? Why? (Note that we assume monochromatic volumes, so don't set the parameters to be different for each channel.)
@@ -340,7 +340,7 @@ def L(screen_pos, rng):
     if not scatter and isect:
       if isect.material_id == -1:
         # index-matching interface, skip through it
-        current_medium = update_medium(ray, isect)
+        current_medium = update_medium(ray, isect, medium)
         continue
 
     # sample next direct & update path throughput
@@ -364,6 +364,20 @@ def L(screen_pos, rng):
   return radiance
 \end{lstlisting}
 
+The pseudocode relies on the \lstinline{update_medium} routine, which update the current medium the ray lies in:
+\begin{lstlisting}[language=python]
+def update_medium(isect, ray, medium):
+    if (isect.interior_medium != isect.exterior_medium):
+        # At medium transition. Update medium.
+        if dot(ray.dir, isect.geometry_normal) > 0:
+            medium = isect.exterior_medium_id
+        else:
+            medium = isect.interior_medium_id
+    return medium
+\end{lstlisting}
+Note that we only update the medium if the intersection specifies a ``medium transition'', where the interior medium
+is different from the exterior medium.
+
 \begin{figure}
 \centering
 \includegraphics[width=0.5\linewidth]{imgs/volpath_3.png}
@@ -371,10 +385,143 @@ def L(screen_pos, rng):
 \label{fig:volpath3}
 \end{figure}
 
-\paragraph{Task (10\%).} You will implement the algorithm above in the \lstinline{vol_path_tracing_3} function in \lstinline{vol_path_tracing.h}. For sampling the phase function $\rho$, use the \lstinline{sample_phase_function} and \lstinline{pdf_sample_phase} functions in \lstinline{phase_function.h}.
+\paragraph{Task (12\%).} You will implement the algorithm above in the \lstinline{vol_path_tracing_3} function in \lstinline{vol_path_tracing.h}. For sampling the phase function $\rho$, use the \lstinline{sample_phase_function} and \lstinline{pdf_sample_phase} functions in \lstinline{phase_function.h}.
 Test your rendering using the scene \lstinline{scenes/volpath_test/volpath_test3.xml}. You should get an image that looks like Figure~\ref{fig:volpath3}. Again, the image can be a bit noisy since we have not implemented next event estimation.
 
 \paragraph{Question(s) (5\%).} Play with the parameters $\sigma_s$, $\sigma_a$ of different volumes, and change \lstinline{max_depth}, how do they affect the final image? Why?
+
+\section{Multiple monochromatic homogeneous volumes with absorption and multiple-scattering with both phase function sampling and next event estimation, no surface lighting}
+
+\begin{figure}
+\includegraphics[width=\linewidth]{imgs/volume_next_event_estimation.pdf}
+\caption{Our 4th volumetric path tracer adds next event estimation to the previous one. Given a point in the volume, we first select a point on the light, then we trace a shadow ray towards the light. Unlike normal next event estimation, where the visibility is a binary function, here the visibility is determined by the transmittance between the volume point and the light source. Our shadow ray needs to trace through index-matching surfaces and skip through them, account for the transmittance of all the media in between.}
+\label{fig:volpath4_illustration}
+\end{figure}
+
+Sampling only using the phase function is inefficient, especially when the light source is relatively small. Our fourth volumetric path tracer adds next event estimation to the sampling (Figure~\ref{fig:volpath4_illustration}) as our section title growing out of control. Instead of sampling from the phase function, we pick a point on the light source, and trace a shadow ray towards the light to account for the transmittance in between. We also need to account for \emph{index-matching surfaces} -- surfaces who don't have a material assigned to them (so the index of refraction is the same inside and outside). Our shadow ray will pass through all index-matching surfaces and account for all the transmittance in between.
+
+Mathematically, the next event estimation is a change of variable of the spherical single scattering integral:
+\begin{equation}
+\int_{S^2} \rho(\mathbf{p}, \omega, \omega') \tau(\mathbf{p}, \mathbf{p}') L_e(\mathbf{p}') \mathrm{d} \omega' =
+\int_{E} \rho(\mathbf{p}, \omega, \omega') \tau(\mathbf{p}, \mathbf{p}') L_e(\mathbf{p}') \frac{\mathbf{n}_{\mathbf{p}'}}{\left|\mathbf{p} - \mathbf{p}'\right|^2} \mathrm{d} \mathbf{p}',
+\end{equation}
+where $\mathbf{p}'$ are points on the light sources, $\tau(\mathbf{p}, \mathbf{p}')$ is the transmittance between point $\mathbf{p}$ and $\mathbf{p}'$. We also need to include the geometry term $\frac{\mathbf{n}_{\mathbf{p}'}}{\left|\mathbf{p} - \mathbf{p}'\right|^2}$ as the Jacobian of the change of variable.
+
+The pseudo code for the volumetric next event estimation looks like this:
+\begin{lstlisting}[language=python]
+def next_event_estimation(p, current_medium):
+    p_prime = sample_point_on_light(p)
+    # Compute transmittance to light. Skip through index-matching shapes.
+    T_light = 1
+    shadow_medium = current_medium
+    shadow_bounces = 0
+    p_trans_dir = 1 # for multiple importance sampling
+    while True:
+      shadow_ray = Ray(p, p_prime - p)
+      isect = intersect(scene, shadow_ray)
+      next_t = distance(p, p_prime)
+      if isect:
+        next_t = distance(p, isect.position)
+        # Account for the transmittance to next_t
+        if shadow_medium:
+            T_light *= exp(-sigma_t * next_t)
+            p_trans_dir *= exp(-sigma_t * next_t);
+
+        if not isect:
+            # Nothing is blocking, we're done
+            break
+        else:
+            # Something is blocking: is it an opaque surface?
+            if isect.material_id >= 0:
+                # we're blocked
+                return 0
+            # otherwise, it's an index-matching surface and
+            # we want to pass through -- this introduces
+            # one extra connection vertex
+            shadow_bounces += 1
+            if max_depth != -1 and bounces + shadow_bounces >= max_depth:
+                # Reach the max no. of vertices
+                return 0
+
+            shadow_medium = update_medium(isect, ray, shadow_medium)
+            p = p + next_t * dir_light
+
+    if T_light > 0:
+        # Compute T_light * G * f * L & pdf_nee
+        # ...
+        contrib = T_light * G * f * L / pdf_nee
+        # Multiple importance sampling: it's also possible
+        # that a phase function sampling + multiple exponential sampling
+        # will reach the light source.
+        # We also need to multiply with G to convert phase function PDF to area measure.
+        pdf_phase = pdf_sample_phase(phase_function, dir_view, dir_light) * G * p_trans_dir
+        # power heuristics
+        w = (pdf_nee * pdf_nee) / (pdf_nee * pdf_nee + pdf_phase * pdf_phase)
+        return w * contrib
+    return 0
+\end{lstlisting}
+
+Then we can put \lstinline{next_event_estimation()} in our previous code and include its contribution. Remember to multiply the result of next event estimation with the transmittance from the previous path vertex to $p$ and $\sigma_s(\mathbf{p})$.
+
+Next, we need to include the multiple importance sampling weight for phase function sampling as well. Previously we included those contribution whenever our path hits a light source:
+\begin{lstlisting}[language=python]
+    if not scatter:
+      # reach a surface, include emission
+      radiance += current_path_throughput * Le(isect)
+\end{lstlisting}
+
+This time, we need to multiply the contribution with the multiple importance sampling weight $\frac{p_{\text{phase}}^2}{p_{\text{phase}}^2 + p_{\text{nee}}^2}$ -- how do we get those values? The problem is that the quantities that are required for computing these two PDFs might exist several bounces ago, since in our main loop in \lstinline{L} we skip through index-matching surfaces. My strategy for resolving this is to cache the necessary quantities during the main loop. We introduce the quantities \lstinline{dir_pdf} (the pdf of the latest phase function sampling), \lstinline{nee_p_cache} (the last position p that can issue a next event estimation -- if it's on an index-matching surface, it can't issue next event estimation). \lstinline{multi_trans_pdf} (the product PDF of transmittance sampling going through several index-matching surfaces from the last phase function sampling):
+\begin{lstlisting}[language=python]
+def L(screen_pos, rng):
+  # ...
+  current_path_throughput = 1
+  radiance = 0
+  bounces = 0
+  dir_pdf = 0 // in solid angle measure
+  nee_p_cache = None
+  multi_trans_pdf = 1
+  while True:
+    # ...
+\end{lstlisting}
+
+We update these cache variables accordingly, and then when we hit a light source in the main loop, we use them to
+compute the multiple importance sampling weight:
+\begin{lstlisting}[language=python]
+# If we reach a surface and didn't scatter, include the emission.
+if not scatter:
+  if bounces == 0:
+    # This is the only way we can see the light source, so
+    # we don't need multiple importance sampling.
+    radiance += current_path_throughput * Le(isect);
+  else:
+    # Need to account for next event estimation
+    light_point = isect
+    # Note that pdf_nee needs to account for the path vertex that issued
+    # next event estimation potentially many bounces ago.
+    # The vertex position is stored in nee_p_cache.
+    pdf_nee = pdf_point_on_light(isect.light, light_point, nee_p_cache, scene)
+    # The PDF for sampling the light source using phase function sampling + transmittance sampling
+    # The directional sampling pdf was cached in dir_pdf in solid angle measure.
+    # The transmittance sampling pdf was cached in multi_trans_pdf.
+    pdf_phase = dir_pdf * multi_trans_pdf * G;
+    w = (p_dir * p_dir) / (p_dir * p_dir + p_nee * p_nee)
+    // current_path_throughput already accounts for transmittance.
+    radiance += current_path_throughput * emission(vertex, -ray.dir, scene) * w
+\end{lstlisting}
+
+\begin{figure}
+\centering
+\includegraphics[width=0.48\linewidth]{imgs/volpath_4.png}
+\includegraphics[width=0.48\linewidth]{imgs/volpath_4_2.png}
+\caption{Test scenes for our fourth volumetric path tracer.}
+\label{fig:volpath4}
+\end{figure}
+
+\paragraph{Debugging tip.} Implement the method first without multiple importance sampling. Render the previous scene in our third volumetric path tracer. Make sure it converges to the same image.
+
+\paragraph{Task (12\%).} You will implement the algorithm above in the \lstinline{vol_path_tracing_4} function in \lstinline{vol_path_tracing.h}. Test your rendering using the scenes \lstinline{scenes/volpath_test/volpath_test4.xml} and \lstinline{scenes/volpath_test/volpath_test4_2.xml}. You should get an image that looks like Figure~\ref{fig:volpath4}.
+
+\paragraph{Question(s) (5\%).} In \lstinline{scenes/volpath_test/volpath_test4_2.xml}, we render a scene with an object composed of dense volume. How does it compare to rendering the object directly with a Lambertian material? Why are they alike or different?
 
 
 \bibliographystyle{plain}

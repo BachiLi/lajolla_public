@@ -2,7 +2,7 @@
 
 <scene version="0.5.0">
 	<integrator type="volpath">
-		<integer name="maxDepth" value="-1"/>
+		<integer name="maxDepth" value="6"/>
 		<integer name="version" value="4"/>
 	</integrator>
 
@@ -49,7 +49,7 @@
 		</transform>
 
 		<sampler type="independent">
-			<integer name="sampleCount" value="8192"/>
+			<integer name="sampleCount" value="256"/>
 		</sampler>
 
 		<film type="hdrfilm" id="film">
