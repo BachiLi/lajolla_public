@@ -9,7 +9,7 @@
 	<medium type="homogeneous" id="medium">
 		<rgb name="sigmaA" value="0.4 0.3 0.01"/>
 		<rgb name="sigmaS" value="1.0 1.0 1.0"/>
-		<float name="scale" value="0.5"/>
+		<float name="scale" value="0.25"/>
 	</medium>
 
 	<sensor type="perspective">
@@ -23,7 +23,7 @@
 		<float name="fov" value="39.3077"/>
 
 		<sampler type="independent">
-			<integer name="sampleCount" value="64"/>
+			<integer name="sampleCount" value="1024"/>
 		</sampler>
 
 		<film type="hdrfilm">
