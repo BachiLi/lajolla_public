@@ -300,7 +300,11 @@ Our strategy of sampling the integral $L_3$ is as follows: we first generate a d
 
 \paragraph{Index-matched surfaces.} Sometimes we will hit surfaces that have no materials assigned (\lstinline{material_id = -1}). For these surfaces, we need to pass through them. Passing through an index-matched surface counts as one bounce.
 
-\paragraph{Russian roulette.} We use the \lstinline{scene.options.rr_depth} to control the Russian roulette behavior. We initialize Russian roulette when a light path has \lstinline{rr_depth + 1} vertices.
+\paragraph{Russian roulette.} We use the \lstinline{scene.options.rr_depth} to control the Russian roulette behavior. We initialize Russian roulette when a light path has \lstinline{rr_depth + 1} vertices. We set the probability for termination to
+\begin{equation}
+P_{rr} = \min\left(\frac{\text{contrib}(\text{path})}{p(\text{path})}, 0.95\right),
+\end{equation}
+where $\text{contrib}(path)$ is the evaluation of the integrand of the path in the volumetric integral, and $p(\text{path})$ is the probability density of generating such path.
 
 The pseudo code looks like this:
 \begin{lstlisting}[language=python]
@@ -356,16 +360,14 @@ def L(screen_pos, rng):
         break
       else:
         current_path_throughput /= rr_prob
-    
     bounces += 1
-
   return radiance
 \end{lstlisting}
 
 \begin{figure}
 \centering
 \includegraphics[width=0.5\linewidth]{imgs/volpath_3.png}
-\caption{How Figure~\ref{fig:volpath3_illustration} would be rendered like. Left top is a light source, and bottom right is an volume with index-matched interface.}
+\caption{How Figure~\ref{fig:volpath3_illustration} would be rendered like. Left top is a light source, and bottom right is a volume with index-matched interface.}
 \label{fig:volpath3}
 \end{figure}
 
