@@ -510,7 +510,7 @@ if not scatter:
     # The transmittance sampling pdf was cached in multi_trans_pdf.
     pdf_phase = dir_pdf * multi_trans_pdf * G;
     w = (p_dir * p_dir) / (p_dir * p_dir + p_nee * p_nee)
-    // current_path_throughput already accounts for transmittance.
+    # current_path_throughput already accounts for transmittance.
     radiance += current_path_throughput * emission(vertex, -ray.dir, scene) * w
 \end{lstlisting}
 
