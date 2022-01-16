@@ -6,28 +6,28 @@
 
 \begin{figure}[h]
     \includegraphics[width=\linewidth]{imgs/colored_smoke.png}
-    \caption{A heterogeneous volume with spectrally varying density over space, rendered with multiple-scattering. Smoke data are generated using Wenzel Jakob's \href{http://www.mitsuba-renderer.org/misc.html}{fsolver}.}
+    \caption{The figure shows a heterogeneous volume with a spectrally varying density over space, rendered with multiple-scattering. Smoke data are generated using Wenzel Jakob's \href{http://www.mitsuba-renderer.org/misc.html}{fsolver}.}
     \label{fig:gallery}
 \end{figure}
 
-In this homework, we will build a volumetric path tracers that can handle scattering and absorption inside participating media inside lajolla. We will split the development into 6 steps and build 6 volumetric path tracers, each has more features than the previous ones.\footnote{This approach is inspired by Steve Marschner's \href{https://www.cs.cornell.edu/courses/cs6630/2015fa/notes/10volpath.pdf}{course note} on volumetric path tracing.} Your $n$-th volumetric path tracer should be able to render all scenes the $(n-1)$-th one can handle. If you want, you can only submit the final volumetric path tracer and let all the rest call the final code. This process is for helping you to slowly and steadily build up your rendering algorithm. You will notice that the scores of them sum up to more then $100\%$. This is because the last volumetric path tracer is a bit more mathematically involved (the implementation is not too bad though), so if you only did the first fifth, you still get $90\%$ of the scores. If you do all of them, you get $110\%$.
+In this homework, we will build a volumetric path tracer that can handle scattering and absorption inside participating media inside lajolla. We will split the development into 6 steps and build 6 volumetric path tracers. Each has more features than the previous ones.\footnote{This approach is inspired by Steve Marschner's \href{https://www.cs.cornell.edu/courses/cs6630/2015fa/notes/10volpath.pdf}{course note} on volumetric path tracing.} Your $n$-th volumetric path tracer should be able to render all scenes the $(n-1)$-th one can handle. If you want, you can only submit the final volumetric path tracer and let all the rest call the final code. This process is for helping you to slowly and steadily build up your rendering algorithm. You will notice that the scores sum up to more than $100\%$. This is because the last volumetric path tracer is a bit more mathematically involved (the implementation is not too bad though), so if you only did the first fifth, you still get $90\%$ of the scores. If you do all of them, you get $110\%$.
 
-\href{https://cs.dartmouth.edu/~wjarosz/publications/novak18monte-sig.html}{This SIGGRAPH course note} is a good reference if you fail to understand the handout. Steve Marschner's course note in the footnote is also very useful.
+\href{https://cs.dartmouth.edu/~wjarosz/publications/novak18monte-sig.html}{This SIGGRAPH course note} is a good reference if you fail to understand the handout. Steve Marschner's course note in the footnote is also very useful. Most of the math in the last part is from Miller et al.~\cite{Miller:2019:NPI} and Georgiev et al.~\cite{Georgiev:2019:IFV}'s articles.
 
-Participating media are volumes with many infinitesimal particles absorbing and scattering lights. Given a ray inside the volume parametrized by distance $\mathbf{p}(t)$, the radiance along the ray is modelled by the \emph{radiative transfer equation}:
+Participating media are volumes with many infinitesimal particles absorbing and scattering lights. Given a ray inside the volume parametrized by distance $\mathbf{p}(t)$, the radiance along the ray is modeled by the \emph{radiative transfer equation}:
 \begin{equation}
 \frac{\mathrm{d}}{\mathrm{d}t} L(\mathbf{p}(t), \omega) = -(\sigma_a(\mathbf{p}(t)) + \sigma_s(\mathbf{p}(t))) L(\mathbf{p}(t), \omega) + \sigma_a L_e(\mathbf{p}(t), \omega) + \sigma_s(\mathbf{p}(t)) \int_{S^2} \rho(\mathbf{p}(t), \omega, \omega') L(\mathbf{p}(t), \omega') \mathrm{d}\omega',
 \label{eq:rte}
 \end{equation}
-where $L$ is the radiance, $\sigma_a$ is the \emph{absorption coefficient}, $\sigma_s$ is the \emph{scattering coefficient}, $L_e$ is the (volumetric) emission, $\rho$ is the \emph{phase function} that is akin to BSDF in surface rendering, and $S^2$ is the spherical domain.
+where $L$ is the radiance, $\sigma_a$ is the \emph{absorption coefficient}, $\sigma_s$ is the \emph{scattering coefficient}, $L_e$ is the (volumetric) emission, $\rho$ is the \emph{phase function} that is akin to BSDFs in surface rendering, and $S^2$ is the spherical domain.
 
-This looks a bit scary, so let's break it down. From now on we'll drop the arguments for $\sigma_a$ and $\sigma_s$, but in general they can still be spatially varying. The radiative transfer equation is made of four components: \textbf{absorption}, \textbf{emission}, \textbf{in-scattering}, and \textbf{out-scattering}. Absorption and emission handles particles that absorb and emit lights:
+This looks a bit scary, so let's break it down. For now, we'll drop the arguments for $\sigma_a$ and $\sigma_s$, but in general, they can still be spatially varying. The radiative transfer equation is made of four components: \textbf{absorption}, \textbf{emission}, \textbf{in-scattering}, and \textbf{out-scattering}. Absorption and emission handle particles that absorb and emit lights:
 \begin{equation}
 \frac{\mathrm{d}}{\mathrm{d}t} L_a(\mathbf{p}(t), \omega) = -\sigma_a L_a(\mathbf{p}(t), \omega) + \sigma_a L_e(\mathbf{p}(t), \omega).
 \end{equation}
-Notice how this is just a simple linear ordinary differential equation $x' = ax + b$, where $\sigma_a$ attenuates lights and $L_e$ is the gain.
+Notice how this is a linear ordinary differential equation $x' = ax + b$, where $\sigma_a$ attenuates lights and $L_e$ is the gain.
 
-The in-scattering accounts for all the lights bounces between the particles along the ray, just like the surface rendering equation:
+The in-scattering accounts for all the lights bounce between the particles along the ray, just like the surface rendering equation:
 \begin{equation}
 \frac{\mathrm{d}}{\mathrm{d}t} L_{is}(\mathbf{p}(t), \omega) = \sigma_s \int_{S^2} \rho(\mathbf{p}(t), \omega, \omega') L(\mathbf{p}(t), \omega') \mathrm{d}\omega'.
 \end{equation}
@@ -37,16 +37,16 @@ However, the light does not just bounce \emph{into} the ray, it also bounces \em
 \frac{\mathrm{d}}{\mathrm{d}t} L_{os}(\mathbf{p}(t), \omega) = -\sigma_s L_{os}(\mathbf{p}(t)).
 \end{equation}
 
-Combining all these three components, we get the full radiative transfer equation (Equation~\ref{eq:rte}). Notice that the full radiative transfer equation is also like a linear ODE: $-(\sigma_a + \sigma_s) L$ attenuates light, and $L_e$ and the spherical integral are the gain that makes things brighter. For this reason, we often let $\sigma_t = \sigma_a + \sigma_s$ and call it the \emph{extinction coefficient}.
+Combining all these components, we get the full radiative transfer equation (Equation~\ref{eq:rte}). Notice that the full radiative transfer equation is also like a linear ODE: $-(\sigma_a + \sigma_s) L$ attenuates light, and $L_e$ and the spherical integral are the gain that makes things brighter. For this reason, we often let $\sigma_t = \sigma_a + \sigma_s$ and call it the \emph{extinction coefficient}.
 
-We'll start from a very simplified version of the radiative transfer equation, then slowly handle more complex situations. To make things simpler, we will throughout assume our medium does not emit light itself: it will receive lighting from other surfaces in the scene.
+We'll start from a simplified version of the radiative transfer equation, then slowly handle more complex situations. To make things simpler, we will throughout assume our medium does not emit light itself: it will receive lighting from other surfaces in the scene.
 
 Before that, let's introduce lajolla's data structures for storing the participating media.
 
 \section{Lajolla's participating media data structures and interfaces}
 \begin{figure}
     \includegraphics[width=\linewidth]{imgs/media.pdf}
-    \caption{Lajolla assumes that media are separated by closed surface boundaries. At the object surface, we store the ID of the interior and exterior media (if either of them is vaccum, set the ID to \lstinline{-1}). The outmost medium is specified at the camera (and can be accessed through \lstinline{camera.medium_id}). A surface can be \emph{index-matching} meaning that light just pass through without changing direction or losing energy. In this case, the \lstinline{material_id} of the surface is set to \lstinline{-1}. A surface can also be transmissive. In this case, it is assigned a transmissive material like \lstinline{roughdielectric}.}
+    \caption{Lajolla assumes that media are separated by closed surface boundaries. At the object surface, we store the ID of the interior and exterior media (if both of them are vacuum, set the ID to \lstinline{-1}). The outmost medium is specified at the camera (and can be accessed through \lstinline{camera.medium_id}). A surface can be \emph{index-matching} meaning that light passes through without changing direction or losing energy. In this case, the \lstinline{material_id} of the surface is set to \lstinline{-1}. A surface can also be transmissive. In this case, it is assigned a transmissive material like \lstinline{roughdielectric}.}
     \label{fig:data_structure}
 \end{figure}
 
@@ -75,12 +75,12 @@ inline PhaseFunction get_phase_function(const Medium &medium) {
     return std::visit([&](const auto &m) { return m.phase_function; }, medium);
 }
 \end{lstlisting}
-You will need these functions to obtain the necessary quantities in the homeworks.
+You will need these functions to obtain the necessary quantities in the homework.
 
 A \lstinline{HomogeneousMedium} should be straightforward: it contains constant $\sigma_a$ and $\sigma_s$.
 We will talk more about \lstinline{HeterogeneousMedium} and \lstinline{PhaseFunction} later.
 
-Lajolla assumes that the media are separated by surface boundaries (Figure~\ref{fig:data_structure}). It's up to the upstream user to make sure they are consistent to each other and the surfaces are closed (if they are not, the results are undefined).\footnote{Modern production volume renderers have paid special attention to make sure the renderers can handle all sorts of inputs, including nested volumes. See \href{here}{https://graphics.pixar.com/library/ProductionVolumeRendering/index.html} for more information.} 
+Lajolla assumes that the media are separated by surface boundaries (Figure~\ref{fig:data_structure}). It's up to the upstream users to make sure they are consistent with each other, and the surfaces are closed (if they are not, the results are undefined).\footnote{Modern production volume renderers have paid special attention to make sure the renderers can handle all sorts of inputs, including nested volumes. See \href{here}{https://graphics.pixar.com/library/ProductionVolumeRendering/index.html} for more information.}
 
 In the scene file, each objects are marked with corresponding exterior and interior media:
 \begin{lstlisting}[language=xml]
@@ -101,6 +101,7 @@ In the scene file, each objects are marked with corresponding exterior and inter
         <ref id="medium"/>
     </sensor>
 \end{lstlisting}
+If an object has the same interior and exterior media, then it does not need to specify them. 
 
 The \lstinline{Medium}s are stored in \lstinline{scene.media} which you can access through \lstinline{scene.media[medium_id]}. The \lstinline{intersection} routine in lajolla returns a \lstinline{PathVertex} object which contains relevant information of the intersection:
 \begin{lstlisting}[language=c++]
@@ -126,7 +127,7 @@ struct PathVertex {
 \label{fig:volpath1_illustration}
 \end{figure}
 
-Our first volume renderer will make four assumptions:
+Our first volume renderer will make four assumptions.
 \begin{itemize}
     \item There is only a single, homogeneous ($\sigma_a$ and $\sigma_s$ are constants over space) volume.
     \item The volume does not scatter light: $\sigma_s = 0$.
@@ -138,16 +139,16 @@ Under these assumptions, the radiative transfer equation becomes
 \begin{equation}
 \frac{\mathrm{d}}{\mathrm{d}t} L_1(\mathbf{p}(t), \omega) = -\sigma_a L_1(\mathbf{p}(t), \omega),
 \end{equation}
-and we know $L_1(\mathbf{p}(t_{\text{hit}}), \omega) = L_e(\mathbf{p}(t_{\text{hit}}))$ where $t_{\text{hit}}$ is the distance between the origin of the ray and the emissive surface. 
+and we know $L_1(\mathbf{p}(t_{\text{hit}}), \omega) = L_e(\mathbf{p}(t_{\text{hit}}))$ where $t_{\text{hit}}$ is the distance between the origin of the ray and the emissive surface.
 
-This ordinary differential equation has a simple closed form:
+This ordinary differential equation has a simple closed-form:
 \begin{equation}
 L_1(\mathbf{p}(0), \omega) = \exp\left(-\sigma_a t_{\text{hit}} \right) L_e(\mathbf{p}(t_{\text{hit}})).
 \end{equation}
 Figure~\ref{fig:volpath1_illustration} illustrates the setup. In volume rendering the exponential term
 $\exp\left(-\sigma_a t_{\text{hit}} \right)$ is often called the ``transmittance''.
 
-Our rendering algorithm (that generates a sample for a pixel) is as follows (in Python-style pseudo code).
+Our rendering algorithm (that generates a sample for a pixel) is as follows (in Python-style pseudo-code).
 \begin{lstlisting}[language=python]
 def L(screen_pos, rng):
   camera_ray = sample_primary(camera, screen_pos, rng)
@@ -161,7 +162,7 @@ def L(screen_pos, rng):
   return 0
 \end{lstlisting}
 
-Note that while our volumes are monochromatic, the light can be colored, so the final results can still have color.
+While our volumes are monochromatic, the light can be colored, so the final results can still have color.
 
 \begin{figure}
 \centering
@@ -172,21 +173,19 @@ Note that while our volumes are monochromatic, the light can be colored, so the 
 
 \paragraph{Task (13\%).} You will implement the algorithm above in the \lstinline{vol_path_tracing_1} function in \lstinline{vol_path_tracing.h}. You might want to first look at the surface path tracing code in \lstinline{path_tracing.h} to understand lajolla's API better. Test your rendering using the scene \lstinline{scenes/volpath_test/volpath_test1.xml}. You should get an image that looks like Figure~\ref{fig:volpath1}.
 
-\paragraph{Ray differentials.} In the surface path tracer, lajolla uses ray differential for texture lookup. Determining ray differentials for volumetric scattering is actually an unsolved problem. For this homework, we will just disable ray differentials by setting it to 0:
+\paragraph{Ray differentials.} In the surface path tracer, lajolla uses ray differential for texture lookup. Determining ray differentials for volumetric scattering is an unsolved problem. For this homework, we will disable ray differentials by setting it to 0 and do not change it:
 \begin{lstlisting}[language=c++]
 RayDifferential ray_diff = RayDifferential{Real(0), Real(0)};
 \end{lstlisting}
 
-\paragraph{Environment maps.} Throughout the homework, we will assume there is no environment map in the scene. 
-
-\paragraph{Emissive volumes.} Throughout the homework, we will assume the volume is not emissive (the emission always comes from the surfaces.)
+\paragraph{Environment maps.} Throughout the homework, we assume there is no environment map in the scene. 
 
 \paragraph{Question(s) (5\%).} Change the absorption parameters to zero in \lstinline{scenes/volpath_test/volpath_test1.xml}. What do you see? Why?
 
 \section{Single monochromatic homogeneous volume with absorption and single-scattering, no surface lighting}
 \begin{figure}
 \includegraphics[width=\linewidth]{imgs/single_scattering.pdf}
-\caption{The setup of our second volumetric renderer. Light can now scatter inside the medium once and we need to account for the phase function $\rho$ and the extra transmittance $\exp{-\sigma_t t'}$ We need to integrate over the ray to account for all scattering.}
+\caption{The figure shows the setup of our second volumetric renderer. Light can now scatter inside the medium once, and we need to account for the phase function $\rho$ and the extra transmittance $\exp{-\sigma_t t'}$ We need to integrate over the camera ray to account for all scattering.}
 \label{fig:volpath2_illustration}
 \end{figure}
 
@@ -198,11 +197,11 @@ Our next renderer adds single scattering to the volume (Figure~\ref{fig:volpath2
     \item Light only scatter (changes direction) once in the volume.
 \end{itemize}
 
-Now we need to solve the full radiative transfer equation (Equation~\ref{eq:rte}), except the spherical integral only recurse once:
+Now we need to solve the radiative transfer equation (Equation~\ref{eq:rte}), except the spherical integral only recurse once:
 \begin{equation}
 L_{\text{scatter}1}(\mathbf{p}, \omega) = \int_{\mathcal{M}} \rho(\mathbf{p}(t), \omega, \omega') L_e(\mathbf{p}', \omega) \exp\left(-\sigma_t \left\| \mathbf{p}(t) - \mathbf{p}' \right\|\right) \frac{\left| \omega' \cdot \mathbf{n}_{\mathbf{p}'} \right|}{{\left\| \mathbf{p}(t) - \mathbf{p}' \right\|}^2} \text{visible}(\mathbf{p}(t), \mathbf{p}') \mathrm{d}\mathbf{p}',
 \end{equation}
-instead of integrating over the sphere $S^2$, we apply a change of variable to integrate over the scene manifold $\mathcal{M}$ over all points on surfaces $\mathbf{p}'$. $\frac{\left| \omega' \cdot \mathbf{n}_{\mathbf{p}'} \right|}{{\left\| \mathbf{p}(t) - \mathbf{p}' \right\|}^2} \text{visible}(\mathbf{p}(t), \mathbf{p}')$ is the Jacobian of the transformation and $\omega' = \frac{\mathbf{p}' - \mathbf{p}(t)}{\left\| \mathbf{p}' - \mathbf{p}(t) \right\|}$. $\exp\left(-\sigma_t \left\| \mathbf{p}(t) - \mathbf{p}' \right\|\right)$ is the transmittance between $\mathbf{p}(t)$ and $\mathbf{p}'(t)$ that represents energy loss due to absorption and out-scattering (hence it uses the extinction coefficient $\sigma_t = \sigma_a + \sigma_s$ instead of $\sigma_a$ or $\sigma_s$). $s1$ stands for ``scattering once''.
+instead of integrating over the sphere $S^2$, we apply a change of variable to integrate over the scene manifold $\mathcal{M}$ for all points on surfaces $\mathbf{p}'$. $\frac{\left| \omega' \cdot \mathbf{n}_{\mathbf{p}'} \right|}{{\left\| \mathbf{p}(t) - \mathbf{p}' \right\|}^2} \text{visible}(\mathbf{p}(t), \mathbf{p}')$ is the Jacobian of the transformation and $\omega' = \frac{\mathbf{p}' - \mathbf{p}(t)}{\left\| \mathbf{p}' - \mathbf{p}(t) \right\|}$. $\exp\left(-\sigma_t \left\| \mathbf{p}(t) - \mathbf{p}' \right\|\right)$ is the transmittance between $\mathbf{p}(t)$ and $\mathbf{p}'(t)$ that represents energy loss due to absorption and out-scattering (hence it uses the extinction coefficient $\sigma_t = \sigma_a + \sigma_s$ instead of $\sigma_a$ or $\sigma_s$). $s1$ stands for ``scattering once''.
 
 The radiative transfer equation is then
 \begin{equation}
@@ -210,13 +209,13 @@ The radiative transfer equation is then
 \label{eq:rte_single_scattering}
 \end{equation}
 
-We no longer have a simple closed-form solution and have to resort to Monte Carlo sampling. To make the differential equation more familiar to us who are more used to Monte Carlo rendering, let's convert the equation above into an integral:
+We no longer have a simple closed-form solution and resort to Monte Carlo sampling. To make the differential equation more familiar to us who are more used to Monte Carlo rendering, let's convert the equation above into an integral:
 \begin{equation}
 L_2(\mathbf{p}(0), \omega) = \int_{0}^{t_{\text{hit}}} \exp\left(-\sigma_t t \right) \sigma_s L_{\text{scatter}1}(\mathbf{p}, \omega) \mathrm{d}t + \exp\left(-\sigma_t t_{\text{hit}} \right) L_e(\mathbf{p}(t_{\text{hit}}))
 \label{eq:rte_single_scattering_integral_form}
 \end{equation}
 
-To sample this integral, we importance sample the transmittance $\exp\left(-sigma_t t\right)$. To do this we need to sample $t$ such that $p(t) \propto \exp\left(-\sigma_t t\right)$. This can be done by standard inverse tranform sampling. We first integrate $\exp\left(-\sigma_t t \right)$:
+To sample this integral, we importance sample the transmittance $\exp\left(-sigma_t t\right)$. To do this we need to sample $t$ such that $p(t) \propto \exp\left(-\sigma_t t\right)$. This can be done by the standard inverse tranform sampling. We first integrate $\exp\left(-\sigma_t t \right)$:
 \begin{equation}
 \int_{0}^{t} \exp\left(-\sigma_t s\right) \mathrm{d}s = -\frac{exp(-\sigma_t * t)}{\sigma_t} + \frac{1}{\sigma_t}.
 \end{equation}
@@ -272,7 +271,7 @@ def L(screen_pos, rng):
 \paragraph{Task (13\%).} You will implement the algorithm above in the \lstinline{vol_path_tracing_2} function in \lstinline{vol_path_tracing.h}. For evaluating the phase function $\rho$, use the \lstinline{eval} function in \lstinline{phase_function.h}.
 Test your rendering using the scene \lstinline{scenes/volpath_test/volpath_test2.xml}. You should get an image that looks like Figure~\ref{fig:volpath2}. Note that the rendered image will be a bit noisy even a high sampling count. This is expected, since we are not importance sampling the geometry term $\frac{\left| \omega' \cdot \mathbf{n}_{\mathbf{p}'} \right|}{{\left\| \mathbf{p}(t) - \mathbf{p}' \right\|}^2} \text{visible}(\mathbf{p}(t), \mathbf{p}')$ along $t$. Such importance sampling scheme is called the \emph{equiangular sampling}~\cite{Kulla:2012:IST} (or \emph{track-length estimator} in nuclear engineering~\cite{Rief:1984:TLE}). Equiangular sampling is out of the scope for this homework, but you're free to implement it!
 
-\paragraph{Question(s) (5\%).} Play with the parameters $\sigma_s$ and $\sigma_a$, how do they affect the final image? Why? (Note that we assume monochromatic volumes, so don't set the parameters to be different for each channel.)
+\paragraph{Question(s) (5\%).} Play with the parameters $\sigma_s$ and $\sigma_a$, how do they affect the final image? Why? (we assume monochromatic volumes, so don't set the parameters to be different for each channel.)
 
 \paragraph{Bonus (25\%).} Implement the \emph{equiangular sampling}~\cite{Kulla:2012:IST} sampling strategy. Potentially combine it with the transmittance sampling using multiple importance sampling. (I do not recommend you implement this until you've finished the whole homework.)
 
@@ -295,7 +294,6 @@ Under this assumption, our volumetric integral becomes:
 L_3(\mathbf{p}(0), \omega) = \int_{0}^{t_{\text{hit}}} \exp\left(-\sigma_t t \right) \sigma_s L_{\text{scatter}}(\mathbf{p}, \omega) \mathrm{d}t + \exp\left(-\sigma_t t_{\text{hit}} \right) L_e(\mathbf{p}(t_{\text{hit}})),
 \label{eq:rte_multiple_scattering_integral_form}
 \end{equation}
-
 where $L_{\text{scatter}}$ is recursive:
 \begin{equation}
 L_{\text{scatter}}(\mathbf{p}, \omega) = \int_{S^2} \rho(\mathbf{p}(t), \omega, \omega') L_3(\mathbf{p}(t), \omega') \mathrm{d}\omega'.
@@ -371,7 +369,7 @@ def L(screen_pos, rng):
   return radiance
 \end{lstlisting}
 
-The pseudocode relies on the \lstinline{update_medium} routine, which update the current medium the ray lies in:
+The pseudocode relies on the \lstinline{update_medium} routine, which updates the current medium the ray lies in:
 \begin{lstlisting}[language=python]
 def update_medium(isect, ray, medium):
     if (isect.interior_medium != isect.exterior_medium):
@@ -382,7 +380,7 @@ def update_medium(isect, ray, medium):
             medium = isect.interior_medium_id
     return medium
 \end{lstlisting}
-Note that we only update the medium if the intersection specifies a ``medium transition'', where the interior medium
+We only update the medium if the intersection specifies a ``medium transition'', where the interior medium
 is different from the exterior medium.
 
 \begin{figure}
@@ -401,11 +399,11 @@ Test your rendering using the scene \lstinline{scenes/volpath_test/volpath_test3
 
 \begin{figure}
 \includegraphics[width=\linewidth]{imgs/volume_next_event_estimation.pdf}
-\caption{Our 4th volumetric path tracer adds next event estimation to the previous one. Given a point in the volume, we first select a point on the light, then we trace a shadow ray towards the light. Unlike normal next event estimation, where the visibility is a binary function, here the visibility is determined by the transmittance between the volume point and the light source. Our shadow ray needs to trace through index-matching surfaces and skip through them, account for the transmittance of all the media in between.}
+\caption{Our 4th volumetric path tracer adds next event estimation to the previous one. Given a point in the volume, we first select a point on the light, then we trace a shadow ray towards the light. Unlike normal next event estimation, where the visibility is a binary function, here the visibility is determined by the transmittance between the volume point and the light source. Our shadow ray needs to trace through index-matching surfaces and skip through them, accounting for the transmittance of all the media in between.}
 \label{fig:volpath4_illustration}
 \end{figure}
 
-Sampling only using the phase function is inefficient, especially when the light source is relatively small. Our fourth volumetric path tracer adds next event estimation to the sampling (Figure~\ref{fig:volpath4_illustration}) as our section title growing out of control. Instead of sampling from the phase function, we pick a point on the light source, and trace a shadow ray towards the light to account for the transmittance in between. We also need to account for \emph{index-matching surfaces} -- surfaces who don't have a material assigned to them (so the index of refraction is the same inside and outside). Our shadow ray will pass through all index-matching surfaces and account for all the transmittance in between.
+Sampling only using the phase function is inefficient, especially when the light source is relatively small. Our fourth volumetric path tracer adds the next event estimation to the sampling (Figure~\ref{fig:volpath4_illustration}) as our section title grows out of control. Instead of sampling from the phase function, we pick a point on the light source, and trace a shadow ray towards the light to account for the transmittance in between. We also need to account for \emph{index-matching surfaces} -- surfaces that don't have a material assigned to them (so the index of refraction is the same inside and outside). Our shadow ray will pass through all index-matching surfaces and account for all the transmittance in between.
 
 Mathematically, the next event estimation is a change of variable of the spherical single scattering integral:
 \begin{equation}
@@ -414,7 +412,7 @@ Mathematically, the next event estimation is a change of variable of the spheric
 \end{equation}
 where $\mathbf{p}'$ are points on the light sources, $\tau(\mathbf{p}, \mathbf{p}')$ is the transmittance between point $\mathbf{p}$ and $\mathbf{p}'$. We also need to include the geometry term $\frac{\mathbf{n}_{\mathbf{p}'}}{\left|\mathbf{p} - \mathbf{p}'\right|^2}$ as the Jacobian of the change of variable.
 
-The pseudo code for the volumetric next event estimation looks like this:
+The pseudo-code for the volumetric next event estimation looks like this:
 \begin{lstlisting}[language=python]
 def next_event_estimation(p, current_medium):
     p_prime = sample_point_on_light(p)
@@ -520,7 +518,7 @@ if not scatter:
 \centering
 \includegraphics[width=0.48\linewidth]{imgs/volpath_4.png}
 \includegraphics[width=0.48\linewidth]{imgs/volpath_4_2.png}
-\caption{Test scenes for our fourth volumetric path tracer. The left scene is similar to the previous test scene in volumetric path tracer 3, but the light source is smaller. The right scene contains a dense volumetric ball floating in air.}
+\caption{Test scenes for our fourth volumetric path tracer. The left scene is similar to the previous test scene in volumetric path tracer 3, but the light source is smaller. The right scene contains a dense volumetric ball floating in the air.}
 \label{fig:volpath4}
 \end{figure}
 
@@ -532,13 +530,13 @@ if not scatter:
 
 \section{Multiple monochromatic homogeneous volumes with absorption and multiple-scattering with both phase function sampling and next event estimation, with surface lighting}
 
-We are finally adding surface lighting to our volumetric renderer. This should be much easier compared to the last two parts. So far whenever we encounter a surface, we use $L_e$ to represent its emission. Adding surface lighting is just replacing $L_e$ with the full rendering equation (that includes transmittance and volumetric scattering). Code-wise, we just need to go through all the places where we sample or evaluate the phase function, and also consider the case where we hit a surface and include the BSDF sampling and evaluation. I will let you figure out the details! 
+We are finally adding surface lighting to our volumetric renderer. This should be much easier compared to the last two parts. So far, whenever we encounter a surface, we use $L_e$ to represent its emission. Adding surface lighting is just replacing $L_e$ with the full rendering equation (that includes transmittance and volumetric scattering). Code-wise, we just need to go through all the places where we sample or evaluate the phase function, and also consider the case where we hit a surface and include the BSDF sampling and evaluation. I will let you figure out the details! 
 
 \begin{figure}
 \centering
 \includegraphics[width=0.48\linewidth]{imgs/volpath_5.png}
 \includegraphics[width=0.48\linewidth]{imgs/volpath_5_2.png}
-\caption{Test scenes for our fifth volumetric path tracer. The left scene contains a volumetric ball and an opaque Lambertian ball (with red reflectance). The right scene contains an outer sphere with dielectric interface and an inner sphere with Lambertian material, and between them is a dense volume.}
+\caption{Test scenes for our fifth volumetric path tracer. The left scene contains a volumetric ball and an opaque Lambertian ball (with red reflectance). The right scene contains an outer sphere with a dielectric interface and an inner sphere with Lambertian material, and between them is a dense volume.}
 \label{fig:volpath5}
 \end{figure}
 
@@ -553,13 +551,13 @@ We are finally adding surface lighting to our volumetric renderer. This should b
 \paragraph{Task (13\%).} You will add surface lighting in the \lstinline{vol_path_tracing_5} function in \lstinline{vol_path_tracing.h}. Test your rendering using the scenes \lstinline{scenes/volpath_test/volpath_test5.xml} and \lstinline{scenes/volpath_test/volpath_test5_2.xml}. You should get images that look like the ones in Figure~\ref{fig:volpath5}. Also check out \lstinline{scenes/volpath_test/vol_cbox.xml} and \lstinline{scenes/volpath_test/vol_cbox_teapot.xml} to see what we can render now (Figure~\ref{fig:volpath5_cbox})!
 
 \paragraph{Question(s) (5\%).} Play with the index of refraction parameter of the dielectric interface in \\
-\lstinline{scenes/volpath_test/volpath_test5_2.xml}. How does that affect the apperance? Why?
+\lstinline{scenes/volpath_test/volpath_test5_2.xml}. How does that affect appearance? Why?
 
 \section{Multiple chromatic heterogeneous volumes with absorption and multiple-scattering with both phase function sampling and next event estimation, with surface lighting}
 
-We reach the final stage of this homework. This last part is a bit tough, so don't worry too much if you cannot finish it. Even if you don't finish this part, you will still get $90\%$ of the score. But the math is fun and you should try to understand it!
+We reach the final stage of this homework. This last part is a bit tough due to the mathematicaly complexity (but the implementation isn't that bad), so don't worry too much if you cannot finish it. Even if you don't finish this part, you will still get $90\%$ of the score. But the math is fun and you should try to understand it!
 
-So far we have been assuming that 1) the volumes are monochromatic, and 2) they are homogeneous. We are going to solve the two problems at once with a super clever idea called \emph{null-scattering}. Let's focus on heterogeneous media first and look at the radiative transfer equation (assuming no volumetric emission):
+So far, we have been assuming that 1) the volumes are monochromatic, and 2) they are homogeneous. We are going to solve the two problems at once with a super clever idea called \emph{null-scattering}. Let's focus on heterogeneous media first and look at the radiative transfer equation (assuming no volumetric emission):
 \begin{equation}
 \frac{\mathrm{d}}{\mathrm{d}t}L(\mathbf{p}(t), \omega) = -\sigma_t(\mathbf{p}(t)) L(\mathbf{p}(t), \omega) + \sigma_s(\mathbf{p}(t)) \int_{S^2} \rho(\omega, \omega') L(\mathbf{p}(t), \omega') d\omega',
 \end{equation}
@@ -577,11 +575,11 @@ where $\tau$ is the transmittance:
 
 The transmittance has a closed-form when the volume is homogeneous. However when we have heterogeneous volumes (i.e. $\sigma_t$ changes with position), we need to use Monte Carlo to estimate the transmittance. The exponential makes it tricky to do an unbiased estimation: $E[\exp(X)] \neq \exp(E[X])$ for most random variable $X$, where $E$ is expectation. This means that when we have an estimation of the integral $X \approx \int_{0}^{t'} \sigma_t\left(\mathbf{p}(t'') \mathrm{d}t''\right)$, even if $X$ is unbiased ($E[X] = \int_{0}^{t'} \sigma_t\left(\mathbf{p}(t'')\right) \mathrm{d}t''$), the exponentiation of $X$ won't be an unbiased estimation of the exponentiation of the integral.
 
-\paragraph{Homogenized free-flight sampling.} To resolve this, we apply a trick called \emph{homogenization}. That is, we convert the heterogeneous medium into a homogeneous medium by inserting \emph{fake} particles that does not scatter lights. Then we can use the closed form solution to obtain an answer. Mathematically, we modify the radiative transfer equation as follows:
+\paragraph{Homogenized free-flight sampling.} To resolve this, we apply a trick called \emph{homogenization}. That is, we convert the heterogeneous medium into a homogeneous medium by inserting \emph{fake} particles that do not scatter lights. Then we can use the closed-form solution from the homogeneous medium to obtain an answer. Mathematically, we modify the radiative transfer equation as follows:
 \begin{equation}
 \frac{\mathrm{d}}{\mathrm{d}t}L(\mathbf{p}(t), \omega) = -(\sigma_t(\mathbf{p}(t)) + \sigma_n(\mathbf{p}(t))) L(\mathbf{p}(t), \omega) + \sigma_n(\mathbf{p}(t)) L(\mathbf{p}(t), \omega) + \sigma_s(\mathbf{p}(t)) \int_{S^2} \rho(\omega, \omega') L(\mathbf{p}(t), \omega') d\omega',
 \end{equation}
-where $\sigma_n$ is the density of the \emph{fake} particles. All we did is to add $-\sigma_n + \sigma_n$ to the right hand side, so we do not alter the values of the radiative transfer equation at all.
+where $\sigma_n$ is the density of the \emph{fake} particles. All we did is to add $-\sigma_n + \sigma_n$ to the right-hand side, so we did not alter the values of the radiative transfer equation at all.
 
 Now, if we choose the fake particle density $\sigma_n(\mathbf{p}(t))$ such that $\sigma_t(\mathbf{p}(t)) + \sigma_n(\mathbf{p}(t))$ is a constant for all $t$, then we convert the radiative transfer equation back to a homogeneous medium! 
 
@@ -605,9 +603,9 @@ To evaluate $L$, we importance sample the homogenized transmittance $\tau_m$. Ev
     \item We hit a \emph{fake} particle, and need to keep evaluating $L$ by continuing the ray in a straight line.
 \end{enumerate}
 
-The probability that the first event happenning is the same as Equation~\ref{eq:hit_surface_prob}. For the second and third event, we can use whatever probability we like (it's just importance sampling), but for a reason that will become clearer later, we will choose the \emph{real} probability to be $\frac{\sigma_t}{\sigma_m}$, and the \emph{fake} probability to be $\frac{\sigma_n}{\sigma_m}$ (a more optimal way to assign the probability is to set the real probability to $\frac{\sigma_s}{\sigma_s + \sigma_n}$, but then it is possible that $\sigma_s + \sigma_n = 0$ and we need to deal with those corner cases, so we opt for simplicity here). We arrive at the classical \emph{delta tracking} (or Woodcock tracking) algorithm~\cite{Woodcock:1965:TGC}.
+The probability that the first event happenning is the same as Equation~\ref{eq:hit_surface_prob}. For the second and third event, we can use whatever probability we like (it's just importance sampling). We will choose the \emph{real} probability to be $\frac{\sigma_t}{\sigma_m}$, and the \emph{fake} probability to be $\frac{\sigma_n}{\sigma_m}$ (a more optimal way to assign the probability is to set the real probability to $\frac{\sigma_s}{\sigma_s + \sigma_n}$, but then it is possible that $\sigma_s + \sigma_n = 0$ and we need to deal with those corner cases, so we opt for simplicity here). We arrive at the classical \emph{delta tracking} (or Woodcock tracking) algorithm~\cite{Woodcock:1965:TGC}.
 
-\paragraph{Homogenized next event estimation.} Next, we need a way to evaluate the transmittance (instead of importance sampling) for next event estimation.
+\paragraph{Homogenized next event estimation.} Next, we need to evaluate the transmittance (instead of importance sampling) for the next event estimation.
 We will use the same homogenization trick.
 We have the following integral to estimate between two points $\mathbf{p}(0)$ and $\mathbf{p}(t')$:
 \begin{equation}
@@ -638,16 +636,16 @@ Instead of solving the ODE above using exponentiation (which gives us back the e
 \end{aligned}
 \label{eq:transmittance_recursive_integral}
 \end{equation}
-and now we have a recursive integral equation that we can directly estimate using Monte Carlo. (Note that we can get an integral that does not involve homogenization nor exponentiation by just integrating both sides of $\frac{\mathrm{d}\tau_\mathbf{p}\left(t'\right)}{\mathrm{d}t'} = -\sigma_t(\mathbf{p}(t'))\tau_\mathbf{p}\left(t'\right)$, but Monte Carlo sampling of this integral turns out to be very very slow. See Georgiev et al.'s article for a deeper discussion~\cite{Georgiev:2019:IFV}.)
+and now we have a recursive integral equation that we can directly estimate using Monte Carlo. (we can get an integral that does not involve homogenization nor exponentiation by just integrating both sides of $\frac{\mathrm{d}\tau_\mathbf{p}\left(t'\right)}{\mathrm{d}t'} = -\sigma_t(\mathbf{p}(t'))\tau_\mathbf{p}\left(t'\right)$, but Monte Carlo sampling of this integral turns out to be very very slow. See Georgiev et al.'s article for a deeper discussion~\cite{Georgiev:2019:IFV}.) This change of variable trick is called an \emph{exponential integrator} in ODE literature (Google it if you're interested ;).
 
 The Monte Carlo sampler we will apply for solving Equation~\ref{eq:transmittance_recursive_integral} is called the \emph{ratio tracking} method. The idea is to use a path tracing like algorithm with Russian roulette. We notice that the recursive integral is a bit like the rendering equation: we have the \emph{light source term} $\exp\left(-\sigma_m t'\right)$, and the recursive integral $\int_{0}^{t'} \exp\left(\sigma_m (t''-t')\right) \sigma_n(\mathbf{p}(t)) \tau_{\mathbf{p}}(t'') \mathrm{d}t''$. 
-Starting from $z=t'$, we sample a distance $z_d$ such that $p(z_d) \propto \exp\left(\sigma_m z_d\right)$ and update $z$. If we reach 0, then we evaluate the light source term. Otherwise we evaluate the recursive term. One way to think about this is that we hit the fake particle if we choose to evaluate the recursive term. The probability for evaluating the light source term is $\exp\left(-\sigma_m z\right)$ (Equation~\ref{eq:hit_surface_prob}), and the probability density for evaluating the recursive term is $\exp\left(-\sigma_m z_d\right) \sigma_m$. We accumulate these probabilities by multiplying them, while also account for the integrand.
+Starting from $z=t'$, we sample a distance $z_d$ such that $p(z_d) \propto \exp\left(\sigma_m z_d\right)$ and update $z$. If we reach 0, then we evaluate the light source term. Otherwise, we evaluate the recursive term. One way to think about this is that we hit the fake particle if we choose to evaluate the recursive term. The probability for evaluating the light source term is $\exp\left(-\sigma_m z\right)$ (Equation~\ref{eq:hit_surface_prob}), and the probability density for evaluating the recursive term is $\exp\left(-\sigma_m z_d\right) \sigma_m$. We accumulate these probabilities by multiplying them, while also accounting for the integrand.
 
-\paragraph{Dealing with chromatic media.} Finally we need to deal with colors. So far we have been assuming that $\sigma_a$ and $\sigma_s$ are monochromatic, but in practice they can be RGB colors (or even a vector representing response per wavelength). We deal with this by sampling a channel (R, G, or B) whenever we need to sample distance. Importantly, when computing probability density, we take the average probability density over all channels: this is a form of multiple importance sampling (called the one-sample multiple importance sampling~\cite{Veach:1995:OCS}).
+\paragraph{Dealing with chromatic media.} Finally, we need to deal with colors. So far, we have been assuming that $\sigma_a$ and $\sigma_s$ are monochromatic, but in practice, they can be RGB colors (or even a vector representing response per wavelength). We deal with this by sampling a channel (R, G, or B) whenever we need to sample distance. Importantly, when computing probability density, we take the average probability density over all channels: this is a form of multiple importance sampling (called the one-sample multiple importance sampling~\cite{Veach:1995:OCS}).
 
-\paragraph{Multiple importance sampling.} To combine phase function sampling with next event estimation, we need the PDFs for the ratio tracking (the sequence of decision we make to evaluate either the recursive term or the source term) during free-flight sampling, and the PDFs of free-flight sampling (the real/fake particle events) during next event estimation. So when evaluating the PDF for one of them, we must also accumuate the PDF of the other.
+\paragraph{Multiple importance sampling.} To combine phase function sampling with the next event estimation, we need the PDFs for the ratio tracking (the sequence of decisions we make to evaluate either the recursive term or the source term) during free-flight sampling, and the PDFs of free-flight sampling (the real/fake particle events) during next event estimation. So when evaluating the PDF for one of them, we must also accumulate the PDF of the other.
 
-Combining all of these, let's look at the pseudo code. For homogenized free-flight sampling it looks like this:
+Combining all of these, let's look at the pseudo-code. For homogenized free-flight sampling, it looks like this:
 \begin{lstlisting}[language=python]
 scatter = False
 transmittance = make_const_spectrum(1)
@@ -694,10 +692,10 @@ if in_medium():
 Two crucial differences between the pseudo code and the math above are:
 1) We terminate the loop when the iteration reaches a maximum amount of fake particle collisions 
 (default is set to $1000$). While this is not mathematically correct, I found that sometimes
-numerical error can lead to unbounded loops.
+the numerical error can lead to unbounded loops.
 2) We divide both transmittance and the PDF with the maximum of the majorant. This is to improve
-numerical robustness. Note that whenever we hit the fake particle, both the transmittance and
-the free-flight PDF needs to be multiplied with $\sigma_n$ ($\sigma_m (1 - \sigma_t / \sigma_m) = \sigma_n$),
+numerical robustness. Whenever we hit the fake particle, both the transmittance and
+the free-flight PDF needs to be multiplied with $\sigma_n$ (note that $\sigma_m (1 - \sigma_t / \sigma_m) = \sigma_n$),
 which can be a few hundreds or larger. If we do not normalize these values, the numbers will
 quickly blow up and go to infinity.
 
@@ -742,11 +740,30 @@ while True:
   # same as the previous next event estimation code...
 \end{lstlisting}
 
-Notice that Whenever we need to compute the Monte Carlo estimate of the transmittance, we need to divide it by the
-average of the PDFs over the RGB channels. For example, when updating the path throughput:
+Notice that whenever we need to compute the Monte Carlo estimate of the transmittance, we need to divide it by the
+average PDFs over the RGB channels. For example, when updating the path throughput:
 \begin{lstlisting}
 current_path_throughput *= (transmittance / avg(trans_dir_pdf))
 \end{lstlisting}
+Same when computing multiple importance sampling.
+
+\begin{figure}
+\centering
+\includegraphics[width=0.48\linewidth]{imgs/volpath_6.png}
+\caption{Test scene for our final volumetric path tracer.}
+\label{fig:volpath6}
+\end{figure}
+
+\begin{figure}
+\centering
+\includegraphics[width=0.48\linewidth]{imgs/hetvol.png}
+\caption{Monochromatic heterogeneous volume. Scene data courtesy of Wenzel Jakob.}
+\label{fig:hetvol}
+\end{figure}
+
+\paragraph{Task (20\%).} You will implement the algorithms above in the \lstinline{vol_path_tracing} function in \lstinline{vol_path_tracing.h}. For getting the majorant, use \lstinline{get_majorant} defined in \lstinline{medium.h}. For accessing \lstinline{max_null_collisions}, use \lstinline{scene.options.max_null_collisions}. Test your rendering using the scenes \lstinline{scenes/volpath_test/volpath_test6.xml} (chromatic homogeneous medium), \lstinline{scenes/volpath_test/hetvol.xml},  \lstinline{scenes/volpath_test/hetvol_colored.xml}. You should get images that look like the ones in Figure~\ref{fig:gallery},~\ref{fig:volpath6}, and~\ref{fig:hetvol}.
+
+\paragraph{Bonus (10\%).} Generate some heterogeneous volumes yourself and render them! Look at \lstinline{volume.cpp} for the format of the 3D volume grid.
 
 \bibliographystyle{plain}
 \bibliography{refs}
