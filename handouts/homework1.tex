@@ -315,7 +315,7 @@ The 2012 version of the Disney BRDF did not support glasses. In the 2015 version
 f_{\text{glass}} = \begin{cases}
 \frac{\text{baseColor} F_g D_g G_g}{4 |n \cdot \omega_{\text{in}}|} & \mbox{ if } \left(n_g \cdot \omega_{\text{in}}\right) \left(n_g \cdot \omega_{\text{out}}\right) > 0 \\
 \frac{\sqrt{\text{baseColor}} (1 - F_g) D_g G_g \left|h \cdot \omega_{\text{out}} h \cdot \omega_{\text{in}} \right|}{
-\left|n \cdot \omega_{\text{in}}\right| \left( h \cdot \omega_{\text{in}} + \eta \cdot \omega_{\text{out}} \right)^2} & \mbox{ otherwise}\\
+\left|n \cdot \omega_{\text{in}}\right| \left( h \cdot \omega_{\text{in}} + \eta h \cdot \omega_{\text{out}} \right)^2} & \mbox{ otherwise}\\
 \end{cases}
 \label{eq:f_glass}
 \end{equation}
