@@ -628,7 +628,7 @@ To solve this ODE, we apply a change of variable $\tilde{\tau}_{\mathbf{p}}(t') 
 \end{aligned}.
 \end{equation}
 
-Instead of solving the ODE above using exponentiation (which gives us back the exponential integral), we simply integrate both sides and get $\tilde{\tau}_{\mathbf{p}}(t') = 1 + \int_0^{t'} \sigma_n(\mathbf{p}(t')) \tilde{\tau}_{\mathbf{p}}(t') \mathrm{d}t''$. Changing the variable back to $\tau$ from $\tilde{tau}$ gives us:
+Instead of solving the ODE above using exponentiation (which gives us back the exponential integral), we simply integrate both sides and get $\tilde{\tau}_{\mathbf{p}}(t') = 1 + \int_0^{t'} \sigma_n(\mathbf{p}(t')) \tilde{\tau}_{\mathbf{p}}(t') \mathrm{d}t''$. Changing the variable back to $\tau$ from $\tilde{\tau}$ gives us:
 \begin{equation}
 \begin{aligned}
 \tau_{\mathbf{p}}(t') = \frac{\tilde{\tau}_{\mathbf{p}}(t')}{\exp\left(\sigma_m t'\right)} &= \exp\left(-\sigma_m t'\right) \left(1 + \int_{0}^{t'} \exp\left(\sigma_m t''\right) \sigma_n(\mathbf{p}(t)) \tau_{\mathbf{p}}(t'') \mathrm{d}t'' \right) \\
