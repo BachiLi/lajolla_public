@@ -80,7 +80,7 @@ You will need these functions to obtain the necessary quantities in the homework
 A \lstinline{HomogeneousMedium} should be straightforward: it contains constant $\sigma_a$ and $\sigma_s$.
 We will talk more about \lstinline{HeterogeneousMedium} and \lstinline{PhaseFunction} later.
 
-Lajolla assumes that the media are separated by surface boundaries (Figure~\ref{fig:data_structure}). It's up to the upstream users to make sure they are consistent with each other, and the surfaces are closed (if they are not, the results are undefined).\footnote{Modern production volume renderers have paid special attention to make sure the renderers can handle all sorts of inputs, including nested volumes. See \href{here}{https://graphics.pixar.com/library/ProductionVolumeRendering/index.html} for more information.}
+Lajolla assumes that the media are separated by surface boundaries (Figure~\ref{fig:data_structure}). It's up to the upstream users to make sure they are consistent with each other, and the surfaces are closed (if they are not, the results are undefined).\footnote{Modern production volume renderers have paid special attention to make sure the renderers can handle all sorts of inputs, including nested volumes. See \href{https://graphics.pixar.com/library/ProductionVolumeRendering/index.html}{here} for more information.}
 
 In the scene file, each objects are marked with corresponding exterior and interior media:
 \begin{lstlisting}[language=xml]
