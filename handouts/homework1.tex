@@ -325,7 +325,7 @@ Note that for the refractive case (the second case), the color is taken square r
 For the Fresnel $F_g$, Burley found that the Schlick approximation was very inaccurate for $\eta \approx 1$ (up to $40 \times$ brighter than actual Fresnel), and decided to use the actual Fresnel equation for the dielectric materials. Unlike conductors, the Fresnel reflection for dielectric materials does not require complex indices of refraction and is much more intuitive to control. For completeness, the Fresnel equation is:
 \begin{equation}
 \begin{aligned}
-F_g &= R_s^2 + R_p^2 \\
+F_g &= \frac{1}{2}\left(R_s^2 + R_p^2\right) \\
 R_s &= \frac{h \cdot \omega_{\text{in}} - \eta h \cdot \omega_{\text{out}}}{h \cdot \omega_{\text{in}} + \eta h \cdot \omega_{\text{out}}} \\
 R_p &= \frac{\eta h \cdot \omega_{\text{in}} - h \cdot \omega_{\text{out}}}{\eta h \cdot \omega_{\text{in}} + h \cdot \omega_{\text{out}}}
 \end{aligned}
