@@ -19,6 +19,10 @@
 		<float name="scale" value="100"/>
 
 		<float name="stepSize" value="0.1"/>
+
+		<phase type="hg">
+			<float name="g" value="0.0"/>
+		</phase>
 	</medium>
 
 	<shape type="obj">
@@ -49,7 +53,7 @@
 		</transform>
 
 		<sampler type="independent">
-			<integer name="sampleCount" value="256"/>
+			<integer name="sampleCount" value="32"/>
 		</sampler>
 
 		<film type="hdrfilm">
