@@ -657,11 +657,11 @@ if in_medium():
   u = next(rng) # u \in [0, 1]
   channel = clamp(int(u * 3), 0, 2)
   accum_t = 0
-  iter = 0
+  iteration = 0
   while True:
     if majorant[channel] <= 0:
       break
-    if iter >= max_null_collisions:
+    if iteration >= max_null_collisions:
       break
     t = -log(1 - next(rng)) / majorant[channel]
     dt = t_hit - accum_t
@@ -687,6 +687,7 @@ if in_medium():
       trans_dir_pdf *= exp(-majorant * dt)
       trans_nee_pdf *= exp(-majorant * dt)
       break
+    iteration += 1
 \end{lstlisting}
 
 Two crucial differences between the pseudo code and the math above are:
@@ -716,11 +717,11 @@ while True:
     if shadow_medium:
       u = next(rng) # Sample a channel for sampling
       channel = clamp(int(u * 3), 0, 2)
-      iter = 0
+      iteration = 0 = 0
       while True:
         if majorant[channel] <= 0:
           break
-        if iter >= max_null_collisions:
+        if iteration = 0 >= max_null_collisions:
           break
         t = -log(1 - next(rng)) / majorant[channel]
         dt = next_t - accum_t
@@ -737,6 +738,7 @@ while True:
           T_light *= exp(-majorant * dt);
           p_trans_nee *= exp(-majorant * dt);
           p_trans_dir *= exp(-majorant * dt);
+        iteration += 1
   # same as the previous next event estimation code...
 \end{lstlisting}
 
