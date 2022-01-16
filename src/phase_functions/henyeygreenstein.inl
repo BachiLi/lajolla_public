@@ -1,3 +1,5 @@
+#include "../frame.h"
+
 Spectrum eval_op::operator()(const HenyeyGreenstein &p) const {
     return make_const_spectrum(c_INVFOURPI *
         (1 - p.g * p.g) / 
@@ -27,16 +29,20 @@ std::optional<Vector3> sample_phase_function_op::operator()(const HenyeyGreenste
         Real phi = 2 * c_PI * rnd_param.y;
         return Vector3{r * cos(phi), r * sin(phi), z};
     } else {
-        Real tmp = (p.g * p.g - 1) / (2 * rnd_param.x - (p.g + 1));
+        Real tmp = (p.g * p.g - 1) / (2 * rnd_param.x * p.g - (p.g + 1));
         Real cos_elevation = (tmp * tmp - (1 + p.g * p.g)) / (2 * p.g);
         Real sin_elevation = sqrt(max(1 - cos_elevation * cos_elevation, Real(0)));
         Real azimuth = 2 * c_PI * rnd_param.y;
-        return Vector3{sin_elevation * cos(azimuth),
-                       sin_elevation * sin(azimuth),
-                       cos_elevation};
+        Frame frame(dir_in);
+        return to_world(frame,
+            Vector3{sin_elevation * cos(azimuth),
+                    sin_elevation * sin(azimuth),
+                    cos_elevation});
     }
 }
 
 Real pdf_sample_phase_op::operator()(const HenyeyGreenstein &p) const {
-    return c_INVFOURPI;
+    return c_INVFOURPI *
+        (1 - p.g * p.g) / 
+            (pow((1 + p.g * p.g + 2 * p.g * dot(dir_in, dir_out)), Real(3)/Real(2)));
 }
