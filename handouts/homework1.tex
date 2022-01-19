@@ -195,7 +195,7 @@ $\alpha_x, \alpha_y$ are parameters for modeling the smoothness of the material.
 \alpha_y &= max(\alpha_{\text{min}}, \text{roughness}^2 \cdot \text{aspect})
 \end{aligned},
 \end{equation}
-where $\text{anisotropic}$ and $\text{roughness}$ are the parameters.
+where $\text{anisotropic}$ and $\text{roughness}$ are the parameters, and $\alpha_{\text{min}} = 0.0001$.
 
 Given a normal distribution function and a microfacet configuration, it is possible to derive the average occlusion factor $G_m$ given a viewing angle~\cite{Heitz:2014:UMF}. Burley uses the Smith model, which enables a closed-form solution under the assumption that all the microfacets are independently oriented:
 \begin{equation}
