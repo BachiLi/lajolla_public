@@ -2,7 +2,7 @@
 
 \begin{document}
 
-\header{2}{Volumetric Path Tracing (tentative draft)}
+\header{2}{Volumetric Path Tracing}
 
 \begin{figure}[h]
     \includegraphics[width=\linewidth]{imgs/colored_smoke.png}
@@ -13,6 +13,8 @@
 In this homework, we will build a volumetric path tracer that can handle scattering and absorption inside participating media inside lajolla. We will split the development into 6 steps and build 6 volumetric path tracers. Each has more features than the previous ones.\footnote{This approach is inspired by Steve Marschner's \href{https://www.cs.cornell.edu/courses/cs6630/2015fa/notes/10volpath.pdf}{course note} on volumetric path tracing.} Your $n$-th volumetric path tracer should be able to render all scenes the $(n-1)$-th one can handle. If you want, you can only submit the final volumetric path tracer and let all the rest call the final code. This process is for helping you to slowly and steadily build up your rendering algorithm. You will notice that the scores sum up to more than $100\%$. This is because the last volumetric path tracer is a bit more mathematically involved (the implementation is not too bad though), so if you only did the first fifth, you still get $90\%$ of the scores. If you do all of them, you get $110\%$.
 
 \href{https://cs.dartmouth.edu/~wjarosz/publications/novak18monte-sig.html}{This SIGGRAPH course note} is a good reference if you fail to understand the handout. Steve Marschner's course note in the footnote is also very useful. Most of the math in the last part is from Miller et al.~\cite{Miller:2019:NPI} and Georgiev et al.~\cite{Georgiev:2019:IFV}'s articles.
+
+\paragraph{Submission and grading.} Please upload a zip file to Canvas including your code, and a text file (readme.txt) answering the questions below. For the questions, as long as you say something plausible, you will get full scores.
 
 Participating media are volumes with many infinitesimal particles absorbing and scattering lights. Given a ray inside the volume parametrized by distance $\mathbf{p}(t)$, the radiance along the ray is modeled by the \emph{radiative transfer equation}:
 \begin{equation}
@@ -273,7 +275,7 @@ Test your rendering using the scene \lstinline{scenes/volpath_test/volpath_test2
 
 \paragraph{Question(s) (5\%).} Play with the parameters $\sigma_s$ and $\sigma_a$, how do they affect the final image? Why? (we assume monochromatic volumes, so don't set the parameters to be different for each channel.)
 
-\paragraph{Bonus (25\%).} Implement the \emph{equiangular sampling}~\cite{Kulla:2012:IST} sampling strategy. Potentially combine it with the transmittance sampling using multiple importance sampling. (I do not recommend you implement this until you've finished the whole homework.)
+\paragraph{Bonus (25\%).} Implement the \emph{equiangular sampling}~\cite{Kulla:2012:IST} sampling strategy. Potentially combine it with the transmittance sampling using multiple importance sampling. (I do not recommend you implement this until you've finished the whole homework.) If you implement this bonus, please mention it in the README file, and provide rendering comparisons.
 
 \section{Multiple monochromatic homogeneous volumes with absorption and multiple-scattering using only phase function sampling, no surface lighting}
 \begin{figure}
@@ -767,7 +769,7 @@ Same when computing multiple importance sampling.
 
 \paragraph{Question (s) (5\%).} Play with the \lstinline{g} parameter of the Henyey-Greenstein phase function in \lstinline{scenes/volpath_test/hetvol.xml} (the valid range is $(-1, 1)$). How does it change the appearance? Why? 
 
-\paragraph{Bonus (10\%).} Generate some heterogeneous volumes yourself and render them! Look at \lstinline{volume.cpp} for the format of the 3D volume grid.
+\paragraph{Bonus (10\%).} Generate some heterogeneous volumes yourself and render them! Look at \lstinline{volume.cpp} for the format of the 3D volume grid. If you did this bonus, please submit the scene files and rendering and mention it in the README file.
 
 \bibliographystyle{plain}
 \bibliography{refs}
