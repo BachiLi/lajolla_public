@@ -428,7 +428,7 @@ We need to modify the metal BRDF $\hat{f}_{\text{metal}}$ a bit: recall that our
 a dielectric specular reflection. We include that in our metal BRDF. To do this, we modify the Fresnel term $F_m$ to include an achromatic specular component, with a control parameter $\text{specularTint}$ to potentially make it closer to the base color:
 \begin{equation}
 \begin{aligned}
-	\hat{F}_m &= C_0 + (1 - C_0) (1 - \left(h \cdot n\right)^5) \\
+	\hat{F}_m &= C_0 + (1 - C_0) \left(1 - \left(h \cdot n\right)\right)^5 \\
 	C_0 &= \text{specular} \cdot R_0(\eta) (1 - \text{metallic}) K_s + \text{metallic} \cdot \text{baseColor} \\
 	K_s &= (1 - \text{specularTint}) + \text{specularTint} \cdot C_{\text{tint}}
 \end{aligned}
