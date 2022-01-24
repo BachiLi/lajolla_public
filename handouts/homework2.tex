@@ -23,7 +23,7 @@ where $L$ is the radiance, $\sigma_a$ is the \emph{absorption coefficient}, $\si
 
 This looks a bit scary, so let's break it down. For now, we'll drop the arguments for $\sigma_a$ and $\sigma_s$, but in general, they can still be spatially varying. The radiative transfer equation is made of four components: \textbf{absorption}, \textbf{emission}, \textbf{in-scattering}, and \textbf{out-scattering}. Absorption and emission handle particles that absorb and emit lights:
 \begin{equation}
-\frac{\mathrm{d}}{\mathrm{d}t} L_a(\mathbf{p}(t), \omega) = -\sigma_a L_a(\mathbf{p}(t), \omega) + \sigma_a L_e(\mathbf{p}(t), \omega).
+\frac{\mathrm{d}}{\mathrm{d}t} L_a(\mathbf{p}(t), \omega) = -\sigma_a L_a(\mathbf{p}(t), \omega) + L_e(\mathbf{p}(t), \omega).
 \end{equation}
 Notice how this is a linear ordinary differential equation $x' = ax + b$, where $\sigma_a$ attenuates lights and $L_e$ is the gain.
 
