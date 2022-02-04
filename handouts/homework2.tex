@@ -241,10 +241,10 @@ Thus our rendering algorithm (that generate a sample for a pixel) looks like thi
 def L(screen_pos, rng):
   camera_ray = sample_primary(camera, screen_pos, rng)
   isect = intersect(scene, camera_ray)
-  if isect:
-    u = next(rng) # u \in [0, 1]
-    t = (1 - u) / sigma_t
-    if t < isect.t_hit:
+
+  u = next(rng) # u \in [0, 1]
+  t = -log(1 - u) / sigma_t
+  if t < isect.t_hit:
         trans_pdf = exp(-sigma_t * t) * sigma_t
         transmittance = exp(-sigma_t * t)
         # compute L_s1 using Monte Carlo sampling
