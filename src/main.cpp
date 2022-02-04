@@ -10,15 +10,18 @@
 
 int main(int argc, char *argv[]) {
     if (argc <= 1) {
-        std::cout << "[Usage] ./lajolla [-t num_threads] filename.xml" << std::endl;
+        std::cout << "[Usage] ./lajolla [-t num_threads] [-o output_file_name] filename.xml" << std::endl;
         return 0;
     }
 
     int num_threads = std::thread::hardware_concurrency();
+    std::string outputfile = "";
     std::vector<std::string> filenames;
     for (int i = 1; i < argc; ++i) {
         if (std::string(argv[i]) == "-t") {
             num_threads = std::stoi(std::string(argv[++i]));
+        } if (std::string(argv[i]) == "-o") {
+            outputfile = std::string(argv[++i]);
         } else {
             filenames.push_back(std::string(argv[i]));
         }
@@ -35,12 +38,14 @@ int main(int argc, char *argv[]) {
         std::cout << "Done. Took " << tick(timer) << " seconds." << std::endl;
         std::cout << "Rendering..." << std::endl;
         Image3 img = render(scene);
+        if (outputfile.compare("") == 0) {outputfile = scene.output_filename;}
         std::cout << "Done. Took " << tick(timer) << " seconds." << std::endl;
-        imwrite(scene.output_filename, img);
-        std::cout << "Image written to " << scene.output_filename << std::endl;
+        imwrite(outputfile, img);
+        std::cout << "Image written to " << outputfile << std::endl;
     }
 
     parallel_cleanup();
     rtcReleaseDevice(embree_device);
     return 0;
 }
+
