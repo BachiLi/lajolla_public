@@ -245,22 +245,21 @@ def L(screen_pos, rng):
   u = next(rng) # u \in [0, 1]
   t = -log(1 - u) / sigma_t
   if t < isect.t_hit:
-        trans_pdf = exp(-sigma_t * t) * sigma_t
-        transmittance = exp(-sigma_t * t)
-        # compute L_s1 using Monte Carlo sampling
-        p = camera_ray.org + t * camera_ray.dir
-        # Equation 7
-        L_s1_estimate, L_s1_pdf = L_s1(p, sample_point_on_light(rng))
-        return (transmittance / trans_pdf) * (L_s1_estimate / L_s1_pdf)
-    else:
-        # hit a surface, account for surface emission
-        trans_pdf = exp(-sigma_t * isect.t_hit)
-        transmittance = exp(-sigma_t * isect.t_hit)
-        Le = 0
-        if is_light(isect):
-          Le = isect.Le
-        return (transmittance / trans_pdf) * Le
-  return 0
+    trans_pdf = exp(-sigma_t * t) * sigma_t
+    transmittance = exp(-sigma_t * t)
+    # compute L_s1 using Monte Carlo sampling
+    p = camera_ray.org + t * camera_ray.dir
+    # Equation 7
+    L_s1_estimate, L_s1_pdf = L_s1(p, sample_point_on_light(rng))
+    return (transmittance / trans_pdf) * sigma_s * (L_s1_estimate / L_s1_pdf)
+  else:
+    # hit a surface, account for surface emission
+    trans_pdf = exp(-sigma_t * isect.t_hit)
+    transmittance = exp(-sigma_t * isect.t_hit)
+    Le = 0
+    if is_light(isect):
+      Le = isect.Le
+    return (transmittance / trans_pdf) * Le
 \end{lstlisting}
 
 \begin{figure}
