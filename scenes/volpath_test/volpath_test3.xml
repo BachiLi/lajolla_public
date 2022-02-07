@@ -13,17 +13,17 @@
 	</medium>
 
 	<medium type="homogeneous" id="medium2">
-		<rgb name="sigmaA" value="1.0 1.0 1.0"/>
+		<rgb name="sigmaA" value="5 5 5"/>
 		<rgb name="sigmaS" value="0.5 0.5 0.5"/>
-		<float name="scale" value="200"/>
+		<float name="scale" value="1"/>
 	</medium>
 
 	<shape type="sphere">
 		<point name="center" x="-0.5" y="-0.5" z="0"/>
 		<float name="radius" value="0.75"/>
 
-		<ref name="interior" id="medium1"/>
-		<ref name="exterior" id="medium2"/>
+		<ref name="interior" id="medium2"/>
+		<ref name="exterior" id="medium1"/>
 	</shape>
 
 	<shape type="sphere">
@@ -34,7 +34,7 @@
 			<spectrum name="radiance" value="10"/>
 		</emitter>
 
-		<ref name="exterior" id="medium2"/>
+		<ref name="exterior" id="medium1"/>
 
 		<bsdf type="diffuse">
 			<rgb name="reflectance" value="0.0 0.0 0.0"/>
