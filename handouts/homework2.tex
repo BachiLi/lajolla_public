@@ -347,6 +347,7 @@ def L(screen_pos, rng):
       if isect.material_id == -1:
         # index-matching interface, skip through it
         current_medium = update_medium(ray, isect, medium)
+        bounces += 1
         continue
 
     # sample next direct & update path throughput
