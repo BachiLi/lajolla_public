@@ -429,10 +429,10 @@ def next_event_estimation(p, current_medium):
       next_t = distance(p, p_prime)
       if isect:
         next_t = distance(p, isect.position)
-        # Account for the transmittance to next_t
-        if shadow_medium:
-          T_light *= exp(-sigma_t * next_t)
-          p_trans_dir *= exp(-sigma_t * next_t)
+      # Account for the transmittance to next_t
+      if shadow_medium:
+        T_light *= exp(-sigma_t * next_t)
+        p_trans_dir *= exp(-sigma_t * next_t)
 
       if not isect:
         # Nothing is blocking, we're done
