@@ -431,40 +431,40 @@ def next_event_estimation(p, current_medium):
         next_t = distance(p, isect.position)
         # Account for the transmittance to next_t
         if shadow_medium:
-            T_light *= exp(-sigma_t * next_t)
-            p_trans_dir *= exp(-sigma_t * next_t)
+          T_light *= exp(-sigma_t * next_t)
+          p_trans_dir *= exp(-sigma_t * next_t)
 
-        if not isect:
-            # Nothing is blocking, we're done
-            break
-        else:
-            # Something is blocking: is it an opaque surface?
-            if isect.material_id >= 0:
-                # we're blocked
-                return 0
-            # otherwise, it's an index-matching surface and
-            # we want to pass through -- this introduces
-            # one extra connection vertex
-            shadow_bounces += 1
-            if max_depth != -1 and bounces + shadow_bounces >= max_depth:
-                # Reach the max no. of vertices
-                return 0
+      if not isect:
+        # Nothing is blocking, we're done
+        break
+      else:
+        # Something is blocking: is it an opaque surface?
+        if isect.material_id >= 0:
+          # we're blocked
+          return 0
+        # otherwise, it's an index-matching surface and
+        # we want to pass through -- this introduces
+        # one extra connection vertex
+        shadow_bounces += 1
+        if max_depth != -1 and bounces + shadow_bounces >= max_depth:
+          # Reach the max no. of vertices
+          return 0
 
-            shadow_medium = update_medium(isect, ray, shadow_medium)
-            p = p + next_t * dir_light
+        shadow_medium = update_medium(isect, ray, shadow_medium)
+        p = p + next_t * dir_light
 
     if T_light > 0:
-        # Compute T_light * G * f * L & pdf_nee
-        # ...
-        contrib = T_light * G * f * L / pdf_nee
-        # Multiple importance sampling: it's also possible
-        # that a phase function sampling + multiple exponential sampling
-        # will reach the light source.
-        # We also need to multiply with G to convert phase function PDF to area measure.
-        pdf_phase = pdf_sample_phase(phase_function, dir_view, dir_light) * G * p_trans_dir
-        # power heuristics
-        w = (pdf_nee * pdf_nee) / (pdf_nee * pdf_nee + pdf_phase * pdf_phase)
-        return w * contrib
+      # Compute T_light * G * f * L & pdf_nee
+      # ...
+      contrib = T_light * G * f * L / pdf_nee
+      # Multiple importance sampling: it's also possible
+      # that a phase function sampling + multiple exponential sampling
+      # will reach the light source.
+      # We also need to multiply with G to convert phase function PDF to area measure.
+      pdf_phase = pdf_sample_phase(phase_function, dir_view, dir_light) * G * p_trans_dir
+      # power heuristics
+      w = (pdf_nee * pdf_nee) / (pdf_nee * pdf_nee + pdf_phase * pdf_phase)
+      return w * contrib
     return 0
 \end{lstlisting}
 
