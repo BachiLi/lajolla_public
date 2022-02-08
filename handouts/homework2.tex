@@ -410,9 +410,9 @@ Sampling only using the phase function is inefficient, especially when the light
 Mathematically, the next event estimation is a change of variable of the spherical single scattering integral:
 \begin{equation}
 \int_{S^2} \rho(\mathbf{p}, \omega, \omega') \tau(\mathbf{p}, \mathbf{p}') L_e(\mathbf{p}') \mathrm{d} \omega' =
-\int_{E} \rho(\mathbf{p}, \omega, \omega') \tau(\mathbf{p}, \mathbf{p}') L_e(\mathbf{p}') \frac{\mathbf{n}_{\mathbf{p}'}}{\left|\mathbf{p} - \mathbf{p}'\right|^2} \mathrm{d} \mathbf{p}',
+\int_{E} \rho(\mathbf{p}, \omega, \omega') \tau(\mathbf{p}, \mathbf{p}') L_e(\mathbf{p}') \frac{\left|\omega' \cdot \mathbf{n}_{\mathbf{p}'}\right|}{\left|\mathbf{p} - \mathbf{p}'\right|^2} \mathrm{d} \mathbf{p}',
 \end{equation}
-where $\mathbf{p}'$ are points on the light sources, $\tau(\mathbf{p}, \mathbf{p}')$ is the transmittance between point $\mathbf{p}$ and $\mathbf{p}'$. We also need to include the geometry term $\frac{\mathbf{n}_{\mathbf{p}'}}{\left|\mathbf{p} - \mathbf{p}'\right|^2}$ as the Jacobian of the change of variable.
+where $\mathbf{p}'$ are points on the light sources, $\tau(\mathbf{p}, \mathbf{p}')$ is the transmittance between point $\mathbf{p}$ and $\mathbf{p}'$. We also need to include the geometry term $\frac{\left|\omega' \cdot \mathbf{n}_{\mathbf{p}'}\right|}{\left|\mathbf{p} - \mathbf{p}'\right|^2}$ as the Jacobian of the change of variable.
 
 The pseudo-code for the volumetric next event estimation looks like this:
 \begin{lstlisting}[language=python]
