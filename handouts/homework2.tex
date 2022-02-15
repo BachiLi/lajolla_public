@@ -510,8 +510,8 @@ if not scatter:
     # The PDF for sampling the light source using phase function sampling + transmittance sampling
     # The directional sampling pdf was cached in dir_pdf in solid angle measure.
     # The transmittance sampling pdf was cached in multi_trans_pdf.
-    pdf_phase = dir_pdf * multi_trans_pdf * G;
-    w = (p_dir * p_dir) / (p_dir * p_dir + p_nee * p_nee)
+    dir_pdf_ = dir_pdf * multi_trans_pdf * G;
+    w = (dir_pdf_ * dir_pdf_) / (dir_pdf_ * dir_pdf_ + pdf_nee * pdf_nee)
     # current_path_throughput already accounts for transmittance.
     radiance += current_path_throughput * emission(vertex, -ray.dir, scene) * w
 \end{lstlisting}
