@@ -719,11 +719,11 @@ while True:
     if shadow_medium:
       u = next(rng) # Sample a channel for sampling
       channel = clamp(int(u * 3), 0, 2)
-      iteration = 0 = 0
+      iteration = 0
       while True:
         if majorant[channel] <= 0:
           break
-        if iteration = 0 >= max_null_collisions:
+        if iteration >= max_null_collisions:
           break
         t = -log(1 - next(rng)) / majorant[channel]
         dt = next_t - accum_t
