@@ -7,15 +7,15 @@
 	</integrator>
 
 	<medium type="homogeneous" id="medium1">
-		<rgb name="sigmaA" value="1 0.5 0.4"/>
-		<rgb name="sigmaS" value="1 0.6 1.2"/>
-		<float name="scale" value="0.05"/>
-	</medium>
-
-	<medium type="homogeneous" id="medium2">
 		<rgb name="sigmaA" value="1.0 1.5 1.5"/>
 		<rgb name="sigmaS" value="0.5 0.75 0.25"/>
 		<float name="scale" value="200"/>
+	</medium>
+
+	<medium type="homogeneous" id="medium2">
+		<rgb name="sigmaA" value="1 0.5 0.4"/>
+		<rgb name="sigmaS" value="1 0.6 1.2"/>
+		<float name="scale" value="0.05"/>
 	</medium>
 
 	<shape type="sphere">
@@ -72,6 +72,6 @@
 			<rfilter type="gaussian"/>
 		</film>
 
-		<ref id="medium1"/>
+		<ref id="medium2"/>
 	</sensor>
 </scene>
