@@ -20,7 +20,7 @@ int main(int argc, char *argv[]) {
     for (int i = 1; i < argc; ++i) {
         if (std::string(argv[i]) == "-t") {
             num_threads = std::stoi(std::string(argv[++i]));
-        } if (std::string(argv[i]) == "-o") {
+        } else if (std::string(argv[i]) == "-o") {
             outputfile = std::string(argv[++i]);
         } else {
             filenames.push_back(std::string(argv[i]));
