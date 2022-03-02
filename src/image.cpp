@@ -66,6 +66,7 @@ Image1 imread1(const fs::path &filename) {
             FreeEXRErrorMessage(err);
             Error(std::string("Failure when loading image: ") + filename.string());
         }
+        img = Image1(width, height);
         for (int i = 0; i < width * height; i++) {
             img(i) = (data[4 * i] + data[4 * i + 1] + data[4 * i + 2]) / 3;
         }
