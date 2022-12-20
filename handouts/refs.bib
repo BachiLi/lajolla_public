@@ -11,6 +11,7 @@
 @string{CGF = "Comput. Graph. Forum"}
 @string{JOSA = "J. Opt. Soc. Am."}
 @string{CGF_EGSR = "Comput. Graph. Forum (Proc. EGSR)"}
+@string{CGF_EG = "Comput. Graph. Forum (Proc. Eurographics)"}
 
 @inproceedings{Woodcock:1965:TGC,
     title = {Techniques used in the {GEM} code for {Monte Carlo} neutronics calculations in reactors and other systems of complex geometry},
@@ -118,6 +119,14 @@
     year = {1994}
 }
 
+@inproceedings{Lafortune:1995:5RV,
+    author = { Lafortune, Eric P. and Willems, Yves D. },
+    title = { A {5D} tree to reduce the variance of {Monte Carlo} ray tracing },
+    booktitle = RT_EGWR,
+    year = { 1995 },
+    pages = { 11--20 }
+}
+
 @inproceedings{Smith:1995:PLS,
     title = {A pixel is not a little square, a pixel is not a little square, a pixel is not a little square!(and a voxel is not a little cube},
     author = {Smith, Alvy Ray},
@@ -150,6 +159,26 @@
     year = {2001}
 }
 
+@article{Kelemen:2002:SRM,
+    author = {Kelemen, Csaba and Szirmay-Kalos, L{\'a}szl{\'o} and Antal, Gy{\"o}rgy and Csonka, Ferenc},
+    title = {A Simple and Robust Mutation Strategy for the {Metropolis} Light Transport Algorithm},
+    journal = CGF_EG,
+    year = {2002},
+    volume = {21},
+    number = {3},
+    pages = {531--540}
+}
+
+@article{Marschner:2003:LSH,
+    title = {Light scattering from human hair fibers},
+    author = {Marschner, Stephen R and Jensen, Henrik Wann and Cammarano, Mike and Worley, Steve and Hanrahan, Pat},
+    journal = TOG_SIGGRAPH,
+    volume = {22},
+    number = {3},
+    pages = {780--791},
+    year = {2003}
+}
+
 @article{Matusik:2003:DRM,
     author = {Matusik, Wojciech and Pfister, Hanspeter and Brand, Matt and McMillan, Leonard},
     title = {A Data-driven Reflectance Model},
@@ -175,6 +204,42 @@
     booktitle = {Symposium on Interactive Ray Tracing},
     pages = {125--132},
     year = {2006}
+}
+
+@article{Hachisuka:2008:PPM,
+    author = {Hachisuka, Toshiya and Ogaki, Shinji and Jensen, Henrik Wann},
+    title = {Progressive Photon Mapping},
+    journal = TOG_SIGGRAPHAsia,
+    volume = {27},
+    number = {5},
+    year = {2008},
+    pages = {130:1--130:8}
+}
+
+@inproceedings{Olano:2010:LM,
+    title = {LEAN mapping},
+    author = {Olano, Marc and Baker, Dan},
+    booktitle = {Symposium on Interactive 3D Graphics and Games},
+    pages = {181--188},
+    year = {2010}
+}
+
+@article{Knaus:2011:PPM,
+    title = {Progressive Photon Mapping: A Probabilistic Approach},
+    author = {Knaus, Claude and Zwicker, Matthias},
+    journal = TOG,
+    volume = {30},
+    number = {3},
+    year = {2011},
+    pages = {25:1--25:13}
+}
+
+@inproceedings{Chen:2011:RVS,
+    title = {Real-time volumetric shadows using {1D} min-max mipmaps},
+    author = {Chen, Jiawen and Baran, Ilya and Durand, Fr{\'e}do and Jarosz, Wojciech},
+    booktitle = {Symposium on Interactive 3D Graphics and Games},
+    pages = {39--46},
+    year = {2011}
 }
 
 @article{Kulla:2012:IST,
@@ -204,6 +269,16 @@
     year = {2012}
 }
 
+@article{Dupuy:2013:LEA,
+    title = {Linear efficient antialiased displacement and reflectance mapping},
+    author = {Dupuy, Jonathan and Heitz, Eric and Iehl, Jean-Claude and Poulin, Pierre and Neyret, Fabrice and Ostromoukhov, Victor},
+    journal = TOG_SIGGRAPHAsia,
+    volume = {32},
+    number = {6},
+    pages = {1--11},
+    year = {2013}
+}
+
 @article{Wyman:2013:SAP,
     title = {Simple analytic approximations to the {CIE} {XYZ} color matching functions},
     author = {Wyman, Chris and Sloan, Peter-Pike and Shirley, Peter},
@@ -212,6 +287,15 @@
     number = {2},
     pages = {11},
     year = {2013}
+}
+
+@article{Yan:2014:RGH,
+    author = {Ling-Qi Yan and Milo{\v{s}} Ha{\v{s}}an and Wenzel Jakob and Jason Lawrence and Steve Marschner and Ravi Ramamoorthi},
+    title = {Rendering Glints on High-Resolution Normal-Mapped Specular Surfaces},
+    journal = TOG_SIGGRAPH,
+    year = {2014},
+    volume = {33},
+    number = {4}
 }
 
 @article{Heitz:2014:UMF,
@@ -224,12 +308,52 @@
     year = {2014}
 }
 
+@article{Kettunen:2015:GPT,
+    author = {Kettunen, Markus and Manzi, Marco and Aittala, Miika and Lehtinen, Jaakko and Durand, Fr{\'e}do and Zwicker, Matthias},
+    title = {Gradient-domain Path Tracing},
+    journal = TOG_SIGGRAPH,
+    volume = {34},
+    number = {4},
+    year = {2015},
+    pages = {123:1--123:13},
+    publisher = {ACM}
+}
+
+@inproceedings{Christensen:2015:ARP,
+    author = {Christensen, Per H.},
+    title = {An Approximate Reflectance Profile for Efficient Subsurface Scattering},
+    year = {2015},
+    booktitle = {ACM SIGGRAPH Talks},
+    articleno = {25},
+    numpages = {1}
+}
+
+@article{Heitz:2015:SMD,
+    title = {The SGGX microflake distribution},
+    author = {Heitz, Eric and Dupuy, Jonathan and Crassin, Cyril and Dachsbacher, Carsten},
+    journal = TOG_SIGGRAPHAsia,
+    volume = {34},
+    number = {4},
+    pages = {1--11},
+    year = {2015}
+}
+
 @article{Burley:2015:EDB,
     title = {Extending the {Disney} {BRDF} to a {BSDF} with integrated subsurface scattering},
     author = {Burley, Brent},
     journal = {SIGGRAPH Course},
     volume = {19},
     year = {2015}
+}
+
+@article{Heitz:2016:MMB,
+    title = {Multiple-scattering microfacet {BSDFs} with the {Smith} model},
+    author = {Heitz, Eric and Hanika, Johannes and d'Eon, Eugene and Dachsbacher, Carsten},
+    journal = TOG_SIGGRAPH,
+    volume = {35},
+    number = {4},
+    pages = {1--14},
+    year = {2016}
 }
 
 @article{Heitz:2016:RPS,
@@ -253,6 +377,37 @@
     year = {2016}
 }
 
+@article{Belcour:2017:PEM,
+    title = {A practical extension to microfacet theory for the modeling of varying iridescence},
+    author = {Belcour, Laurent and Barla, Pascal},
+    journal = TOG_SIGGRAPH,
+    volume = {36},
+    number = {4},
+    pages = {1--14},
+    year = {2017}
+}
+
+@article{Muller:2017:PPG,
+    author = {M\"uller, Thomas and Gross, Markus and Nov\'ak, Jan},
+    title = {Practical Path Guiding for Efficient Light-Transport Simulation},
+    journal = CGF_EGSR,
+    volume = {36},
+    number = {4},
+    year = {2017},
+    pages = {91--100}
+}
+
+@article{Anderson:2017:AED,
+    author = {Anderson, Luke and Li, Tzu-Mao and Lehtinen, Jaakko and Durand, Fr{\'e}do},
+    title = {{Aether}: An Embedded Domain Specific Sampling Language for {Monte Carlo} Rendering},
+    journal = TOG_SIGGRAPH,
+    volume = {36},
+    number = {4},
+    year = {2017},
+    pages = {99:1--99:16},
+    publisher = {ACM}
+}
+
 @article{Belcour:2017:ACG,
     author = {Belcour, Laurent and Yan, Ling-Qi and Ramamoorthi, Ravi and Nowrouzezahrai, Derek},
     title = {Antialiasing Complex Global Illumination Effects in Path-Space},
@@ -261,6 +416,27 @@
     number = {1},
     year = {2017},
     publisher = {ACM}
+}
+
+@article{Li:2018:DMC,
+    title = {Differentiable {Monte Carlo} Ray Tracing through Edge Sampling},
+    author = {Li, Tzu-Mao and Aittala, Miika and Durand, Fr{\'e}do and Lehtinen, Jaakko},
+    journal = TOG_SIGGRAPHAsia,
+    volume = {37},
+    number = {6},
+    pages = {222:1--222:11},
+    year = {2018},
+    publisher = {ACM}
+}
+
+@article{Guo:2018:PMC,
+    title = {Position-free {Monte Carlo} simulation for arbitrary layered BSDFs},
+    author = {Guo, Yu and Ha{\v{s}}an, Milo{\v{s}} and Zhao, Shuang},
+    journal = {ACM Transactions on Graphics (ToG)},
+    volume = {37},
+    number = {6},
+    pages = {1--14},
+    year = {2018}
 }
 
 @article{Christensen:2018:RAP,
@@ -290,6 +466,41 @@
     year = {2018}
 }
 
+@inproceedings{Levy:2018:GHM,
+    title = {Generalizing {Hamiltonian} {Monte Carlo} with Neural Networks},
+    author = {Daniel Levy and Matt D. Hoffman and Jascha Sohl-Dickstein},
+    booktitle = {International Conference on Learning Representations},
+    year = {2018}
+}
+
+@inproceedings{Yuksel:2019:SL,
+    author = {Cem Yuksel},
+    title = {Stochastic Lightcuts},
+    booktitle = {High-Performance Graphics},
+    year = {2019},
+    pages = {27--32}
+}
+
+@article{Kondapaneni:2019:OMI,
+    title = {Optimal multiple importance sampling},
+    author = {Kondapaneni, Ivo and V{\'e}voda, Petr and Grittmann, Pascal and Sk{\v{r}}ivan, Tom{\'a}{\v{s}} and Slusallek, Philipp and K{\v{r}}iv{\'a}nek, Jaroslav},
+    journal = TOG_SIGGRAPH,
+    volume = {38},
+    number = {4},
+    pages = {1--14},
+    year = {2019}
+}
+
+@article{Muller:2019:NIS,
+    title = {Neural importance sampling},
+    author = {M{\"u}ller, Thomas and McWilliams, Brian and Rousselle, Fabrice and Gross, Markus and Nov{\'a}k, Jan},
+    journal = TOG,
+    volume = {38},
+    number = {5},
+    pages = {1--19},
+    year = {2019}
+}
+
 @article{Georgiev:2019:IFV,
     author = {Georgiev, Iliyan and Misso, Zackary and Hachisuka, Toshiya and Nowrouzezahrai, Derek and Křivánek, Jaroslav and Jarosz, Wojciech},
     title = {Integral formulations of volumetric transmittance},
@@ -306,4 +517,147 @@
     volume = {38},
     number = {4},
     year = {2019}
+}
+
+@article{Bitterli:2020:SRR,
+    title = {Spatiotemporal reservoir resampling for real-time ray tracing with dynamic direct lighting},
+    author = {Bitterli, Benedikt and Wyman, Chris and Pharr, Matt and Shirley, Peter and Lefohn, Aaron and Jarosz, Wojciech},
+    journal = TOG_SIGGRAPH,
+    volume = {39},
+    number = {4},
+    pages = {148},
+    year = {2020}
+}
+
+@article{Gamboa:2020:ETE,
+    title = {An efficient transport estimator for complex layered materials},
+    author = {Gamboa, Luis E and Gruson, Adrien and Nowrouzezahrai, Derek},
+    booktitle = CGF_EG,
+    volume = {39},
+    number = {2},
+    pages = {363--371},
+    year = {2020}
+}
+
+@article{Muller:2021:RNR,
+    author = {M\"{u}ller, Thomas and Rousselle, Fabrice and Nov\'{a}k, Jan and Keller, Alexander},
+    title = {Real-time Neural Radiance Caching for Path Tracing},
+    journal = TOG_SIGGRAPH,
+    volume = {40},
+    number = {4},
+    year = {2021},
+    pages = {36:1--36:16}
+}
+
+@inproceedings{KeilYu:2021:PRF,
+    title = {Plenoxels: Radiance Fields without Neural Networks},
+    author = {{Sara Fridovich-Keil and Alex Yu} and Matthew Tancik and Qinhong Chen and Benjamin Recht and Angjoo Kanazawa},
+    year = {2022},
+    booktitle = {Computer Vision and Pattern Recognition},
+}
+
+@article{Thonat:2021:TDM,
+    title = {Tessellation-free displacement mapping for ray tracing},
+    author = {Thonat, Theo and Beaune, Francois and Sun, Xin and Carr, Nathan and Boubekeur, Tamy},
+    journal = TOG_SIGGRAPHAsia,
+    volume = {40},
+    number = {6},
+    pages = {1--16},
+    year = {2021}
+}
+
+@article{Mildenhall:2021:NRS,
+    title = {{NeRF}: Representing scenes as neural radiance fields for view synthesis},
+    author = {Mildenhall, Ben and Srinivasan, Pratul P and Tancik, Matthew and Barron, Jonathan T and Ramamoorthi, Ravi and Ng, Ren},
+    journal = {Communications of the ACM},
+    volume = {65},
+    number = {1},
+    pages = {99--106},
+    year = {2021}
+}
+
+@article{Kettunen:2021:URT,
+    author = {Kettunen, Markus and D'Eon, Eugene and Pantaleoni, Jacopo and Nov\'{a}k, Jan},
+    title = {An Unbiased Ray-Marching Transmittance Estimator},
+    year = {2021},
+    volume = {40},
+    number = {4},
+    journal = TOG_SIGGRAPH,
+    articleno = {137},
+    numpages = {20}
+}
+
+@article{Paulin:2021:CSS,
+    title = {Cascaded Sobol' Sampling},
+    author = {Paulin, Lois and Coeurjolly, David and Iehl, Jean-Claude and Bonneel, Nicolas and Keller, Alexander and Ostromoukhov, Victor},
+    journal = TOG_SIGGRAPHAsia,
+    volume = {40},
+    number = {6},
+    pages = {1--13},
+    year = {2021}
+}
+
+@article{Wang:2021:LCR,
+    title = {Learning to cluster for rendering with many lights},
+    author = {Wang, Yu-Chen and Wu, Yu-Ting and Li, Tzu-Mao and Chuang, Yung-Yu},
+    journal = TOG_SIGGRAPHAsia,
+    volume = {40},
+    number = {6},
+    pages = {1--10},
+    year = {2021}
+}
+
+@inproceedings{Rosu:2022:NSL,
+    title = {Neural strands: Learning hair geometry and appearance from multi-view images},
+    author = {Rosu, Radu Alexandru and Saito, Shunsuke and Wang, Ziyan and Wu, Chenglei and Behnke, Sven and Nam, Giljoo},
+    booktitle = {European Conference on Computer Vision},
+    pages = {73--89},
+    year = {2022}
+}
+
+@inproceedings{Bangaru:2022:DRN,
+    title = {Differentiable Rendering of Neural {SDFs} through Reparameterization},
+    author = {Bangaru, Sai and Gharbi, Michael and Li, Tzu-Mao and Luan, Fujun and Sunkavalli, Kalyan and Hasan, Milos and Bi, Sai and Xu, Zexiang and Bernstein, Gilbert and Durand, Fredo},
+    booktitle = {ACM SIGGRAPH Asia Conference Proceedings},
+    articleno = {22},
+    numpages = {9},
+    year = {2022}
+}
+
+@article{Yan:2022:EEB,
+    title = {Efficient Estimation of Boundary Integrals for Path-Space Differentiable Rendering},
+    author = {Yan, Kai and Lassner, Christoph and Budge, Brian and Dong, Zhao and Zhao, Shuang},
+    journal = TOG_SIGGRAPH,
+    volume = {41},
+    number = {4},
+    year = {2022},
+    pages = {123:1--123:13}
+}
+
+@article{Grittmann:2022:EMI,
+    author = {Pascal Grittmann and \"Omercan Yazici and Iliyan Georgiev and Philipp Slusallek},
+    title = {Efficiency-aware multiple importance sampling for bidirectional rendering algorithms},
+    journal = TOG_SIGGRAPH,
+    year = {2022},
+    volume = {41},
+    number = {4}
+}
+
+@article{Gu:2022:NJC,
+    title = {Neural {James-Stein} Combiner for Unbiased and Biased Renderings},
+    author = {Gu, Jeongmin and Iglesias-Guitian, Jose A and Moon, Bochang},
+    journal = TOG_SIGGRAPHAsia,
+    volume = {41},
+    number = {6},
+    year = {2022}
+}
+
+@article{Wang:2022:PMC,
+    author = {Beibei Wang and Wenhua Jin and Jiahui Fan and Jian Yang and Nicolas Holzschuch and Ling-Qi Yan},
+    title = {Position-free Multiple-bounce Computations for {Smith} Microfacet {BSDFs}},
+    journal = TOG_SIGGRAPH,
+    year = {2022},
+    volume = {41},
+    number = {4},
+    pages={134:1--134:14}
 }

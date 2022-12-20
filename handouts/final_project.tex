@@ -1,0 +1,184 @@
+\input{preamble}
+
+\begin{document}
+
+\header{3}{Final Project}
+
+The final project will be a project of your choice. Ideally it will be a rendering-related research project with a new algorithm or system. It is also fine for you to implement some non-trivial rendering algorithms in the lajolla renderer (or your own renderer!).
+Below we provide some options for you to think about, but feel free to come up with your own ones.
+
+\paragraph{Grading.} 
+The project will be graded based on two aspects: technical sophistication and artistic sophistication.
+You can have a project that does not have much technical component, but it renders beautiful images.
+Alternatively, you can have a project that produces programmer arts, but is highly technical. 
+To encourage people to pursue ambitious projects, the more ambitious the project is, the less requirement that is to the completness of the project. 
+For example, if you aim to work on a research idea that is novel enough to be published at SIGGRAPH, we will not judge you using the standard of a technical paper.
+It is sufficient to show your work and the initial prototypes and experiments you develop, even if the initial result does not show practical benefit yet.
+
+\paragraph{Logistics.}
+Before 2/7, please let us know what you plan to do for the final project by sending an email to me (tzli@ucsd.edu), and have a brief plan in one or two paragraphs.
+Schedule a chat with us if you have any question. We will have multiple checkpoints between 2/7 and the due date: send us a brief progress report in a few paragraphs describing what you did and what you plan to do next.
+Let's have a maximum of two people in a group. 
+For the research type projects, to avoid conflicts, if multiple groups want to work on the same project, we will consider merging the groups. 
+
+\section{Research project ideas}
+These projects are likely publishable in a conference or a journal if done well (you will likely need to work on it longer even after the course ends for this to happen though).
+They are for students who are more motivated and want to get into rendering research.
+If you choose to work on these projects, it is possible that they will not be finished at the end of the quarter. This is totally fine and you will still get high/full points if you show your work.
+We are happy to work with you after the quarter to finish the project if you did well and are interested.
+
+For anything below, feel free to reach out to us for clarification about details of the project.
+I did not sort them in terms of difficulty.
+
+\paragraph{Differentiable hair rendering.}
+Existing inverse hair rendering methods (e.g.,~\cite{Rosu:2022:NSL}) do not consider the light scattering in the hair fiber, and this can lead to less realistic results.
+In this project, we will develop a differentiable renderer~\cite{Li:2018:DMC} that is capable of computing the derivatives of a rendering of hair with respect to the shading and geometry parameters, and use it for inferring hair reflectance and geometry from images.
+I would recommend porting pbrt's hair rendering code\footnote{\url{https://www.pbrt.org/hair.pdf}} to Mitsuba 3\footnote{\url{https://github.com/mitsuba-renderer/mitsuba3}}'s automatic differentiation utility for derivative computation.
+For the scope of the final project, it is sufficient to only consider the hair BSDF parameters and ignore the curve geometry.
+To handle the geometry derivatives, you can likely adapt Bangaru et al.'s differentiable signed distance field rendering algorithm~\cite{Bangaru:2022:DRN} (since the computation of ray-curve intersection relies on the distance between the ray and the curve).
+
+\paragraph{Guided tri-directional path tracing.}
+From Veach's path-space formulation, it is clear that in addition to tracing rays starting from eyes or lights, it should also be possible to trace rays starting from an arbitrary point in the scene (we explored a similar method in 2017~\cite{Anderson:2017:AED}). 
+However, such \emph{tri}-directional path tracing method is difficult to apply in practice since it is difficult to decide where should we start tracing the ray. 
+In this project, we will design a path guiding algorithm~\cite{Lafortune:1995:5RV,Muller:2017:PPG} that builds a 5D data structure to decide which point and direction the path should start with.
+In the first phase, we will start tracing rays randomly, and record their contributions in the 5D data structure.
+We will then importance sample the recorded contribution and iteratively update the data structure.
+Similar methods have been applied to differentiable rendering (e.g.,~\cite{Yan:2022:EEB}), but it has not been applied in forward rendering algorithms yet.
+For the scope of the final project, it is not necessary to combine your method with the camera and light subpaths.
+Ultimately, it would be super cool to combine the tri-directional path tracer with VCM/UPS and use data to decide with subpath to use~\cite{Grittmann:2022:EMI}.
+
+\paragraph{Motion-aware path guiding for animation rendering.}
+Path guiding algorithms build data structures that record contributions of light paths and use them for importance sampling.
+These data structures typically are fitted in a per-frame basis and do not easily extend to animation rendering. 
+In this project, we will explore ways to update the path guiding data structures over time.
+A potential point of reference is the neural radiance caching work from Muller et al.~\cite{Muller:2021:RNR}.
+A relatively simple starting point is to implement a simple exponential weighted moving average update for the 5D tree data structure of Mueller et al.~\cite{Mueller:2017:PPG}.
+Can you come up with heuristics to account for occlusion and parallax? What kind of information we can extract from a renderer that can help updating the data structure?
+
+\paragraph{Denoising Metropolis light transport rendering.}
+Denoising Monte Carlo rendered images have been extensively used in production rendering.
+However, denoising of Metropolis light transport rendered images have not been looked at at all.
+In particular, Metropolis light transport methods tend to produce correlation artifacts in images (e.g., patches of images being much brighter than it should), that can be jarring especially for animation rendering.
+Can we design denoising algorithms that work well for Metropolis light transport rendering?
+A relatively simple starting point is to collect a bunch of images rendered using Metropolis light transport and use them to train a standard convolutional neural network.
+How do we ensure the output animation to be temporally stable?
+Can we output anything during rendering to help denoising? A relevant reference is the work from Gu et al.~\cite{Gu:2022:NJC} for combining a path traced image and a denoised image with correlated artifacts.
+We can use a similar technique to combine a path traced image (can be collected ``for-free'' during the large step mutation in a Kelemen-style renderer~\cite{Kelemen:2002:SRM}) and the correlated MLT rendering.
+
+\paragraph{Neural mutation for Metropolis light transport.}
+Neural networks have been shown to be helpful for importance sampling in a Monte Carlo path tracer~\cite{Muller:2019:NIS}.
+Can we apply them to Metropolis light transport as well?
+Similar methods have been explored in the machine learning community for Hamiltonian Monte Carlo~\cite{Levy:2018:GHM}.
+In this project, we will investigate the use of neural networks for designing mutation in a Metropolis light transport renderer.
+A relatively simple starting point is to implement Levy et al.'s method in a Kelemen-style path tracer and see how well it works. 
+
+\paragraph{Multiple-scattering NeRF with neural scattering fields.}
+Neural Radiance Fields~\cite{Mildenhall:2021:NRS} and their variants have been revolutionizing 3D computer vision using inverse volume rendering.
+However, all of the current NeRF variants do not consider multiple-scattering within the volumes.
+In this project, we will explore the incorporation of multiple scattering in neural fields.
+To achieve this, we need a neural representation that can represent a spatially varying, anisotropoic scattering coefficients and phase function.
+We will also need a way to importance sample both the phase function and transmittance of this neural representation.
+Alternatively, we can also explore a voxel-based representation (which can have similar performance to a neural representation!~\cite{KeilYu:2021:PRF}) using the SGGX phase function~\cite{Heitz:2015:SMD} and spherical harmonics for the scattering coefficients.
+I would recommend starting from known lighting (e.g., an environment map) and single scattering to make the problem easier.
+
+\paragraph{Spatially varying neural BSDF for neural signed distance fields.}
+Another popular neural scene representation is neural signed distance fields~\cite{Bangaru:2022:DRN}.
+However, similar to the situation of NeRF, existing neural signed distance fields do not model the BSDF of the surfaces (they assuming all surfaces are pure emitters).
+In this project, we will explore modeling a spatially varying BSDF for neural signed distance fields.
+The network architecture can be a 7D coordinate network that takes a 3D position and two 2D directions and outputs the BSDF response.
+For importance sampling, it might be useful to make the network a normalizing flow~\cite{Muller:2019:NIS} conditioned on the position and incoming direction. Similar to above, I would recommend starting from known lighting (e.g., an environment map) and direct lighting to make the problem easier.
+
+\section{Implementation ideas}
+
+Following are projects that are less novel, but could also produce cool images. 
+They are usually about the implementation of the papers we talked about in the class.
+I did not sort them in terms of difficulty.
+
+\paragraph{Energy-preserving microfacet BSDFs.} 
+Implement Heitz et al.'s multiple-scattering microfacet BSDF~\cite{Heitz:2016:MMB} in lajolla.
+Alternatively, implement the position-free variant~\cite{Wang:2022:PMC}.
+As a bonus, compare them to the energy compensation technique introduced by Kulla and Conty\footnote{\url{https://blog.selfshadow.com/publications/s2017-shading-course/imageworks/s2017_pbs_imageworks_slides_v2.pdf}}, and show the pros and cons.
+
+\paragraph{Normal map and displacement map filtering.}
+Implement LEAN~\cite{Olano:2010:LM} and use it for rendering high resolution normal map in lajolla.
+Compare it to a high sample count reference.
+When does it work well and when does it fail?
+As a bonus, implement LEADR~\cite{Dupuy:2013:LEA} for filtering displacement map.
+First you will need to implement displacement mapping in lajolla.
+This can be done in a preprocessing pass to convert meshes with displacement map textures into tesselated mesh, or in an on-the-fly manner~\cite{Thonat:2021:TDM}.
+Alternatively, implement Yan et al.'s normal map filtering technique~\cite{Yan:2014:RGH} in lajolla. 
+
+\paragraph{Layered BSDF.}
+Implement the position-free layered BSDF simulator from Guo et al.~\cite{Guo:2018:PMC} in lajolla.
+As a starting point, maybe start with a two layer BSDF with no volumetric scattering in between.
+Implementing the unidirectional version is good enough.
+As a bonus, read Gamboa et al.'s work~\cite{Gamboa:2020:ETE} and implement their sampling strategy.
+
+\paragraph{Hair BCSDF.}
+Implement Marschner's hair scattering model~\cite{Marschner:2003:LSH} in lajolla.
+You'll have to implement a ray-curve intersection routine and a hair BCSDF.
+You may want to read Matt Pharr's note on implement hair rendering in pbrt.\footnote{See \url{https://www.pbrt.org/hair.pdf}}. 
+
+\paragraph{Thin-film iridescence BSDF.}
+Implement Belcour's thin-film iridescence BSDF~\cite{Belcour:2017:PEM} in lajolla.
+Feel free to look at Belcour's source code.
+
+\paragraph{Efficient transmittance estimation.}
+Implement Kettunen et al.'s unbiased ray marching estimator~\cite{Kettunen:2021:URT}.
+You can extend your volumetric path tracer in homework 2 for this.
+Replace your ratio tracker with the new ray marching estimator.
+Compare to the ratio tracker and analyze their variance reduction properties.
+
+\paragraph{BSSRDF.}
+Implement a BSSRDF in lajolla.
+You can use the one from Christensen and Burley~\cite{Christensen:2015:ARP}.
+For importance sampling the BSSRDF, check out King et al.'s talk\footnote{\url{https://pdfs.semanticscholar.org/90da/5211ce2a6f63d50b8616736c393aaf8bf4ca.pdf}}.
+You are encouraged to read pbrt's code\footnote{\url{https://www.pbr-book.org/3ed-2018/Light_Transport_II_Volume_Rendering/Sampling_Subsurface_Reflection_Functions}}.
+
+\paragraph{Single scattering.}
+Implement Chen et al.'s 1D Min-Max mipmap shadow mapping technique for rendering single scattering volumes~\cite{Chen:2011:RVS}.
+You don't have to implement it on GPUs or show real-time performance.
+
+\paragraph{Stratification.}
+Implement low-discrepancy sampling in lajolla.
+A simpler starting point is Halton sequence.
+Read the related chapters in pbrt\footnote{\url{https://www.pbr-book.org/3ed-2018/Sampling_and_Reconstruction/The_Halton_Sampler}} for the reference.
+Smallppm\footnote{\url{https://cs.uwaterloo.ca/~thachisu/smallppm_exp.cpp}} from Toshiya Hachisuka also contains a low discrepenacy photon mapper using Halton sequence.
+
+
+\paragraph{Bidirectional path tracing.}
+Implement a bidirectional path tracer in lajolla.
+Read the related chapters in pbrt\footnote{\url{https://www.pbr-book.org/3ed-2018/Light_Transport_III_Bidirectional_Methods/Bidirectional_Path_Tracing}} for the reference.
+Another good reference code is \textit{smallpssmlt}\footnote{\url{https://cs.uwaterloo.ca/~thachisu/smallpssmlt.cpp}} from Toshiya Hachisuka.
+
+\paragraph{Progressive photon mapping.}
+Implement progressive photon mapping~\cite{Hachisuka:2008:PPM} in lajolla.
+Read the related chapters in pbrt\footnote{\url{https://www.pbr-book.org/3ed-2018/Light_Transport_III_Bidirectional_Methods/Stochastic_Progressive_Photon_Mapping}}.
+Another good reference code is \textit{smallppm}\footnote{\url{https://cs.uwaterloo.ca/~thachisu/smallppm_exp.cpp}} from Toshiya Hachisuka.
+You can also implement the probabilistic variant from Knaus et al.~\cite{Knaus:2011:PPM}.
+
+\paragraph{Gradient-domain path tracing.} 
+Implement gradient-domain path tracing~\cite{Kettunen:2015:GPT} in lajolla.
+A good reference code is smallgdpt from me~\footnote{\url{https://gist.github.com/BachiLi/4f5c6e5a4fef5773dab1}}.
+
+\paragraph{Metropolis light transport.} Implement Kelemen-style Metropolis light transport~\cite{Kelemen:2002:SRM} in lajolla. Read the relevant chapters in pbrt\footnote{\url{https://www.pbr-book.org/3ed-2018/Light_Transport_III_Bidirectional_Methods/Metropolis_Light_Transport}}. Another good reference code is \textit{smallpssmlt}\footnote{\url{https://cs.uwaterloo.ca/~thachisu/smallpssmlt.cpp}} and \textit{smallmmlt}\footnote{\url{https://cs.uwaterloo.ca/~thachisu/smallmmlt.cpp}} from Toshiya Hachisuka.
+
+\paragraph{Optimal multiple importance sampling.}
+Implement \emph{optimal} multiple importance sampling using control variates from Kondapaneni et al.~\cite{Kondapaneni:2019:OMI} in lajolla.
+Ideally, apply their method for a unidirectional path tracer or even a bidirectional path tracer (instead of just applying it for direct lighting) -- what kind of data structure do you need for maintaining the required statistics?
+
+\paragraph{Lightcuts.}
+Implement stochastic lightcuts~\cite{Yuksel:2019:SL} from Yuksel et al. in lajolla for rendering scenes with millions of lights.
+As a bonus, implement the data-driven version from Wang et al.~\cite{Wang:2021:LCR}.
+
+\paragraph{ReSTIR.}
+Implement ReSTIR~\cite{Bitterli:2020:SRR} in lajolla for rendering scenes with many lights.
+You don't need to implement the temporal reuse, but you should explore spatial reuse.
+
+\paragraph{GPU rendering.}
+Port most of lajolla to Vulkan/DirectX 12/CUDA/OpenCL/Metal.
+
+\bibliographystyle{plain}
+\bibliography{refs}
+
+\end{document}
