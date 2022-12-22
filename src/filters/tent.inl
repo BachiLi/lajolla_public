@@ -3,6 +3,8 @@ Vector2 sample_op::operator()(const Tent &filter) const {
     // the positive part is     k(x) = (1 - x / half_width) / normalization
     // and the negative part is k(x) = (1 + x / half_width) / normalization
     // where normalization = (half_width - half_width^2 / width)*2 = half_width
+    // (the normalization term can be derived through integration:
+    //  \int_{-half_width}^{half_width} k(x) = normalization)
 
     // We want to map a uniform number [0, 1] to the two parts of the tent
     // we first map the first half [0, 0.5] to a uniform number u \in [0, 1]
