@@ -11,6 +11,8 @@ cmake ..
 ```
 It requires compilers that support C++17 (gcc version >= 8, clang version >= 7, Apple Clang version >= 11.0, MSVC version >= 19.14).
 
+Apple M1 users: you might need to build Embree from scratch since the prebuilt MacOS binary provided is built for x86 machines.
+
 # Run
 Try 
 ```
