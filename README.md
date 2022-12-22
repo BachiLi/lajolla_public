@@ -9,6 +9,7 @@ mkdir build
 cd build
 cmake ..
 ```
+It requires compilers that support C++17 (gcc version >= 8, clang version >= 7, Apple Clang version >= 11.0, MSVC version >= 19.14).
 
 # Run
 Try 
