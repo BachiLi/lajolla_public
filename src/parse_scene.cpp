@@ -401,16 +401,16 @@ RenderOptions parse_integrator(pugi::xml_node node,
         options.integrator = Integrator::VolPath;
         for (auto child : node.children()) {
             std::string name = child.attribute("name").value();
-            if (name == "maxDepth") {
+            if (name == "maxDepth" || name == "max_depth") {
                 options.max_depth = parse_integer(
                     child.attribute("value").value(), default_map);
-            } else if (name == "rrDepth") {
+            } else if (name == "rrDepth" || name == "rr_depth") {
                 options.rr_depth = parse_integer(
                     child.attribute("value").value(), default_map);
             } else if (name == "version") {
                 options.vol_path_version = parse_integer(
                     child.attribute("value").value(), default_map);
-            } else if (name == "maxNullCollisions") {
+            } else if (name == "maxNullCollisions" || name == "max_null_collisions") {
                 options.max_null_collisions = parse_integer(
                     child.attribute("value").value(), default_map);
             }
@@ -420,13 +420,13 @@ RenderOptions parse_integrator(pugi::xml_node node,
         options.max_depth = 2;
     } else if (type == "depth") {
         options.integrator = Integrator::Depth;
-    } else if (type == "shadingNormal") {
+    } else if (type == "shadingNormal" || type == "shading_normal") {
         options.integrator = Integrator::ShadingNormal;
-    } else if (type == "meanCurvature") {
+    } else if (type == "meanCurvature" || type == "mean_curvature") {
         options.integrator = Integrator::MeanCurvature;
-    } else if (type == "rayDifferential") {
+    } else if (type == "rayDifferential" || type == "ray_differential") {
         options.integrator = Integrator::RayDifferential;
-    } else if (type == "mipmapLevel") {
+    } else if (type == "mipmapLevel" || type == "mipmap_level") {
         options.integrator = Integrator::MipmapLevel;
     } else {
         Error(std::string("Unsupported integrator: ") + type);
@@ -552,9 +552,9 @@ std::tuple<std::string /* ID */, Medium> parse_medium(
         Real scale = 1;
         for (auto child : node.children()) {
             std::string name = child.attribute("name").value();
-            if (name == "sigmaA") {
+            if (name == "sigmaA" || name == "sigma_a") {
                 sigma_a = parse_color(child, default_map);
-            } else if (name == "sigmaS") {
+            } else if (name == "sigmaS" || name == "sigma_s") {
                 sigma_s = parse_color(child, default_map);
             } else if (name == "scale") {
                 scale = parse_float(child.attribute("value").value(),
@@ -610,9 +610,9 @@ std::tuple<Camera, std::string /* output filename */, ParsedSampler>
             std::string name = child.attribute("name").value();
             if (name == "fov") {
                 fov = parse_float(child.attribute("value").value(), default_map);
-            } else if (name == "toWorld") {
+            } else if (name == "toWorld" || name == "to_world") {
                 to_world = parse_transform(child, default_map);
-            } else if (name == "fovAxis") {
+            } else if (name == "fovAxis" || name == "fov_axis") {
                 std::string value = child.attribute("value").value();
                 if (value == "x") {
                     fov_axis = FovAxis::X;
@@ -643,8 +643,9 @@ std::tuple<Camera, std::string /* output filename */, ParsedSampler>
             }
             for (auto grand_child : child.children()) {
                 std::string name = grand_child.attribute("name").value();
-                if (name == "sampleCount") {
-                    sampler.sample_count = parse_integer(grand_child.attribute("value").value(), default_map);
+                if (name == "sampleCount" || name == "sample_count") {
+                    sampler.sample_count = parse_integer(
+                        grand_child.attribute("value").value(), default_map);
                 }
             }
         } else if (std::string(child.name()) == "ref") {
@@ -732,10 +733,10 @@ std::tuple<std::string /* ID */, Material> parse_bsdf(
         Real extIOR = 1.000277;
         for (auto child : node.children()) {
             std::string name = child.attribute("name").value();
-            if (name == "diffuseReflectance") {
+            if (name == "diffuseReflectance" || name == "diffuse_reflectance") {
                 diffuse_reflectance = parse_spectrum_texture(
                     child, texture_map, texture_pool, default_map);
-            } else if (name == "specularReflectance") {
+            } else if (name == "specularReflectance" || name == "specular_reflectance") {
                 specular_reflectance = parse_spectrum_texture(
                     child, texture_map, texture_pool, default_map);
             } else if (name == "alpha") {
@@ -766,9 +767,9 @@ std::tuple<std::string /* ID */, Material> parse_bsdf(
                 }
             } else if (name == "roughness") {
                 roughness = parse_float_texture(child, texture_map, texture_pool, default_map);
-            } else if (name == "intIOR") {
+            } else if (name == "intIOR" || name == "int_ior") {
                 intIOR = parse_float(child.attribute("value").value(), default_map); 
-            } else if (name == "extIOR") {
+            } else if (name == "extIOR" || name == "ext_ior") {
                 extIOR = parse_float(child.attribute("value").value(), default_map); 
             }
         }
@@ -788,10 +789,10 @@ std::tuple<std::string /* ID */, Material> parse_bsdf(
         Real extIOR = 1.000277;
         for (auto child : node.children()) {
             std::string name = child.attribute("name").value();
-            if (name == "specularReflectance") {
+            if (name == "specularReflectance" || name == "specular_reflectance") {
                 specular_reflectance = parse_spectrum_texture(
                     child, texture_map, texture_pool, default_map);
-            } else if (name == "specularTransmittance") {
+            } else if (name == "specularTransmittance" || name == "specular_transmittance") {
                 specular_transmittance = parse_spectrum_texture(
                     child, texture_map, texture_pool, default_map);
             } else if (name == "alpha") {
@@ -821,9 +822,9 @@ std::tuple<std::string /* ID */, Material> parse_bsdf(
             } else if (name == "roughness") {
                 roughness = parse_float_texture(
                     child, texture_map, texture_pool, default_map);
-            } else if (name == "intIOR") {
+            } else if (name == "intIOR" || name == "int_ior") {
                 intIOR = parse_float(child.attribute("value").value(), default_map);
-            } else if (name == "extIOR") {
+            } else if (name == "extIOR" || name == "ext_ior") {
                 extIOR = parse_float(child.attribute("value").value(), default_map); 
             }
         }
@@ -836,7 +837,7 @@ std::tuple<std::string /* ID */, Material> parse_bsdf(
         Texture<Real> subsurface = make_constant_float_texture(Real(0));
         for (auto child : node.children()) {
             std::string name = child.attribute("name").value();
-            if (name == "baseColor") {
+            if (name == "baseColor" || name == "base_color") {
                 base_color = parse_spectrum_texture(
                     child, texture_map, texture_pool, default_map);
             } else if (name == "roughness") {
@@ -857,7 +858,7 @@ std::tuple<std::string /* ID */, Material> parse_bsdf(
             make_constant_float_texture(Real(0.0));
         for (auto child : node.children()) {
             std::string name = child.attribute("name").value();
-            if (name == "baseColor") {
+            if (name == "baseColor" || name == "base_color") {
                 base_color = parse_spectrum_texture(
                     child, texture_map, texture_pool, default_map);
             } else if (name == "roughness") {
@@ -876,7 +877,7 @@ std::tuple<std::string /* ID */, Material> parse_bsdf(
         Real eta = Real(1.5);
         for (auto child : node.children()) {
             std::string name = child.attribute("name").value();
-            if (name == "baseColor") {
+            if (name == "baseColor" || name == "base_color") {
                 base_color = parse_spectrum_texture(
                     child, texture_map, texture_pool, default_map);
             } else if (name == "roughness") {
@@ -906,10 +907,10 @@ std::tuple<std::string /* ID */, Material> parse_bsdf(
         Texture<Real> sheen_tint = make_constant_float_texture(Real(0.5));
         for (auto child : node.children()) {
             std::string name = child.attribute("name").value();
-            if (name == "baseColor") {
+            if (name == "baseColor" || name == "base_color") {
                 base_color = parse_spectrum_texture(
                     child, texture_map, texture_pool, default_map);
-            } else if (name == "sheenTint") {
+            } else if (name == "sheenTint" || name == "sheen_tint") {
                 sheen_tint = parse_float_texture(
                     child, texture_map, texture_pool, default_map);
             }
@@ -931,10 +932,10 @@ std::tuple<std::string /* ID */, Material> parse_bsdf(
         Real eta = Real(1.5);
         for (auto child : node.children()) {
             std::string name = child.attribute("name").value();
-            if (name == "baseColor") {
+            if (name == "baseColor" || name == "base_color") {
                 base_color = parse_spectrum_texture(
                     child, texture_map, texture_pool, default_map);
-            } else if (name == "specularTransmission") {
+            } else if (name == "specularTransmission" || name == "specular_transmission") {
                 specular_transmission = parse_float_texture(
                     child, texture_map, texture_pool, default_map);
             } else if (name == "metallic") {
@@ -949,7 +950,7 @@ std::tuple<std::string /* ID */, Material> parse_bsdf(
             } else if (name == "roughness") {
                 roughness = parse_float_texture(
                     child, texture_map, texture_pool, default_map);
-            } else if (name == "specularTint") {
+            } else if (name == "specularTint" || name == "specular_tint") {
                 specular_tint = parse_float_texture(
                     child, texture_map, texture_pool, default_map);
             } else if (name == "anisotropic") {
@@ -958,13 +959,13 @@ std::tuple<std::string /* ID */, Material> parse_bsdf(
             } else if (name == "sheen") {
                 sheen = parse_float_texture(
                     child, texture_map, texture_pool, default_map);
-            } else if (name == "sheenTint") {
+            } else if (name == "sheenTint" || name == "sheen_tint") {
                 sheen_tint = parse_float_texture(
                     child, texture_map, texture_pool, default_map);
             } else if (name == "clearcoat") {
                 clearcoat = parse_float_texture(
                     child, texture_map, texture_pool, default_map);
-            } else if (name == "clearcoatGloss") {
+            } else if (name == "clearcoatGloss" || name == "clearcoat_gloss") {
                 clearcoat_gloss = parse_float_texture(
                     child, texture_map, texture_pool, default_map);
             } else if (name == "eta") {
@@ -1068,7 +1069,7 @@ Shape parse_shape(pugi::xml_node node,
             std::string name = child.attribute("name").value();
             if (name == "filename") {
                 filename = parse_string(child.attribute("value").value(), default_map);
-            } else if (name == "toWorld") {
+            } else if (name == "toWorld" || name == "to_world") {
                 if (std::string(child.name()) == "transform") {
                     to_world = parse_transform(child, default_map);
                 }
@@ -1083,11 +1084,11 @@ Shape parse_shape(pugi::xml_node node,
             std::string name = child.attribute("name").value();
             if (name == "filename") {
                 filename = parse_string(child.attribute("value").value(), default_map);
-            } else if (name == "toWorld") {
+            } else if (name == "toWorld" || name == "to_world") {
                 if (std::string(child.name()) == "transform") {
                     to_world = parse_transform(child, default_map);
                 }
-            } else if (name == "shapeIndex") {
+            } else if (name == "shapeIndex" || name == "shape_index") {
                 shape_index = parse_integer(child.attribute("value").value(), default_map);
             }
         }
@@ -1334,7 +1335,7 @@ Scene parse_scene(pugi::xml_node node, const RTCDevice &embree_device) {
                     if (name == "filename") {
                         filename = parse_string(
                             grand_child.attribute("value").value(), default_map);
-                    } else if (name == "toWorld") {
+                    } else if (name == "toWorld" || name == "to_world") {
                         to_world = parse_transform(grand_child, default_map);
                     } else if (name == "scale") {
                         scale = parse_float(
