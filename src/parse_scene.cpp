@@ -695,9 +695,10 @@ std::tuple<std::string /* ID */, Material> parse_bsdf(
         pugi::xml_node node,
         const std::map<std::string /* name id */, ParsedTexture> &texture_map,
         TexturePool &texture_pool,
-        const std::map<std::string, std::string> &default_map) {
+        const std::map<std::string, std::string> &default_map,
+        const std::string &parent_id = "") {
     std::string type = node.attribute("type").value();
-    std::string id;
+    std::string id = parent_id;
     if (!node.attribute("id").empty()) {
         id = node.attribute("id").value();
     }
@@ -705,7 +706,7 @@ std::tuple<std::string /* ID */, Material> parse_bsdf(
         // In lajolla, all BSDFs are twosided.
         for (auto child : node.children()) {
             if (std::string(child.name()) == "bsdf") {
-                return parse_bsdf(child, texture_map, texture_pool, default_map);
+                return parse_bsdf(child, texture_map, texture_pool, default_map, id);
             }
         }
     } else if (type == "diffuse") {
@@ -985,6 +986,10 @@ std::tuple<std::string /* ID */, Material> parse_bsdf(
                                               clearcoat,
                                               clearcoat_gloss,
                                               eta});
+    } else if (type == "null") {
+        // TODO: implement actual null BSDF (the ray will need to pass through the shape)
+        return std::make_tuple(id, Lambertian{
+            make_constant_spectrum_texture(fromRGB(Vector3{0.0, 0.0, 0.0}))});
     } else {
         Error(std::string("Unknown BSDF: ") + type);
     }
