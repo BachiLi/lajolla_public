@@ -58,6 +58,25 @@ auto parse_default_map(const std::string &value,
     return default_map.end();
 }
 
+bool parse_boolean(const std::string &value) {
+    if (value == "true") {
+        return true;
+    } else if (value == "false") {
+        return false;
+    } else {
+        Error("parse_boolean failed");
+        return false;
+    }
+}
+
+bool parse_boolean(const std::string &value,
+                   const std::map<std::string, std::string> &default_map) {
+    if (auto it = parse_default_map(value, default_map); it != default_map.end()) {
+        return parse_boolean(it->second);
+    }
+    return parse_boolean(value);    
+}
+
 int parse_integer(const std::string &value,
                   const std::map<std::string, std::string> &default_map) {
     if (auto it = parse_default_map(value, default_map); it != default_map.end()) {
@@ -1088,6 +1107,43 @@ Shape parse_shape(pugi::xml_node node,
             }
         }
         shape = Sphere{{}, center, radius};
+    } else if (type == "rectangle") {
+        Matrix4x4 to_world = Matrix4x4::identity();
+        bool flip_normals = false;
+        TriangleMesh mesh;
+        mesh.positions = {
+            Vector3{-1, -1, 0}, Vector3{ 1, -1, 0}, Vector3{ 1, 1, 0}, Vector3{-1, 1, 0}
+        };
+        mesh.indices = {
+            Vector3i{0, 1, 2}, Vector3i{0, 2, 3}
+        };
+        mesh.uvs = {
+            Vector2{0, 0}, Vector2{1, 0}, Vector2{1, 1}, Vector2{0, 1}
+        };
+        mesh.normals = {
+            Vector3{0, 0, 1}, Vector3{0, 0, 1}, Vector3{0, 0, 1}, Vector3{0, 0, 1}
+        };
+        for (auto child : node.children()) {
+            std::string name = child.attribute("name").value();
+            if (name == "toWorld" || name == "to_world") {
+                if (std::string(child.name()) == "transform") {
+                    to_world = parse_transform(child, default_map);
+                }
+            } else if (name == "flipNormals" || name == "flip_normals") {
+                flip_normals = parse_boolean(child.attribute("value").value(), default_map);
+            }
+        }
+        for (auto &p : mesh.positions) {
+            p = xform_point(to_world, p);
+        }
+        for (auto &n : mesh.normals) {
+            n = xform_normal(inverse(to_world), n);
+        }
+        if (flip_normals) {
+            for (auto &n : mesh.normals) {
+                n = -n;
+            }
+        }
     } else {
         Error(std::string("Unknown shape:") + type);
     }
