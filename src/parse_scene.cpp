@@ -681,7 +681,14 @@ std::tuple<std::string /* ID */, Material> parse_bsdf(
     if (!node.attribute("id").empty()) {
         id = node.attribute("id").value();
     }
-    if (type == "diffuse") {
+    if (type == "twosided") {
+        // In lajolla, all BSDFs are twosided.
+        for (auto child : node.children()) {
+            if (std::string(child.name()) == "bsdf") {
+                return parse_bsdf(child, texture_map, texture_pool, default_map);
+            }
+        }
+    } else if (type == "diffuse") {
         Texture<Spectrum> reflectance =
             make_constant_spectrum_texture(fromRGB(Vector3{0.5, 0.5, 0.5}));
         for (auto child : node.children()) {
