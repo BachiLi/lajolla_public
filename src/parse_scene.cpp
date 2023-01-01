@@ -44,6 +44,44 @@ std::vector<std::string> split_string(const std::string &str, const std::regex &
     return list;
 }
 
+auto parse_default_map(const std::string &value,
+                       const std::map<std::string, std::string> &default_map) {
+    if (value.length() > 0) {
+        if (value[0] == '$') {
+            auto it = default_map.find(value.substr(1));
+            if (it == default_map.end()) {
+                Error(std::string("Reference default variable ") + value + std::string(" not found."));
+            }
+            return it;
+        }
+    }
+    return default_map.end();
+}
+
+int parse_integer(const std::string &value,
+                  const std::map<std::string, std::string> &default_map) {
+    if (auto it = parse_default_map(value, default_map); it != default_map.end()) {
+        return std::stoi(it->second);
+    }
+    return std::stoi(value);
+}
+
+Real parse_float(const std::string &value,
+                 const std::map<std::string, std::string> &default_map) {
+    if (auto it = parse_default_map(value, default_map); it != default_map.end()) {
+        return std::stof(it->second);
+    }
+    return std::stof(value);
+}
+
+std::string parse_string(const std::string &value,
+                         const std::map<std::string, std::string> &default_map) {
+    if (auto it = parse_default_map(value, default_map); it != default_map.end()) {
+        return it->second;
+    }
+    return value;
+}
+
 Vector3 parse_vector3(const std::string &value) {
     std::vector<std::string> list = split_string(value, std::regex("(,| )+"));
     Vector3 v;
@@ -59,6 +97,14 @@ Vector3 parse_vector3(const std::string &value) {
         Error("parse_vector3 failed");
     }
     return v;
+}
+
+Vector3 parse_vector3(const std::string &value,
+                      const std::map<std::string, std::string> &default_map) {
+    if (auto it = parse_default_map(value, default_map); it != default_map.end()) {
+        return parse_vector3(it->second);
+    }
+    return parse_vector3(value);
 }
 
 Vector3 parse_srgb(const std::string &value) {
@@ -79,6 +125,14 @@ Vector3 parse_srgb(const std::string &value) {
     return srgb;
 } 
 
+Vector3 parse_srgb(const std::string &value,
+                   const std::map<std::string, std::string> &default_map) {
+    if (auto it = parse_default_map(value, default_map); it != default_map.end()) {
+        return parse_srgb(it->second);
+    }
+    return parse_srgb(value);
+}
+
 std::vector<std::pair<Real, Real>> parse_spectrum(const std::string &value) {
     std::vector<std::string> list = split_string(value, std::regex("(,| )+"));
     std::vector<std::pair<Real, Real>> s;
@@ -97,6 +151,15 @@ std::vector<std::pair<Real, Real>> parse_spectrum(const std::string &value) {
     return s;
 }
 
+std::vector<std::pair<Real, Real>> parse_spectrum(
+        const std::string &value,
+        const std::map<std::string, std::string> &default_map) {
+    if (auto it = parse_default_map(value, default_map); it != default_map.end()) {
+        return parse_spectrum(it->second);
+    }
+    return parse_spectrum(value);
+}
+
 Matrix4x4 parse_matrix4x4(const std::string &value) {
     std::vector<std::string> list = split_string(value, std::regex("(,| )+"));
     if (list.size() != 16) {
@@ -113,7 +176,16 @@ Matrix4x4 parse_matrix4x4(const std::string &value) {
     return m;
 }
 
-Matrix4x4 parse_transform(pugi::xml_node node) {
+Matrix4x4 parse_matrix4x4(const std::string &value,
+                          const std::map<std::string, std::string> &default_map) {
+    if (auto it = parse_default_map(value, default_map); it != default_map.end()) {
+        return parse_matrix4x4(it->second);
+    }
+    return parse_matrix4x4(value);
+}
+
+Matrix4x4 parse_transform(pugi::xml_node node,
+                          const std::map<std::string, std::string> &default_map) {
     Matrix4x4 tform = Matrix4x4::identity();
     for (auto child : node.children()) {
         std::string name = to_lowercase(child.name());
@@ -121,45 +193,59 @@ Matrix4x4 parse_transform(pugi::xml_node node) {
             Real x = 1.0;
             Real y = 1.0;
             Real z = 1.0;
-            if (!child.attribute("x").empty())
-                x = std::stof(child.attribute("x").value());
-            if (!child.attribute("y").empty())
-                y = std::stof(child.attribute("y").value());
-            if (!child.attribute("z").empty())
-                z = std::stof(child.attribute("z").value());
+            if (!child.attribute("x").empty()) {
+                x = parse_float(child.attribute("x").value(), default_map);
+            }
+            if (!child.attribute("y").empty()) {
+                y = parse_float(child.attribute("y").value(), default_map);
+            }
+            if (!child.attribute("z").empty()) {
+                z = parse_float(child.attribute("z").value(), default_map);
+            }
             tform = scale(Vector3{x, y, z}) * tform;
         } else if (name == "translate") {
             Real x = 0.0;
             Real y = 0.0;
             Real z = 0.0;
-            if (!child.attribute("x").empty())
-                x = std::stof(child.attribute("x").value());
-            if (!child.attribute("y").empty())
-                y = std::stof(child.attribute("y").value());
-            if (!child.attribute("z").empty())
-                z = std::stof(child.attribute("z").value());
+            if (!child.attribute("x").empty()) {
+                x = parse_float(child.attribute("x").value(), default_map);
+            }
+            if (!child.attribute("y").empty()) {
+                y = parse_float(child.attribute("y").value(), default_map);
+            }
+            if (!child.attribute("z").empty()) {
+                z = parse_float(child.attribute("z").value(), default_map);
+            }
             tform = translate(Vector3{x, y, z}) * tform;
         } else if (name == "rotate") {
             Real x = 0.0;
             Real y = 0.0;
             Real z = 0.0;
             Real angle = 0.0;
-            if (!child.attribute("x").empty())
-                x = std::stof(child.attribute("x").value());
-            if (!child.attribute("y").empty())
-                y = std::stof(child.attribute("y").value());
-            if (!child.attribute("z").empty())
-                z = std::stof(child.attribute("z").value());
-            if (!child.attribute("angle").empty())
-                angle = std::stof(child.attribute("angle").value());
+            if (!child.attribute("x").empty()) {
+                x = parse_float(child.attribute("x").value(), default_map);
+            }
+            if (!child.attribute("y").empty()) {
+                y = parse_float(child.attribute("y").value(), default_map);
+            }
+            if (!child.attribute("z").empty()) {
+                z = parse_float(child.attribute("z").value(), default_map);
+            }
+            if (!child.attribute("angle").empty()) {
+                z = parse_float(child.attribute("angle").value(), default_map);
+            }
             tform = rotate(angle, Vector3(x, y, z)) * tform;
         } else if (name == "lookat") {
-            Vector3 pos = parse_vector3(child.attribute("origin").value());
-            Vector3 target = parse_vector3(child.attribute("target").value());
-            Vector3 up = parse_vector3(child.attribute("up").value());
+            Vector3 pos = parse_vector3(
+                child.attribute("origin").value(), default_map);
+            Vector3 target = parse_vector3(
+                child.attribute("target").value(), default_map);
+            Vector3 up = parse_vector3(
+                child.attribute("up").value(), default_map);
             tform = look_at(pos, target, up) * tform;
         } else if (name == "matrix") {
-            Matrix4x4 trans = parse_matrix4x4(std::string(child.attribute("value").value()));
+            Matrix4x4 trans = parse_matrix4x4(
+                std::string(child.attribute("value").value()), default_map);
             tform = trans * tform;
         }
     }
@@ -169,11 +255,12 @@ Matrix4x4 parse_transform(pugi::xml_node node) {
 Texture<Spectrum> parse_spectrum_texture(
         pugi::xml_node node,
         const std::map<std::string /* name id */, ParsedTexture> &texture_map,
-        TexturePool &texture_pool) {
+        TexturePool &texture_pool,
+        const std::map<std::string, std::string> &default_map) {
     std::string type = node.name();
     if (type == "spectrum") {
         std::vector<std::pair<Real, Real>> spec =
-            parse_spectrum(node.attribute("value").value());
+            parse_spectrum(node.attribute("value").value(), default_map);
         if (spec.size() > 1) {
             Vector3 xyz = integrate_XYZ(spec);
             return make_constant_spectrum_texture(fromRGB(XYZ_to_RGB(xyz)));
@@ -184,9 +271,9 @@ Texture<Spectrum> parse_spectrum_texture(
         }
     } else if (type == "rgb") {
         return make_constant_spectrum_texture(
-            fromRGB(parse_vector3(node.attribute("value").value())));
+            fromRGB(parse_vector3(node.attribute("value").value(), default_map)));
     } else if (type == "srgb") {
-        Vector3 srgb = parse_srgb(node.attribute("value").value());
+        Vector3 srgb = parse_srgb(node.attribute("value").value(), default_map);
         return make_constant_spectrum_texture(
             fromRGB(sRGB_to_RGB(srgb)));
     } else if (type == "ref") {
@@ -215,7 +302,8 @@ Texture<Spectrum> parse_spectrum_texture(
 Texture<Real> parse_float_texture(
         pugi::xml_node node,
         const std::map<std::string /* name id */, ParsedTexture> &texture_map,
-        TexturePool &texture_pool) {
+        TexturePool &texture_pool,
+        const std::map<std::string, std::string> &default_map) {
     std::string type = node.name();
     if (type == "ref") {
         // referencing a texture
@@ -229,18 +317,19 @@ Texture<Real> parse_float_texture(
             ref_id, imread1(t.filename), texture_pool, t.uscale, t.vscale);
     } else if (type == "float") {
         return make_constant_float_texture(
-            std::stof(node.attribute("value").value()));
+            parse_float(node.attribute("value").value(), default_map));
     } else {
         Error(std::string("Unknown float texture type:") + type);
         return make_constant_float_texture(Real(0));
     }
 }
 
-Spectrum parse_color(pugi::xml_node node) {
+Spectrum parse_color(pugi::xml_node node,
+                     const std::map<std::string, std::string> &default_map) {
     std::string type = node.name();
     if (type == "spectrum") {
         std::vector<std::pair<Real, Real>> spec =
-            parse_spectrum(node.attribute("value").value());
+            parse_spectrum(node.attribute("value").value(), default_map);
         if (spec.size() > 1) {
             Vector3 xyz = integrate_XYZ(spec);
             return fromRGB(XYZ_to_RGB(xyz));
@@ -250,19 +339,31 @@ Spectrum parse_color(pugi::xml_node node) {
             return fromRGB(Vector3{0, 0, 0});
         }
     } else if (type == "rgb") {
-        return fromRGB(parse_vector3(node.attribute("value").value()));
+        return fromRGB(parse_vector3(node.attribute("value").value(), default_map));
     } else if (type == "srgb") {
-        Vector3 srgb = parse_srgb(node.attribute("value").value());
+        Vector3 srgb = parse_srgb(node.attribute("value").value(), default_map);
         return fromRGB(sRGB_to_RGB(srgb));
     } else if (type == "float") {
-        return make_const_spectrum(std::stof(node.attribute("value").value()));
+        return make_const_spectrum(parse_float(node.attribute("value").value(), default_map));
     } else {
         Error(std::string("Unknown color type:") + type);
         return make_zero_spectrum();
     }
 }
 
-RenderOptions parse_integrator(pugi::xml_node node) {
+void parse_default_map(pugi::xml_node node,
+                       std::map<std::string, std::string> &default_map) {
+    if (node.attribute("name")) {
+        std::string name = node.attribute("name").value();
+        if (node.attribute("value")) {
+            std::string value = node.attribute("value").value();
+            default_map[name] = value;
+        }
+    }
+}
+
+RenderOptions parse_integrator(pugi::xml_node node,
+                               const std::map<std::string, std::string> &default_map) {
     RenderOptions options;
     std::string type = node.attribute("type").value();
     if (type == "path") {
@@ -270,9 +371,11 @@ RenderOptions parse_integrator(pugi::xml_node node) {
         for (auto child : node.children()) {
             std::string name = child.attribute("name").value();
             if (name == "maxDepth") {
-                options.max_depth = std::stoi(child.attribute("value").value());
+                options.max_depth = parse_integer(
+                    child.attribute("value").value(), default_map);
             } else if (name == "rrDepth") {
-                options.rr_depth = std::stoi(child.attribute("value").value());
+                options.rr_depth = parse_integer(
+                    child.attribute("value").value(), default_map);
             }
         }
     } else if (type == "volpath") {
@@ -280,13 +383,17 @@ RenderOptions parse_integrator(pugi::xml_node node) {
         for (auto child : node.children()) {
             std::string name = child.attribute("name").value();
             if (name == "maxDepth") {
-                options.max_depth = std::stoi(child.attribute("value").value());
+                options.max_depth = parse_integer(
+                    child.attribute("value").value(), default_map);
             } else if (name == "rrDepth") {
-                options.rr_depth = std::stoi(child.attribute("value").value());
+                options.rr_depth = parse_integer(
+                    child.attribute("value").value(), default_map);
             } else if (name == "version") {
-                options.vol_path_version = std::stoi(child.attribute("value").value());
+                options.vol_path_version = parse_integer(
+                    child.attribute("value").value(), default_map);
             } else if (name == "maxNullCollisions") {
-                options.max_null_collisions = std::stoi(child.attribute("value").value());
+                options.max_null_collisions = parse_integer(
+                    child.attribute("value").value(), default_map);
             }
         }
     } else if (type == "direct") {
@@ -309,7 +416,7 @@ RenderOptions parse_integrator(pugi::xml_node node) {
 }
 
 std::tuple<int /* width */, int /* height */, std::string /* filename */, Filter>
-parse_film(pugi::xml_node node) {
+        parse_film(pugi::xml_node node, const std::map<std::string, std::string> &default_map) {
     int width = c_default_res, height = c_default_res;
     std::string filename = c_default_filename;
     Filter filter = c_default_filter;
@@ -318,11 +425,11 @@ parse_film(pugi::xml_node node) {
         std::string type = child.name();
         std::string name = child.attribute("name").value();
         if (name == "width") {
-            width = std::stoi(child.attribute("value").value());
+            width = parse_integer(child.attribute("value").value(), default_map);
         } else if (name == "height") {
-            height = std::stoi(child.attribute("value").value());
+            height = parse_integer(child.attribute("value").value(), default_map);
         } else if (name == "filename") {
-            filename = std::string(child.attribute("value").value());
+            filename = parse_string(child.attribute("value").value(), default_map);
         }
         if (type == "rfilter") {
             std::string filter_type = child.attribute("type").value();
@@ -330,7 +437,8 @@ parse_film(pugi::xml_node node) {
                 Real filter_width = Real(1);
                 for (auto grand_child : child.children()) {
                     if (std::string(grand_child.attribute("name").value()) == "width") {
-                        filter_width = std::stof(grand_child.attribute("value").value());
+                        filter_width = parse_float(
+                            grand_child.attribute("value").value(), default_map);
                     }
                 }
                 filter = Box{filter_width};
@@ -338,7 +446,8 @@ parse_film(pugi::xml_node node) {
                 Real filter_width = Real(2);
                 for (auto grand_child : child.children()) {
                     if (std::string(grand_child.attribute("name").value()) == "width") {
-                        filter_width = std::stof(grand_child.attribute("value").value());
+                        filter_width = parse_float(
+                            grand_child.attribute("value").value(), default_map);
                     }
                 }
                 filter = Tent{filter_width};
@@ -346,7 +455,8 @@ parse_film(pugi::xml_node node) {
                 Real filter_stddev = Real(0.5);
                 for (auto grand_child : child.children()) {
                     if (std::string(grand_child.attribute("name").value()) == "stddev") {
-                        filter_stddev = std::stof(grand_child.attribute("value").value());
+                        filter_stddev = parse_float(
+                            grand_child.attribute("value").value(), default_map);
                     }
                 }
                 filter = Gaussian{filter_stddev};
@@ -356,14 +466,15 @@ parse_film(pugi::xml_node node) {
     return std::make_tuple(width, height, filename, filter);
 }
 
-VolumeSpectrum parse_volume_spectrum(pugi::xml_node node) {
+VolumeSpectrum parse_volume_spectrum(pugi::xml_node node,
+                                     const std::map<std::string, std::string> &default_map) {
     std::string type = node.attribute("type").value();
     if (type == "constvolume") {
         Spectrum value = make_zero_spectrum();
         for (auto child : node.children()) {
             std::string name = child.attribute("name").value();
             if (name == "value") {
-                value = parse_color(child);
+                value = parse_color(child, default_map);
             }
         }
         return ConstantVolume<Spectrum>{value};
@@ -372,7 +483,8 @@ VolumeSpectrum parse_volume_spectrum(pugi::xml_node node) {
         for (auto child : node.children()) {
             std::string name = child.attribute("name").value();
             if (name == "filename") {
-                filename = child.attribute("value").value();
+                filename = parse_string(
+                    child.attribute("value").value(), default_map);
             }
         }
         if (filename.empty()) {
@@ -385,7 +497,8 @@ VolumeSpectrum parse_volume_spectrum(pugi::xml_node node) {
     return ConstantVolume<Spectrum>{make_zero_spectrum()};
 }
 
-PhaseFunction parse_phase_function(pugi::xml_node node) {
+PhaseFunction parse_phase_function(pugi::xml_node node,
+                                   const std::map<std::string, std::string> &default_map) {
     std::string type = node.attribute("type").value();
     if (type == "isotropic") {
         return IsotropicPhase{};
@@ -394,7 +507,7 @@ PhaseFunction parse_phase_function(pugi::xml_node node) {
         for (auto child : node.children()) {
             std::string name = child.attribute("name").value();
             if (name == "g") {
-                g = std::stof(child.attribute("value").value());
+                g = parse_float(child.attribute("value").value(), default_map);
             }
         }
         return HenyeyGreenstein{g};
@@ -405,7 +518,8 @@ PhaseFunction parse_phase_function(pugi::xml_node node) {
 }
 
 std::tuple<std::string /* ID */, Medium> parse_medium(
-        pugi::xml_node node) {
+        pugi::xml_node node,
+        const std::map<std::string, std::string> &default_map) {
     PhaseFunction phase_func = IsotropicPhase{};
 
     std::string type = node.attribute("type").value();
@@ -420,13 +534,14 @@ std::tuple<std::string /* ID */, Medium> parse_medium(
         for (auto child : node.children()) {
             std::string name = child.attribute("name").value();
             if (name == "sigmaA") {
-                sigma_a = parse_color(child);
+                sigma_a = parse_color(child, default_map);
             } else if (name == "sigmaS") {
-                sigma_s = parse_color(child);
+                sigma_s = parse_color(child, default_map);
             } else if (name == "scale") {
-                scale = std::stof(child.attribute("value").value());
+                scale = parse_float(child.attribute("value").value(),
+                                    default_map);
             } else if (std::string(child.name()) == "phase") {
-                phase_func = parse_phase_function(child);
+                phase_func = parse_phase_function(child, default_map);
             }
         }
         return std::make_tuple(id,
@@ -438,13 +553,13 @@ std::tuple<std::string /* ID */, Medium> parse_medium(
         for (auto child : node.children()) {
             std::string name = child.attribute("name").value();
             if (name == "albedo") {
-                albedo = parse_volume_spectrum(child);
+                albedo = parse_volume_spectrum(child, default_map);
             } else if (name == "density") {
-                density = parse_volume_spectrum(child);
+                density = parse_volume_spectrum(child, default_map);
             } else if (name == "scale") {
-                scale = std::stof(child.attribute("value").value());
+                scale = parse_float(child.attribute("value").value(), default_map);
             } else if (std::string(child.name()) == "phase") {
-                phase_func = parse_phase_function(child);
+                phase_func = parse_phase_function(child, default_map);
             }
         }
         // scale only applies to density!!
@@ -459,7 +574,8 @@ std::tuple<std::string /* ID */, Medium> parse_medium(
 std::tuple<Camera, std::string /* output filename */, ParsedSampler>
         parse_sensor(pugi::xml_node node,
                      std::vector<Medium> &media,
-                     std::map<std::string /* name id */, int /* index id */> &medium_map) {
+                     std::map<std::string /* name id */, int /* index id */> &medium_map,
+                     const std::map<std::string, std::string> &default_map) {
     Real fov = c_default_fov;
     Matrix4x4 to_world = Matrix4x4::identity();
     int width = c_default_res, height = c_default_res;
@@ -474,9 +590,9 @@ std::tuple<Camera, std::string /* output filename */, ParsedSampler>
         for (auto child : node.children()) {
             std::string name = child.attribute("name").value();
             if (name == "fov") {
-                fov = std::stof(child.attribute("value").value());
+                fov = parse_float(child.attribute("value").value(), default_map);
             } else if (name == "toWorld") {
-                to_world = parse_transform(child);
+                to_world = parse_transform(child, default_map);
             } else if (name == "fovAxis") {
                 std::string value = child.attribute("value").value();
                 if (value == "x") {
@@ -500,7 +616,7 @@ std::tuple<Camera, std::string /* output filename */, ParsedSampler>
 
     for (auto child : node.children()) {
         if (std::string(child.name()) == "film") {
-            std::tie(width, height, filename, filter) = parse_film(child);
+            std::tie(width, height, filename, filter) = parse_film(child, default_map);
         } else if (std::string(child.name()) == "sampler") {
             std::string name = child.attribute("type").value();
             if (name != "independent") {
@@ -509,7 +625,7 @@ std::tuple<Camera, std::string /* output filename */, ParsedSampler>
             for (auto grand_child : child.children()) {
                 std::string name = grand_child.attribute("name").value();
                 if (name == "sampleCount") {
-                    sampler.sample_count = std::stoi(grand_child.attribute("value").value());
+                    sampler.sample_count = parse_integer(grand_child.attribute("value").value(), default_map);
                 }
             }
         } else if (std::string(child.name()) == "ref") {
@@ -526,7 +642,7 @@ std::tuple<Camera, std::string /* output filename */, ParsedSampler>
         } else if (std::string(child.name()) == "medium") {
             Medium m;
             std::string medium_name;
-            std::tie(medium_name, m) = parse_medium(child);
+            std::tie(medium_name, m) = parse_medium(child, default_map);
             if (!medium_name.empty()) {
                 medium_map[medium_name] = media.size();
             }
@@ -558,24 +674,29 @@ std::tuple<Camera, std::string /* output filename */, ParsedSampler>
 std::tuple<std::string /* ID */, Material> parse_bsdf(
         pugi::xml_node node,
         const std::map<std::string /* name id */, ParsedTexture> &texture_map,
-        TexturePool &texture_pool) {
+        TexturePool &texture_pool,
+        const std::map<std::string, std::string> &default_map) {
     std::string type = node.attribute("type").value();
     std::string id;
     if (!node.attribute("id").empty()) {
         id = node.attribute("id").value();
     }
     if (type == "diffuse") {
-        Texture<Spectrum> reflectance = make_constant_spectrum_texture(fromRGB(Vector3{0.5, 0.5, 0.5}));
+        Texture<Spectrum> reflectance =
+            make_constant_spectrum_texture(fromRGB(Vector3{0.5, 0.5, 0.5}));
         for (auto child : node.children()) {
             std::string name = child.attribute("name").value();
             if (name == "reflectance") {
-                reflectance = parse_spectrum_texture(child, texture_map, texture_pool);
+                reflectance = parse_spectrum_texture(
+                    child, texture_map, texture_pool, default_map);
             }
         }
         return std::make_tuple(id, Lambertian{reflectance});
     } else if (type == "roughplastic" || type == "plastic") {
-        Texture<Spectrum> diffuse_reflectance = make_constant_spectrum_texture(fromRGB(Vector3{0.5, 0.5, 0.5}));
-        Texture<Spectrum> specular_reflectance = make_constant_spectrum_texture(fromRGB(Vector3{1, 1, 1}));
+        Texture<Spectrum> diffuse_reflectance =
+            make_constant_spectrum_texture(fromRGB(Vector3{0.5, 0.5, 0.5}));
+        Texture<Spectrum> specular_reflectance =
+            make_constant_spectrum_texture(fromRGB(Vector3{1, 1, 1}));
         Texture<Real> roughness = make_constant_float_texture(Real(0.1));
         if (type == "plastic") {
             // Approximate plastic materials with very small roughness
@@ -586,9 +707,11 @@ std::tuple<std::string /* ID */, Material> parse_bsdf(
         for (auto child : node.children()) {
             std::string name = child.attribute("name").value();
             if (name == "diffuseReflectance") {
-                diffuse_reflectance = parse_spectrum_texture(child, texture_map, texture_pool);
+                diffuse_reflectance = parse_spectrum_texture(
+                    child, texture_map, texture_pool, default_map);
             } else if (name == "specularReflectance") {
-                specular_reflectance = parse_spectrum_texture(child, texture_map, texture_pool);
+                specular_reflectance = parse_spectrum_texture(
+                    child, texture_map, texture_pool, default_map);
             } else if (name == "alpha") {
                 // Alpha requires special treatment since we need to convert
                 // the values to roughness
@@ -610,24 +733,26 @@ std::tuple<std::string /* ID */, Material> parse_bsdf(
                     roughness = make_image_float_texture(
                         ref_id, roughness_img, texture_pool, t.uscale, t.vscale);
                 } else if (type == "float") {
-                    Real alpha = std::stof(child.attribute("value").value());
+                    Real alpha = parse_float(child.attribute("value").value(), default_map);
                     roughness = make_constant_float_texture(sqrt(alpha));
                 } else {
                     Error(std::string("Unknown float texture type:") + type);
                 }
             } else if (name == "roughness") {
-                roughness = parse_float_texture(child, texture_map, texture_pool);
+                roughness = parse_float_texture(child, texture_map, texture_pool, default_map);
             } else if (name == "intIOR") {
-                intIOR = std::stof(child.attribute("value").value()); 
+                intIOR = parse_float(child.attribute("value").value(), default_map); 
             } else if (name == "extIOR") {
-                extIOR = std::stof(child.attribute("value").value()); 
+                extIOR = parse_float(child.attribute("value").value(), default_map); 
             }
         }
         return std::make_tuple(id, RoughPlastic{
             diffuse_reflectance, specular_reflectance, roughness, intIOR / extIOR});
     } else if (type == "roughdielectric" || type == "dielectric") {
-        Texture<Spectrum> specular_reflectance = make_constant_spectrum_texture(fromRGB(Vector3{1, 1, 1}));
-        Texture<Spectrum> specular_transmittance = make_constant_spectrum_texture(fromRGB(Vector3{1, 1, 1}));
+        Texture<Spectrum> specular_reflectance =
+            make_constant_spectrum_texture(fromRGB(Vector3{1, 1, 1}));
+        Texture<Spectrum> specular_transmittance =
+            make_constant_spectrum_texture(fromRGB(Vector3{1, 1, 1}));
         Texture<Real> roughness = make_constant_float_texture(Real(0.1));
         if (type == "dielectric") {
             // Approximate plastic materials with very small roughness
@@ -638,9 +763,11 @@ std::tuple<std::string /* ID */, Material> parse_bsdf(
         for (auto child : node.children()) {
             std::string name = child.attribute("name").value();
             if (name == "specularReflectance") {
-                specular_reflectance = parse_spectrum_texture(child, texture_map, texture_pool);
+                specular_reflectance = parse_spectrum_texture(
+                    child, texture_map, texture_pool, default_map);
             } else if (name == "specularTransmittance") {
-                specular_transmittance = parse_spectrum_texture(child, texture_map, texture_pool);
+                specular_transmittance = parse_spectrum_texture(
+                    child, texture_map, texture_pool, default_map);
             } else if (name == "alpha") {
                 std::string type = child.name();
                 if (type == "ref") {
@@ -666,43 +793,53 @@ std::tuple<std::string /* ID */, Material> parse_bsdf(
                     Error(std::string("Unknown float texture type:") + type);
                 }
             } else if (name == "roughness") {
-                roughness = parse_float_texture(child, texture_map, texture_pool);
+                roughness = parse_float_texture(
+                    child, texture_map, texture_pool, default_map);
             } else if (name == "intIOR") {
-                intIOR = std::stof(child.attribute("value").value()); 
+                intIOR = parse_float(child.attribute("value").value(), default_map);
             } else if (name == "extIOR") {
-                extIOR = std::stof(child.attribute("value").value()); 
+                extIOR = parse_float(child.attribute("value").value(), default_map); 
             }
         }
         return std::make_tuple(id, RoughDielectric{
             specular_reflectance, specular_transmittance, roughness, intIOR / extIOR});
     } else if (type == "disneydiffuse") {
-        Texture<Spectrum> base_color = make_constant_spectrum_texture(fromRGB(Vector3{0.5, 0.5, 0.5}));
+        Texture<Spectrum> base_color =
+            make_constant_spectrum_texture(fromRGB(Vector3{0.5, 0.5, 0.5}));
         Texture<Real> roughness = make_constant_float_texture(Real(0.5));
         Texture<Real> subsurface = make_constant_float_texture(Real(0));
         for (auto child : node.children()) {
             std::string name = child.attribute("name").value();
             if (name == "baseColor") {
-                base_color = parse_spectrum_texture(child, texture_map, texture_pool);
+                base_color = parse_spectrum_texture(
+                    child, texture_map, texture_pool, default_map);
             } else if (name == "roughness") {
-                roughness = parse_float_texture(child, texture_map, texture_pool);
+                roughness = parse_float_texture(
+                    child, texture_map, texture_pool, default_map);
             } else if (name == "subsurface") {
-                subsurface = parse_float_texture(child, texture_map, texture_pool);
+                subsurface = parse_float_texture(
+                    child, texture_map, texture_pool, default_map);
             }
         }
-        return std::make_tuple(id, DisneyDiffuse{
-            base_color, roughness, subsurface});
+        return std::make_tuple(id, DisneyDiffuse{base_color, roughness, subsurface});
     } else if (type == "disneymetal") {
-        Texture<Spectrum> base_color = make_constant_spectrum_texture(fromRGB(Vector3{0.5, 0.5, 0.5}));
-        Texture<Real> roughness = make_constant_float_texture(Real(0.5));
-        Texture<Real> anisotropic = make_constant_float_texture(Real(0.0));
+        Texture<Spectrum> base_color =
+            make_constant_spectrum_texture(fromRGB(Vector3{0.5, 0.5, 0.5}));
+        Texture<Real> roughness =
+            make_constant_float_texture(Real(0.5));
+        Texture<Real> anisotropic =
+            make_constant_float_texture(Real(0.0));
         for (auto child : node.children()) {
             std::string name = child.attribute("name").value();
             if (name == "baseColor") {
-                base_color = parse_spectrum_texture(child, texture_map, texture_pool);
+                base_color = parse_spectrum_texture(
+                    child, texture_map, texture_pool, default_map);
             } else if (name == "roughness") {
-                roughness = parse_float_texture(child, texture_map, texture_pool);
+                roughness = parse_float_texture(
+                    child, texture_map, texture_pool, default_map);
             } else if (name == "anisotropic") {
-                anisotropic = parse_float_texture(child, texture_map, texture_pool);
+                anisotropic = parse_float_texture(
+                    child, texture_map, texture_pool, default_map);
             }
         }
         return std::make_tuple(id, DisneyMetal{base_color, roughness, anisotropic});
@@ -714,13 +851,16 @@ std::tuple<std::string /* ID */, Material> parse_bsdf(
         for (auto child : node.children()) {
             std::string name = child.attribute("name").value();
             if (name == "baseColor") {
-                base_color = parse_spectrum_texture(child, texture_map, texture_pool);
+                base_color = parse_spectrum_texture(
+                    child, texture_map, texture_pool, default_map);
             } else if (name == "roughness") {
-                roughness = parse_float_texture(child, texture_map, texture_pool);
+                roughness = parse_float_texture(
+                    child, texture_map, texture_pool, default_map);
             } else if (name == "anisotropic") {
-                anisotropic = parse_float_texture(child, texture_map, texture_pool);
+                anisotropic = parse_float_texture(
+                    child, texture_map, texture_pool, default_map);
             } else if (name == "eta") {
-                eta = std::stof(child.attribute("value").value());
+                eta = parse_float(child.attribute("value").value(), default_map);
             }
         }
         return std::make_tuple(id, DisneyGlass{base_color, roughness, anisotropic, eta});
@@ -729,19 +869,23 @@ std::tuple<std::string /* ID */, Material> parse_bsdf(
         for (auto child : node.children()) {
             std::string name = child.attribute("name").value();
             if (name == "clearcoatGloss") {
-                clearcoat_gloss = parse_float_texture(child, texture_map, texture_pool);
+                clearcoat_gloss = parse_float_texture(
+                    child, texture_map, texture_pool, default_map);
             }
         }
         return std::make_tuple(id, DisneyClearcoat{clearcoat_gloss});
     } else if (type == "disneysheen") {
-        Texture<Spectrum> base_color = make_constant_spectrum_texture(fromRGB(Vector3{0.5, 0.5, 0.5}));
+        Texture<Spectrum> base_color =
+            make_constant_spectrum_texture(fromRGB(Vector3{0.5, 0.5, 0.5}));
         Texture<Real> sheen_tint = make_constant_float_texture(Real(0.5));
         for (auto child : node.children()) {
             std::string name = child.attribute("name").value();
             if (name == "baseColor") {
-                base_color = parse_spectrum_texture(child, texture_map, texture_pool);
+                base_color = parse_spectrum_texture(
+                    child, texture_map, texture_pool, default_map);
             } else if (name == "sheenTint") {
-                sheen_tint = parse_float_texture(child, texture_map, texture_pool);
+                sheen_tint = parse_float_texture(
+                    child, texture_map, texture_pool, default_map);
             }
         }
         return std::make_tuple(id, DisneySheen{base_color, sheen_tint});
@@ -762,31 +906,43 @@ std::tuple<std::string /* ID */, Material> parse_bsdf(
         for (auto child : node.children()) {
             std::string name = child.attribute("name").value();
             if (name == "baseColor") {
-                base_color = parse_spectrum_texture(child, texture_map, texture_pool);
+                base_color = parse_spectrum_texture(
+                    child, texture_map, texture_pool, default_map);
             } else if (name == "specularTransmission") {
-                specular_transmission = parse_float_texture(child, texture_map, texture_pool);
+                specular_transmission = parse_float_texture(
+                    child, texture_map, texture_pool, default_map);
             } else if (name == "metallic") {
-                metallic = parse_float_texture(child, texture_map, texture_pool);
+                metallic = parse_float_texture(
+                    child, texture_map, texture_pool, default_map);
             } else if (name == "subsurface") {
-                subsurface = parse_float_texture(child, texture_map, texture_pool);
+                subsurface = parse_float_texture(
+                    child, texture_map, texture_pool, default_map);
             } else if (name == "specular") {
-                specular = parse_float_texture(child, texture_map, texture_pool);
+                specular = parse_float_texture(
+                    child, texture_map, texture_pool, default_map);
             } else if (name == "roughness") {
-                roughness = parse_float_texture(child, texture_map, texture_pool);
+                roughness = parse_float_texture(
+                    child, texture_map, texture_pool, default_map);
             } else if (name == "specularTint") {
-                specular_tint = parse_float_texture(child, texture_map, texture_pool);
+                specular_tint = parse_float_texture(
+                    child, texture_map, texture_pool, default_map);
             } else if (name == "anisotropic") {
-                anisotropic = parse_float_texture(child, texture_map, texture_pool);
+                anisotropic = parse_float_texture(
+                    child, texture_map, texture_pool, default_map);
             } else if (name == "sheen") {
-                sheen = parse_float_texture(child, texture_map, texture_pool);
+                sheen = parse_float_texture(
+                    child, texture_map, texture_pool, default_map);
             } else if (name == "sheenTint") {
-                sheen_tint = parse_float_texture(child, texture_map, texture_pool);
+                sheen_tint = parse_float_texture(
+                    child, texture_map, texture_pool, default_map);
             } else if (name == "clearcoat") {
-                clearcoat = parse_float_texture(child, texture_map, texture_pool);
+                clearcoat = parse_float_texture(
+                    child, texture_map, texture_pool, default_map);
             } else if (name == "clearcoatGloss") {
-                clearcoat_gloss = parse_float_texture(child, texture_map, texture_pool);
+                clearcoat_gloss = parse_float_texture(
+                    child, texture_map, texture_pool, default_map);
             } else if (name == "eta") {
-                eta = std::stof(child.attribute("value").value());
+                eta = parse_float(child.attribute("value").value(), default_map);
             }
         }
         return std::make_tuple(id, DisneyBSDF{base_color,
@@ -816,7 +972,8 @@ Shape parse_shape(pugi::xml_node node,
                   std::vector<Medium> &media,
                   std::map<std::string /* name id */, int /* index id */> &medium_map,
                   std::vector<Light> &lights,
-                  const std::vector<Shape> &shapes) {
+                  const std::vector<Shape> &shapes,
+                  const std::map<std::string, std::string> &default_map) {
     int material_id = -1;
     int interior_medium_id = -1;
     int exterior_medium_id = -1;
@@ -850,7 +1007,8 @@ Shape parse_shape(pugi::xml_node node,
         } else if (name == "bsdf") {
             Material m;
             std::string material_name;
-            std::tie(material_name, m) = parse_bsdf(child, texture_map, texture_pool);
+            std::tie(material_name, m) = parse_bsdf(
+                child, texture_map, texture_pool, default_map);
             if (!material_name.empty()) {
                 material_map[material_name] = materials.size();
             }
@@ -859,7 +1017,7 @@ Shape parse_shape(pugi::xml_node node,
         } else if (name == "medium") {
             Medium m;
             std::string medium_name;
-            std::tie(medium_name, m) = parse_medium(child);
+            std::tie(medium_name, m) = parse_medium(child, default_map);
             if (!medium_name.empty()) {
                 medium_map[medium_name] = media.size();
             }
@@ -883,10 +1041,10 @@ Shape parse_shape(pugi::xml_node node,
         for (auto child : node.children()) {
             std::string name = child.attribute("name").value();
             if (name == "filename") {
-                filename = child.attribute("value").value();
+                filename = parse_string(child.attribute("value").value(), default_map);
             } else if (name == "toWorld") {
                 if (std::string(child.name()) == "transform") {
-                    to_world = parse_transform(child);
+                    to_world = parse_transform(child, default_map);
                 }
             }
         }
@@ -898,13 +1056,13 @@ Shape parse_shape(pugi::xml_node node,
         for (auto child : node.children()) {
             std::string name = child.attribute("name").value();
             if (name == "filename") {
-                filename = child.attribute("value").value();
+                filename = parse_string(child.attribute("value").value(), default_map);
             } else if (name == "toWorld") {
                 if (std::string(child.name()) == "transform") {
-                    to_world = parse_transform(child);
+                    to_world = parse_transform(child, default_map);
                 }
             } else if (name == "shapeIndex") {
-                shape_index = std::stoi(child.attribute("value").value());
+                shape_index = parse_integer(child.attribute("value").value(), default_map);
             }
         }
         shape = load_serialized(filename, shape_index, to_world);
@@ -915,11 +1073,11 @@ Shape parse_shape(pugi::xml_node node,
             std::string name = child.attribute("name").value();
             if (name == "center") {
                 center = Vector3{
-                    std::stof(child.attribute("x").value()),
-                    std::stof(child.attribute("y").value()),
-                    std::stof(child.attribute("z").value())};
+                    parse_float(child.attribute("x").value(), default_map),
+                    parse_float(child.attribute("y").value(), default_map),
+                    parse_float(child.attribute("z").value(), default_map)};
             } else if (name == "radius") {
-                radius = std::stof(child.attribute("value").value());
+                radius = parse_float(child.attribute("value").value(), default_map);
             }
         }
         shape = Sphere{{}, center, radius};
@@ -940,7 +1098,7 @@ Shape parse_shape(pugi::xml_node node,
                     std::string rad_type = grand_child.name();
                     if (rad_type == "spectrum") {
                         std::vector<std::pair<Real, Real>> spec =
-                            parse_spectrum(grand_child.attribute("value").value());
+                            parse_spectrum(grand_child.attribute("value").value(), default_map);
                         if (spec.size() == 1) {
                             // For a light source, the white point is
                             // XYZ(0.9505, 1.0, 1.0888) instead
@@ -953,10 +1111,11 @@ Shape parse_shape(pugi::xml_node node,
                             radiance = fromRGB(XYZ_to_RGB(xyz));
                         }
                     } else if (rad_type == "rgb") {
-                        radiance = fromRGB(parse_vector3(grand_child.attribute("value").value()));
+                        radiance = fromRGB(parse_vector3(
+                            grand_child.attribute("value").value(), default_map));
                     } else if (rad_type == "srgb") {
-                        std::string value = grand_child.attribute("value").value();
-                        Vector3 srgb = parse_srgb(value);
+                        Vector3 srgb = parse_srgb(
+                            grand_child.attribute("value").value(), default_map);
                         radiance = fromRGB(sRGB_to_RGB(srgb));
                     }
                 }
@@ -970,7 +1129,8 @@ Shape parse_shape(pugi::xml_node node,
 }
 
 /// We don't load the images to memory at this stage. Only record their names.
-ParsedTexture parse_texture(pugi::xml_node node) {
+ParsedTexture parse_texture(pugi::xml_node node,
+                            const std::map<std::string, std::string> &default_map) {
     std::string type = node.attribute("type").value();
     if (type == "bitmap") {
         std::string filename = "";
@@ -981,17 +1141,23 @@ ParsedTexture parse_texture(pugi::xml_node node) {
         for (auto child : node.children()) {
             std::string name = child.attribute("name").value();
             if (name == "filename") {
-                filename = child.attribute("value").value();
+                filename = parse_string(
+                    child.attribute("value").value(), default_map);
             } else if (name == "uvscale") {
-                uscale = vscale = std::stof(child.attribute("value").value());
+                uscale = vscale = parse_float(
+                    child.attribute("value").value(), default_map);
             } else if (name == "uscale") {
-                uscale = std::stof(child.attribute("value").value());
+                uscale = parse_float(
+                    child.attribute("value").value(), default_map);
             } else if (name == "vscale") {
-                vscale = std::stof(child.attribute("value").value());
+                vscale = parse_float(
+                    child.attribute("value").value(), default_map);
             } else if (name == "uoffset") {
-                uoffset = std::stof(child.attribute("value").value());
+                uoffset = parse_float(
+                    child.attribute("value").value(), default_map);
             } else if (name == "voffset") {
-                voffset = std::stof(child.attribute("value").value());
+                voffset = parse_float(
+                    child.attribute("value").value(), default_map);
             }
         }
         return ParsedTexture{TextureType::BITMAP, fs::path(filename),
@@ -1007,19 +1173,24 @@ ParsedTexture parse_texture(pugi::xml_node node) {
         for (auto child : node.children()) {
             std::string name = child.attribute("name").value();
             if (name == "color0") {
-                color0 = parse_color(child);
+                color0 = parse_color(child, default_map);
             } else if (name == "color1") {
-                color1 = parse_color(child);
+                color1 = parse_color(child, default_map);
             } else if (name == "uvscale") {
-                uscale = vscale = std::stof(child.attribute("value").value());
+                uscale = vscale = parse_float(
+                    child.attribute("value").value(), default_map);
             } else if (name == "uscale") {
-                uscale = std::stof(child.attribute("value").value());
+                uscale = parse_float(
+                    child.attribute("value").value(), default_map);
             } else if (name == "vscale") {
-                vscale = std::stof(child.attribute("value").value());
+                vscale = parse_float(
+                    child.attribute("value").value(), default_map);
             } else if (name == "uoffset") {
-                uoffset = std::stof(child.attribute("value").value());
+                uoffset = parse_float(
+                    child.attribute("value").value(), default_map);
             } else if (name == "voffset") {
-                voffset = std::stof(child.attribute("value").value());
+                voffset = parse_float(
+                    child.attribute("value").value(), default_map);
             }
         }
         return ParsedTexture{TextureType::CHECKERBOARD,
@@ -1046,20 +1217,27 @@ Scene parse_scene(pugi::xml_node node, const RTCDevice &embree_device) {
     std::map<std::string /* name id */, int /* index id */> medium_map;
     std::vector<Shape> shapes;
     std::vector<Light> lights;
+    // For <default> tags
+    // e.g., <default name="spp" value="4096"/> will map "spp" to "4096"
+    std::map<std::string, std::string> default_map;
+
     int envmap_light_id = -1;
     for (auto child : node.children()) {
         std::string name = child.name();
-        if (name == "integrator") {
-            options = parse_integrator(child);
+        if (name == "default") {
+            parse_default_map(child, default_map);
+        } else if (name == "integrator") {
+            options = parse_integrator(child, default_map);
         } else if (name == "sensor") {
             ParsedSampler sampler;
             std::tie(camera, filename, sampler) =
-                parse_sensor(child, media, medium_map);
+                parse_sensor(child, media, medium_map, default_map);
             options.samples_per_pixel = sampler.sample_count;
         } else if (name == "bsdf") {
             std::string material_name;
             Material m;
-            std::tie(material_name, m) = parse_bsdf(child, texture_map, texture_pool);
+            std::tie(material_name, m) = parse_bsdf(
+                child, texture_map, texture_pool, default_map);
             if (!material_name.empty()) {
                 material_map[material_name] = materials.size();
                 materials.push_back(m);
@@ -1073,14 +1251,15 @@ Scene parse_scene(pugi::xml_node node, const RTCDevice &embree_device) {
                                   media,
                                   medium_map,
                                   lights,
-                                  shapes);
+                                  shapes,
+                                  default_map);
             shapes.push_back(s);
         } else if (name == "texture") {
             std::string id = child.attribute("id").value();
             if (texture_map.find(id) != texture_map.end()) {
                 Error(std::string("Duplicated texture ID:") + id);
             }
-            texture_map[id] = parse_texture(child);
+            texture_map[id] = parse_texture(child, default_map);
         } else if (name == "emitter") {
             std::string type = child.attribute("type").value();
             if (type == "envmap") {
@@ -1090,11 +1269,13 @@ Scene parse_scene(pugi::xml_node node, const RTCDevice &embree_device) {
                 for (auto grand_child : child.children()) {
                     std::string name = grand_child.attribute("name").value();
                     if (name == "filename") {
-                        filename = grand_child.attribute("value").value();
+                        filename = parse_string(
+                            grand_child.attribute("value").value(), default_map);
                     } else if (name == "toWorld") {
-                        to_world = parse_transform(grand_child);
+                        to_world = parse_transform(grand_child, default_map);
                     } else if (name == "scale") {
-                        scale = std::stof(grand_child.attribute("value").value());
+                        scale = parse_float(
+                            grand_child.attribute("value").value(), default_map);
                     }
                 }
                 if (filename.size() > 0) {
@@ -1112,7 +1293,7 @@ Scene parse_scene(pugi::xml_node node, const RTCDevice &embree_device) {
         } else if (name == "medium") {
             std::string medium_name;
             Medium m;
-            std::tie(medium_name, m) = parse_medium(child);
+            std::tie(medium_name, m) = parse_medium(child, default_map);
             if (!medium_name.empty()) {
                 medium_map[medium_name] = media.size();
                 media.push_back(m);
