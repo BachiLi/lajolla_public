@@ -19,6 +19,8 @@ find_package(Embree REQUIRED)
 include_directories(${EMBREE_INCLUDE_PATH})
 link_libraries(${EMBREE_LIBRARY})
 
+include_directories(${CMAKE_SOURCE_DIR}/src)
+
 set(SRCS src/3rdparty/miniz.h
          src/3rdparty/miniz.c
          src/3rdparty/pugiconfig.hpp
@@ -42,6 +44,9 @@ set(SRCS src/3rdparty/miniz.h
          src/materials/disney_bsdf.inl
          src/media/homogeneous.inl
          src/media/heterogeneous.inl
+         src/parsers/load_serialized.h
+         src/parsers/parse_obj.h
+         src/parsers/parse_scene.h
          src/phase_functions/isotropic.inl
          src/phase_functions/henyeygreenstein.inl
          src/shapes/sphere.inl
@@ -54,15 +59,12 @@ set(SRCS src/3rdparty/miniz.h
          src/intersection.h
          src/lajolla.h
          src/light.h
-         src/load_serialized.h
          src/material.h
          src/matrix.h
          src/medium.h
          src/microfacet.h
          src/mipmap.h
          src/parallel.h
-         src/parse_obj.h
-         src/parse_scene.h
          src/path_tracing.h
          src/phase_function.h
          src/vol_path_tracing.h
@@ -77,17 +79,17 @@ set(SRCS src/3rdparty/miniz.h
          src/texture.h
          src/transform.h
          src/vector.h
+         src/parsers/load_serialized.cpp
+         src/parsers/parse_obj.cpp
+         src/parsers/parse_scene.cpp
          src/camera.cpp
          src/filter.cpp
          src/image.cpp
          src/intersection.cpp
          src/light.cpp
-         src/load_serialized.cpp
          src/material.cpp
          src/medium.cpp
          src/parallel.cpp
-         src/parse_obj.cpp
-         src/parse_scene.cpp
          src/phase_function.cpp
          src/render.cpp
          src/scene.cpp
@@ -95,8 +97,6 @@ set(SRCS src/3rdparty/miniz.h
          src/table_dist.cpp
          src/transform.cpp
          src/volume.cpp)
-
-
 
 add_library(lajolla_lib STATIC ${SRCS})
 add_executable(lajolla src/main.cpp)

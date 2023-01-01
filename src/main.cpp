@@ -1,5 +1,5 @@
+#include "parsers/parse_scene.h"
 #include "parallel.h"
-#include "parse_scene.h"
 #include "image.h"
 #include "render.h"
 #include "timer.h"
