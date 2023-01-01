@@ -28,6 +28,7 @@ set(SRCS src/3rdparty/miniz.h
          src/3rdparty/pugixml.cpp
          src/3rdparty/stb_image.h
          src/3rdparty/tinyexr.h
+         src/3rdparty/tinyply.h
          src/filters/box.inl
          src/filters/gaussian.inl
          src/filters/tent.inl
@@ -46,6 +47,7 @@ set(SRCS src/3rdparty/miniz.h
          src/media/heterogeneous.inl
          src/parsers/load_serialized.h
          src/parsers/parse_obj.h
+         src/parsers/parse_ply.h
          src/parsers/parse_scene.h
          src/phase_functions/isotropic.inl
          src/phase_functions/henyeygreenstein.inl
@@ -81,6 +83,7 @@ set(SRCS src/3rdparty/miniz.h
          src/vector.h
          src/parsers/load_serialized.cpp
          src/parsers/parse_obj.cpp
+         src/parsers/parse_ply.cpp
          src/parsers/parse_scene.cpp
          src/camera.cpp
          src/filter.cpp

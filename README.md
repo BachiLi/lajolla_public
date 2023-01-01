@@ -36,4 +36,6 @@ We use [stb_image](https://github.com/nothings/stb) and [tinyexr](https://github
 
 We use [miniz](https://github.com/richgel999/miniz) for compression & decompression.
 
+We use [tinyply](https://github.com/ddiakopoulos/tinyply) for parsing PLY files.
+
 Many scenes in the scenes folder are directly downloaded from [http://www.mitsuba-renderer.org/download.html](http://www.mitsuba-renderer.org/download.html). Scenes courtesy of Wenzel Jakob, Cornell Program of Computer Graphics, Marko Dabrovic, Eric Veach, Jonas Pilo, and Bernhard Vogl.

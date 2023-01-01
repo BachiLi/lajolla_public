@@ -3,6 +3,8 @@
 #include "flexception.h"
 #include "load_serialized.h"
 #include "parse_obj.h"
+#include "parse_ply.h"
+#include "shape_utils.h"
 #include "transform.h"
 #include <cctype>
 #include <map>
@@ -1070,6 +1072,7 @@ Shape parse_shape(pugi::xml_node node,
     if (type == "obj") {
         std::string filename;
         Matrix4x4 to_world = Matrix4x4::identity();
+        bool face_normals = false;
         for (auto child : node.children()) {
             std::string name = child.attribute("name").value();
             if (name == "filename") {
@@ -1078,13 +1081,25 @@ Shape parse_shape(pugi::xml_node node,
                 if (std::string(child.name()) == "transform") {
                     to_world = parse_transform(child, default_map);
                 }
+            } else if (name == "faceNormals" || name == "face_normals") {
+                face_normals = parse_boolean(
+                    child.attribute("value").value(), default_map);
             }
         }
         shape = parse_obj(filename, to_world);
+        TriangleMesh &mesh = std::get<TriangleMesh>(shape);
+        if (face_normals) {
+            mesh.normals = std::vector<Vector3>{};
+        } else {
+            if (mesh.normals.size() == 0) {
+                mesh.normals = compute_normal(mesh.positions, mesh.indices);
+            }
+        }
     } else if (type == "serialized") {
         std::string filename;
         int shape_index = 0;
         Matrix4x4 to_world = Matrix4x4::identity();
+        bool face_normals = false;
         for (auto child : node.children()) {
             std::string name = child.attribute("name").value();
             if (name == "filename") {
@@ -1095,9 +1110,49 @@ Shape parse_shape(pugi::xml_node node,
                 }
             } else if (name == "shapeIndex" || name == "shape_index") {
                 shape_index = parse_integer(child.attribute("value").value(), default_map);
+            } else if (name == "faceNormals" || name == "face_normals") {
+                face_normals = parse_boolean(
+                    child.attribute("value").value(), default_map);
             }
         }
         shape = load_serialized(filename, shape_index, to_world);
+        TriangleMesh &mesh = std::get<TriangleMesh>(shape);
+        if (face_normals) {
+            mesh.normals = std::vector<Vector3>{};
+        } else {
+            if (mesh.normals.size() == 0) {
+                mesh.normals = compute_normal(mesh.positions, mesh.indices);
+            }
+        }
+    } else if (type == "ply") {
+        std::string filename;
+        int shape_index = 0;
+        Matrix4x4 to_world = Matrix4x4::identity();
+        bool face_normals = false;
+        for (auto child : node.children()) {
+            std::string name = child.attribute("name").value();
+            if (name == "filename") {
+                filename = parse_string(child.attribute("value").value(), default_map);
+            } else if (name == "toWorld" || name == "to_world") {
+                if (std::string(child.name()) == "transform") {
+                    to_world = parse_transform(child, default_map);
+                }
+            } else if (name == "shapeIndex" || name == "shape_index") {
+                shape_index = parse_integer(child.attribute("value").value(), default_map);
+            } else if (name == "faceNormals" || name == "face_normals") {
+                face_normals = parse_boolean(
+                    child.attribute("value").value(), default_map);
+            }
+        }
+        shape = parse_ply(filename, to_world);
+        TriangleMesh &mesh = std::get<TriangleMesh>(shape);
+        if (face_normals) {
+            mesh.normals = std::vector<Vector3>{};
+        } else {
+            if (mesh.normals.size() == 0) {
+                mesh.normals = compute_normal(mesh.positions, mesh.indices);
+            }
+        }
     } else if (type == "sphere") {
         Vector3 center{0, 0, 0};
         Real radius = 1;
