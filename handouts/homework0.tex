@@ -41,7 +41,10 @@ Once lajolla is built, you can try to render some images in the \lstinline{scene
 
 After the reading is done, you will see an image file \lstinline{image.exr} appeared in your working directory. EXRs are \href{https://en.wikipedia.org/wiki/High_dynamic_range}{\emph{high-dynamic range images}} and require a different image viewer. We recommend viewing it using \href{https://github.com/wkjarosz/hdrview}{HDRView} or \href{https://github.com/Tom94/tev}{Tev}. You should be able to see images like the ones in Figure~\ref{fig:gallery} (maybe noiser, since the default settings for these scenes use a smaller number of light simulation samples compared to the ones in the figure).
 
-The scene format in lajolla follows the Mitsuba scene format, where you can read the documentation \href{https://www.mitsuba-renderer.org/releases/current/documentation.pdf}{here}. The scene files are human-readable, so just looking at those files should give you a reasonable idea.
+The scene format in lajolla follows the Mitsuba scene format, where you can read the documentation \href{https://www.mitsuba-renderer.org/releases/current/documentation.pdf}{here}.
+The scene files are human-readable, so just looking at those files should give you a reasonable idea.
+
+To edit and convert the scene files, apart from manually editing the text, you can try out the \href{Mitsuba Blender add-on}{https://github.com/mitsuba-renderer/mitsuba-blender} which can import and export Mitsuba scene files. Note that some shaders can cause issues with the conversion and you might need to manually fix it. Let us know if things do not work as you expect. We also welcome pull requests.
 
 \section{Design philosophy}
 
