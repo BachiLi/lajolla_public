@@ -1448,9 +1448,58 @@ Scene parse_scene(pugi::xml_node node, const RTCDevice &embree_device) {
                         intensity = parse_intensity(grand_child, default_map);
                     }
                 }
-                std::cerr << "position:" << position << std::endl;
                 Shape s = Sphere{{}, position, Real(1e-4)};
                 intensity *= (c_FOURPI / surface_area(s));
+                Material m = Lambertian{
+                    make_constant_spectrum_texture(make_zero_spectrum())};
+                int material_id = materials.size();
+                materials.push_back(m);
+                set_material_id(s, material_id);
+                set_area_light_id(s, lights.size());
+                lights.push_back(DiffuseAreaLight{(int)shapes.size() /* shape ID */, intensity});
+                shapes.push_back(s);
+            } else if (type == "directional") {
+                std::cout << "[Warning] converting a directional light into a small spherical light." << std::endl;
+                Vector3 direction = Vector3{0, 0, 1};
+                Spectrum intensity = make_const_spectrum(1);
+                for (auto grand_child : child.children()) {
+                    std::string name = grand_child.attribute("name").value();
+                    if (name == "direction") {
+                        if (!grand_child.attribute("x").empty()) {
+                            direction.x = parse_float(grand_child.attribute("x").value(), default_map);
+                        }
+                        if (!grand_child.attribute("y").empty()) {
+                            direction.y = parse_float(grand_child.attribute("y").value(), default_map);
+                        }
+                        if (!grand_child.attribute("z").empty()) {
+                            direction.z = parse_float(grand_child.attribute("z").value(), default_map);
+                        }
+                    } else if (name == "toWorld" || name == "to_world") {
+                        Matrix4x4 to_world = parse_transform(grand_child, default_map);
+                        direction = xform_vector(to_world, direction);
+                    } else if (name == "irradiance") {
+                        intensity = parse_intensity(grand_child, default_map);
+                    }
+                }
+                direction = normalize(direction);
+                Vector3 tangent, bitangent;
+                std::tie(tangent, bitangent) = coordinate_system(-direction);
+                TriangleMesh mesh;
+                Real length = Real(1e-3);
+                Real dist = Real(1e3);
+                mesh.positions = {
+                    Real(0.5) * length * (-tangent-bitangent) - dist * direction,
+                    Real(0.5) * length * ( tangent-bitangent) - dist * direction,
+                    Real(0.5) * length * ( tangent+bitangent) - dist * direction,
+                    Real(0.5) * length * (-tangent+bitangent) - dist * direction};
+                mesh.indices = {
+                    Vector3i{0, 1, 2}, Vector3i{0, 2, 3}
+                };
+                mesh.normals = {
+                    direction, direction, direction, direction
+                };
+                intensity *= ((dist * dist) / (length * length));
+                Shape s = mesh;
                 Material m = Lambertian{
                     make_constant_spectrum_texture(make_zero_spectrum())};
                 int material_id = materials.size();
