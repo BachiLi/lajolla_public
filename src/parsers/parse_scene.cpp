@@ -957,7 +957,7 @@ std::tuple<std::string /* ID */, Material> parse_bsdf(
             }
         }
         return std::make_tuple(id, DisneySheen{base_color, sheen_tint});
-    } else if (type == "disneybsdf") {
+    } else if (type == "disneybsdf" || type == "principled") {
         Texture<Spectrum> base_color = make_constant_spectrum_texture(fromRGB(Vector3{0.5, 0.5, 0.5}));
         Texture<Real> specular_transmission = make_constant_float_texture(Real(0));
         Texture<Real> metallic = make_constant_float_texture(Real(0));
@@ -976,7 +976,8 @@ std::tuple<std::string /* ID */, Material> parse_bsdf(
             if (name == "baseColor" || name == "base_color") {
                 base_color = parse_spectrum_texture(
                     child, texture_map, texture_pool, default_map);
-            } else if (name == "specularTransmission" || name == "specular_transmission") {
+            } else if (name == "specularTransmission" || name == "specular_transmission" ||
+                        name == "specTrans" || name == "spec_trans") {
                 specular_transmission = parse_float_texture(
                     child, texture_map, texture_pool, default_map);
             } else if (name == "metallic") {
@@ -991,7 +992,8 @@ std::tuple<std::string /* ID */, Material> parse_bsdf(
             } else if (name == "roughness") {
                 roughness = parse_float_texture(
                     child, texture_map, texture_pool, default_map);
-            } else if (name == "specularTint" || name == "specular_tint") {
+            } else if (name == "specularTint" || name == "specular_tint" ||
+                        name == "specTint" || name == "spec_tint") {
                 specular_tint = parse_float_texture(
                     child, texture_map, texture_pool, default_map);
             } else if (name == "anisotropic") {
