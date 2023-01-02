@@ -32,7 +32,11 @@ We use \href{https://cmake.org/}{CMake} as our build system. To build, on a Unix
   make -j
 \end{lstlisting}
 
-On Windows, latest visual studios support directly using CMake as project files.\footnote{\url{https://docs.microsoft.com/en-us/cpp/build/cmake-projects-in-visual-studio?view=msvc-170}} Alternatively, you can use CMake's graphical user interface downloaded from CMake's website. However, we have received reports that lajolla can crash on Windows machines. You might want to consider using Windows Subsystems for Linux to use a Unix-like system for building and running lajolla (or you can help us fix issues on Windows and get extra points!). 
+On Windows, latest visual studios support directly using CMake as project files.\footnote{\url{https://docs.microsoft.com/en-us/cpp/build/cmake-projects-in-visual-studio?view=msvc-170}} Alternatively, you can use CMake's graphical user interface downloaded from CMake's website. 
+
+For Apple M1 users, you might need to build Embree from scratch since the provided prebuilt MacOS binaries are built for the Intel CPUs.
+
+% However, we have received reports that lajolla can crash on Windows machines. You might want to consider using Windows Subsystems for Linux to use a Unix-like system for building and running lajolla (or you can help us fix issues on Windows and get extra points!). 
 
 Once lajolla is built, you can try to render some images in the \lstinline{scenes} directory. Type
 \begin{lstlisting}[language=bash]
