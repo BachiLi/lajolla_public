@@ -34,7 +34,19 @@ PointAndNormal sample_point_on_shape_op::operator()(const TriangleMesh &mesh) co
     Real a = sqrt(std::clamp(uv[0], Real(0), Real(1)));
     Real b1 = 1 - a;
     Real b2 = a * uv[1];
-    return PointAndNormal{v0 + (e1 * b1) + (e2 * b2), normalize(cross(e1, e2))};
+    Vector3 geometric_normal = normalize(cross(e1, e2));
+    // Flip the geometric normal to the same side as the shading normal
+    if (mesh.normals.size() > 0) {
+        Vector3 n0 = mesh.normals[index[0]];
+        Vector3 n1 = mesh.normals[index[1]];
+        Vector3 n2 = mesh.normals[index[2]];
+        Vector3 shading_normal = normalize(
+            (1 - b1 - b2) * n0 + b1 * n1 + b2 * n2);
+        if (dot(geometric_normal, shading_normal) < 0) {
+            geometric_normal = -geometric_normal;
+        }
+    }
+    return PointAndNormal{v0 + (e1 * b1) + (e2 * b2), geometric_normal};
 }
 
 Real surface_area_op::operator()(const TriangleMesh &mesh) const {
