@@ -382,6 +382,34 @@ Spectrum parse_color(pugi::xml_node node,
     }
 }
 
+Spectrum parse_intensity(pugi::xml_node node,
+                         const std::map<std::string, std::string> &default_map) {
+    std::string rad_type = node.name();
+    if (rad_type == "spectrum") {
+        std::vector<std::pair<Real, Real>> spec =
+            parse_spectrum(node.attribute("value").value(), default_map);
+        if (spec.size() == 1) {
+            // For a light source, the white point is
+            // XYZ(0.9505, 1.0, 1.0888) instead
+            // or XYZ(1, 1, 1). We need to handle this special case when
+            // we don't have the full spectrum data.
+            Vector3 xyz{Real(0.9505), Real(1.0), Real(1.0888)};
+            return fromRGB(XYZ_to_RGB(xyz * spec[0].second));
+        } else {
+            Vector3 xyz = integrate_XYZ(spec);
+            return fromRGB(XYZ_to_RGB(xyz));
+        }
+    } else if (rad_type == "rgb") {
+        return fromRGB(parse_vector3(
+            node.attribute("value").value(), default_map));
+    } else if (rad_type == "srgb") {
+        Vector3 srgb = parse_srgb(
+            node.attribute("value").value(), default_map);
+        return fromRGB(sRGB_to_RGB(srgb));
+    }
+    return make_const_spectrum(1);
+}
+
 void parse_default_map(pugi::xml_node node,
                        std::map<std::string, std::string> &default_map) {
     if (node.attribute("name")) {
@@ -1230,29 +1258,7 @@ Shape parse_shape(pugi::xml_node node,
             for (auto grand_child : child.children()) {
                 std::string name = grand_child.attribute("name").value();
                 if (name == "radiance") {
-                    std::string rad_type = grand_child.name();
-                    if (rad_type == "spectrum") {
-                        std::vector<std::pair<Real, Real>> spec =
-                            parse_spectrum(grand_child.attribute("value").value(), default_map);
-                        if (spec.size() == 1) {
-                            // For a light source, the white point is
-                            // XYZ(0.9505, 1.0, 1.0888) instead
-                            // or XYZ(1, 1, 1). We need to handle this special case when
-                            // we don't have the full spectrum data.
-                            Vector3 xyz{Real(0.9505), Real(1.0), Real(1.0888)};
-                            radiance = fromRGB(XYZ_to_RGB(xyz * spec[0].second));
-                        } else {
-                            Vector3 xyz = integrate_XYZ(spec);
-                            radiance = fromRGB(XYZ_to_RGB(xyz));
-                        }
-                    } else if (rad_type == "rgb") {
-                        radiance = fromRGB(parse_vector3(
-                            grand_child.attribute("value").value(), default_map));
-                    } else if (rad_type == "srgb") {
-                        Vector3 srgb = parse_srgb(
-                            grand_child.attribute("value").value(), default_map);
-                        radiance = fromRGB(sRGB_to_RGB(srgb));
-                    }
+                    radiance = parse_intensity(grand_child, default_map);
                 }
             }
             set_area_light_id(shape, lights.size());
@@ -1422,6 +1428,37 @@ Scene parse_scene(pugi::xml_node node, const RTCDevice &embree_device) {
                 } else {
                     Error("Filename unspecified for envmap.");
                 }
+            } else if (type == "point") {
+                std::cout << "[Warning] converting a point light into a small spherical light." << std::endl;
+                Vector3 position = Vector3{0, 0, 0};
+                Spectrum intensity = make_const_spectrum(1);
+                for (auto grand_child : child.children()) {
+                    std::string name = grand_child.attribute("name").value();
+                    if (name == "position") {
+                        if (!grand_child.attribute("x").empty()) {
+                            position.x = parse_float(grand_child.attribute("x").value(), default_map);
+                        }
+                        if (!grand_child.attribute("y").empty()) {
+                            position.y = parse_float(grand_child.attribute("y").value(), default_map);
+                        }
+                        if (!grand_child.attribute("z").empty()) {
+                            position.z = parse_float(grand_child.attribute("z").value(), default_map);
+                        }
+                    } else if (name == "intensity") {
+                        intensity = parse_intensity(grand_child, default_map);
+                    }
+                }
+                std::cerr << "position:" << position << std::endl;
+                Shape s = Sphere{{}, position, Real(1e-4)};
+                intensity *= (c_FOURPI / surface_area(s));
+                Material m = Lambertian{
+                    make_constant_spectrum_texture(make_zero_spectrum())};
+                int material_id = materials.size();
+                materials.push_back(m);
+                set_material_id(s, material_id);
+                set_area_light_id(s, lights.size());
+                lights.push_back(DiffuseAreaLight{(int)shapes.size() /* shape ID */, intensity});
+                shapes.push_back(s);
             } else {
                 Error(std::string("Unknown emitter type:") + type);
             }
