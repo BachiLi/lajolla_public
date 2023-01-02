@@ -223,6 +223,11 @@ Matrix4x4 parse_transform(pugi::xml_node node,
             if (!child.attribute("z").empty()) {
                 z = parse_float(child.attribute("z").value(), default_map);
             }
+            if (!child.attribute("value").empty()) {
+                Vector3 v = parse_vector3(
+                    child.attribute("value").value(), default_map);
+                x = v.x; y = v.y; z = v.z;
+            }
             tform = scale(Vector3{x, y, z}) * tform;
         } else if (name == "translate") {
             Real x = 0.0;
@@ -236,6 +241,11 @@ Matrix4x4 parse_transform(pugi::xml_node node,
             }
             if (!child.attribute("z").empty()) {
                 z = parse_float(child.attribute("z").value(), default_map);
+            }
+            if (!child.attribute("value").empty()) {
+                Vector3 v = parse_vector3(
+                    child.attribute("value").value(), default_map);
+                x = v.x; y = v.y; z = v.z;
             }
             tform = translate(Vector3{x, y, z}) * tform;
         } else if (name == "rotate") {
@@ -253,7 +263,7 @@ Matrix4x4 parse_transform(pugi::xml_node node,
                 z = parse_float(child.attribute("z").value(), default_map);
             }
             if (!child.attribute("angle").empty()) {
-                z = parse_float(child.attribute("angle").value(), default_map);
+                angle = parse_float(child.attribute("angle").value(), default_map);
             }
             tform = rotate(angle, Vector3(x, y, z)) * tform;
         } else if (name == "lookat") {
@@ -1194,17 +1204,18 @@ Shape parse_shape(pugi::xml_node node,
                 flip_normals = parse_boolean(child.attribute("value").value(), default_map);
             }
         }
+        if (flip_normals) {
+            for (auto &n : mesh.normals) {
+                n = -n;
+            }
+        }
         for (auto &p : mesh.positions) {
             p = xform_point(to_world, p);
         }
         for (auto &n : mesh.normals) {
             n = xform_normal(inverse(to_world), n);
         }
-        if (flip_normals) {
-            for (auto &n : mesh.normals) {
-                n = -n;
-            }
-        }
+        shape = mesh;
     } else {
         Error(std::string("Unknown shape:") + type);
     }
