@@ -23,7 +23,7 @@ For the questions, as long as you say something plausible, you will get full sco
 Some questions do not have a single correct answer.
 Do think hard about the questions though. We want you to get the high-level concepts correct, rather than trying to match every single detail.
 
-\paragraph{Notation and convention.} In the following, $\omega_{\text{in}}$ is the \emph{incoming} direction of the BSDF (usually represent the view direction), and $\omega_{\text{out}}$ is the \emph{outgoing} direction of the BSDF (usually represent the light direction), both pointing \emph{outwards} from the surface. $n$ is the shading normal, $n_g$ is the geometry normal, $h$ is the half-vector $h = \frac{\omega_{\text{in}} + \omega_{\text{out}}}{\|\omega_{\text{in}} + \omega_{\text{out}}\|}$. All of our BSDF include the cosine term $|n \cdot \omega_{\text{out}}|$. $\eta$ is the ratio of index of refraction of the medium below divided by the medium above the surface $\frac{\text{IOR}_{\text{internal}}}{\text{IOR}_{\text{external}}}$. All parameters of Disney BSDF are normalized within $[0, 1]$, except for the index of refraction whose acceptable range is $(1, 2]$.
+\paragraph{Notation and convention.} In the following, $\omega_{\text{in}}$ is the \emph{incoming} direction of the BSDF (usually represent the view direction), and $\omega_{\text{out}}$ is the \emph{outgoing} direction of the BSDF (usually represent the light direction), both pointing \emph{outwards} from the surface. $n$ is the shading normal, $n_g$ is the geometric normal, $h$ is the half-vector $h = \frac{\omega_{\text{in}} + \omega_{\text{out}}}{\|\omega_{\text{in}} + \omega_{\text{out}}\|}$. All of our BSDF include the cosine term $|n \cdot \omega_{\text{out}}|$. $\eta$ is the ratio of index of refraction of the medium below divided by the medium above the surface $\frac{\text{IOR}_{\text{internal}}}{\text{IOR}_{\text{external}}}$. All parameters of Disney BSDF are normalized within $[0, 1]$, except for the index of refraction whose acceptable range is $(1, 2]$.
 
 \paragraph{Variant-based material systems.} As mentioned in homework 0, lajolla applies variant-based polymorphism instead of object-oriented polymorphism. The material \lstinline{struct}s in lajolla looks like the following:
 \begin{lstlisting}[language=c++]
@@ -164,7 +164,7 @@ Real pdf_sample_bsdf_op::operator()(const DisneyDiffuse &bsdf) const;
 std::optional<BSDFSampleRecord> sample_bsdf_op::operator()(const DisneyDiffuse &bsdf) const;
 \end{lstlisting}
 
-For sampling, we will simply use a cosine hemisphere sampling. Look at \lstinline{materials/lambertian.inl} to see how it is done. Feel free to copy-paste the code and modify anything. Also notice how the Lambertian BRDF implementation handles the discrepancy between geometry normals and shading normals.
+For sampling, we will simply use a cosine hemisphere sampling. Look at \lstinline{materials/lambertian.inl} to see how it is done. Feel free to copy-paste the code and modify anything. Also notice how the Lambertian BRDF implementation handles the discrepancy between geometric normals and shading normals.
 
 Try out the scene \lstinline{scenes/disney_bsdf_test/simple_sphere.xml} (you'll need to modify the scene file to use the \lstinline{DisneyDiffuse} material) and \lstinline{scenes/disney_bsdf_test/disney_diffuse.xml} to see how the material look like. Play with the parameters.
 

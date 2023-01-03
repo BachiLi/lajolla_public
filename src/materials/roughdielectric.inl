@@ -1,16 +1,16 @@
 #include "../microfacet.h"
 
 Spectrum eval_op::operator()(const RoughDielectric &bsdf) const {
-    bool reflect = dot(vertex.geometry_normal, dir_in) *
-                   dot(vertex.geometry_normal, dir_out) > 0;
+    bool reflect = dot(vertex.geometric_normal, dir_in) *
+                   dot(vertex.geometric_normal, dir_out) > 0;
     // Flip the shading frame if it is inconsistent with the geometry normal
     Frame frame = vertex.shading_frame;
-    if (dot(frame.n, dir_in) * dot(vertex.geometry_normal, dir_in) < 0) {
+    if (dot(frame.n, dir_in) * dot(vertex.geometric_normal, dir_in) < 0) {
         frame = -frame;
     }
     // If we are going into the surface, then we use normal eta
     // (internal/external), otherwise we use external/internal.
-    Real eta = dot(vertex.geometry_normal, dir_in) > 0 ? bsdf.eta : 1 / bsdf.eta;
+    Real eta = dot(vertex.geometric_normal, dir_in) > 0 ? bsdf.eta : 1 / bsdf.eta;
 
     Spectrum Ks = eval(
         bsdf.specular_reflectance, vertex.uv, vertex.uv_screen_size, texture_pool);
@@ -72,16 +72,16 @@ Spectrum eval_op::operator()(const RoughDielectric &bsdf) const {
 }
 
 Real pdf_sample_bsdf_op::operator()(const RoughDielectric &bsdf) const {
-    bool reflect = dot(vertex.geometry_normal, dir_in) *
-                   dot(vertex.geometry_normal, dir_out) > 0;
+    bool reflect = dot(vertex.geometric_normal, dir_in) *
+                   dot(vertex.geometric_normal, dir_out) > 0;
     // Flip the shading frame if it is inconsistent with the geometry normal
     Frame frame = vertex.shading_frame;
-    if (dot(frame.n, dir_in) * dot(vertex.geometry_normal, dir_in) < 0) {
+    if (dot(frame.n, dir_in) * dot(vertex.geometric_normal, dir_in) < 0) {
         frame = -frame;
     }
     // If we are going into the surface, then we use normal eta
     // (internal/external), otherwise we use external/internal.
-    Real eta = dot(vertex.geometry_normal, dir_in) > 0 ? bsdf.eta : 1 / bsdf.eta;
+    Real eta = dot(vertex.geometric_normal, dir_in) > 0 ? bsdf.eta : 1 / bsdf.eta;
     assert(eta > 0);
 
     Vector3 half_vector;
@@ -124,10 +124,10 @@ std::optional<BSDFSampleRecord>
         sample_bsdf_op::operator()(const RoughDielectric &bsdf) const {
     // If we are going into the surface, then we use normal eta
     // (internal/external), otherwise we use external/internal.
-    Real eta = dot(vertex.geometry_normal, dir_in) > 0 ? bsdf.eta : 1 / bsdf.eta;
+    Real eta = dot(vertex.geometric_normal, dir_in) > 0 ? bsdf.eta : 1 / bsdf.eta;
     // Flip the shading frame if it is inconsistent with the geometry normal
     Frame frame = vertex.shading_frame;
-    if (dot(frame.n, dir_in) * dot(vertex.geometry_normal, dir_in) < 0) {
+    if (dot(frame.n, dir_in) * dot(vertex.geometric_normal, dir_in) < 0) {
         frame = -frame;
     }
     Real roughness = eval(

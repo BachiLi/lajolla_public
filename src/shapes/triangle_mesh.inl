@@ -127,12 +127,12 @@ ShadingInfo compute_shading_info_op::operator()(const TriangleMesh &mesh) const 
         dpdv = dpds * dsdv + dpdt * dtdv;
     } else {
         // degenerate uvs. Use an arbitrary coordinate system
-        std::tie(dpdu, dpdv) = coordinate_system(vertex.geometry_normal);
+        std::tie(dpdu, dpdv) = coordinate_system(vertex.geometric_normal);
     }
 
     // Now let's get the shading normal & mean_curvature.
     // By default it is the geometry normal and we have zero curvature.
-    Vector3 shading_normal = vertex.geometry_normal;
+    Vector3 shading_normal = vertex.geometric_normal;
     Real mean_curvature = 0;
     Vector3 tangent, bitangent;
     // However if we have vertex normals, that overrides the geometry normal.

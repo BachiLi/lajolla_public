@@ -241,7 +241,7 @@ Spectrum path_tracing(const Scene &scene,
         // and divide it with the pdf for getting v_{i+1} using hemisphere sampling.
         Real G;
         if (bsdf_vertex) {
-            G = fabs(dot(dir_bsdf, bsdf_vertex->geometry_normal)) /
+            G = fabs(dot(dir_bsdf, bsdf_vertex->geometric_normal)) /
                 distance_squared(bsdf_vertex->position, vertex.position);
         } else {
             // We hit nothing, set G to 1 to account for the environment map contribution.
@@ -274,7 +274,7 @@ Spectrum path_tracing(const Scene &scene,
             int light_id = get_area_light_id(scene.shapes[bsdf_vertex->shape_id]);
             assert(light_id >= 0);
             const Light &light = scene.lights[light_id];
-            PointAndNormal light_point{bsdf_vertex->position, bsdf_vertex->geometry_normal};
+            PointAndNormal light_point{bsdf_vertex->position, bsdf_vertex->geometric_normal};
             Real p1 = light_pmf(scene, light_id) *
                 pdf_point_on_light(light, light_point, vertex.position, scene);
             Real w2 = (p2*p2) / (p1*p1 + p2*p2);

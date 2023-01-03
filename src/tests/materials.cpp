@@ -58,8 +58,8 @@ int main(int argc, char *argv[]) {
     Real rnd_param_w{Real(0.6)};
     Vector3 dir_in = normalize(Vector3{0.3, 0.4, 0.5});
     PathVertex vertex;
-    vertex.geometry_normal = Vector3{0, 0, 1};
-    vertex.shading_frame = Frame(vertex.geometry_normal);
+    vertex.geometric_normal = Vector3{0, 0, 1};
+    vertex.shading_frame = Frame(vertex.geometric_normal);
     {
         Material m = Lambertian{ConstantTexture<Spectrum>{
             Vector3{Real(0.5), Real(0.5), Real(0.5)}}};
@@ -122,8 +122,8 @@ int main(int argc, char *argv[]) {
                             Real(0));
             Real pdf0 = pdf_sample_bsdf(m, dir_in, sample_0->dir_out, vertex, TexturePool());
             // Unfortunately we need to manually add the Fresnel term
-            bool reflect = dot(vertex.geometry_normal, dir_in) *
-                           dot(vertex.geometry_normal, sample_0->dir_out) > 0;
+            bool reflect = dot(vertex.geometric_normal, dir_in) *
+                           dot(vertex.geometric_normal, sample_0->dir_out) > 0;
             Vector3 half_vector;
             if (reflect) {
                 half_vector = normalize(dir_in + sample_0->dir_out);
@@ -156,8 +156,8 @@ int main(int argc, char *argv[]) {
                             Real(1));
             Real pdf1 = pdf_sample_bsdf(m, dir_in, sample_1->dir_out, vertex, TexturePool());
             // Unfortunately we need to manually add the Fresnel term
-            bool reflect = dot(vertex.geometry_normal, dir_in) *
-                           dot(vertex.geometry_normal, sample_1->dir_out) > 0;
+            bool reflect = dot(vertex.geometric_normal, dir_in) *
+                           dot(vertex.geometric_normal, sample_1->dir_out) > 0;
             Vector3 half_vector;
             if (reflect) {
                 half_vector = normalize(dir_in + sample_1->dir_out);

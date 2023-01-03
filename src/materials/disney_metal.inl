@@ -1,8 +1,8 @@
 #include "../microfacet.h"
 
 Spectrum eval_op::operator()(const DisneyMetal &bsdf) const {
-    if (dot(vertex.geometry_normal, dir_in) < 0 ||
-            dot(vertex.geometry_normal, dir_out) < 0) {
+    if (dot(vertex.geometric_normal, dir_in) < 0 ||
+            dot(vertex.geometric_normal, dir_out) < 0) {
         // No light below the surface
         return make_zero_spectrum();
     }
@@ -17,8 +17,8 @@ Spectrum eval_op::operator()(const DisneyMetal &bsdf) const {
 }
 
 Real pdf_sample_bsdf_op::operator()(const DisneyMetal &bsdf) const {
-    if (dot(vertex.geometry_normal, dir_in) < 0 ||
-            dot(vertex.geometry_normal, dir_out) < 0) {
+    if (dot(vertex.geometric_normal, dir_in) < 0 ||
+            dot(vertex.geometric_normal, dir_out) < 0) {
         // No light below the surface
         return 0;
     }
@@ -34,7 +34,7 @@ Real pdf_sample_bsdf_op::operator()(const DisneyMetal &bsdf) const {
 
 std::optional<BSDFSampleRecord>
         sample_bsdf_op::operator()(const DisneyMetal &bsdf) const {
-    if (dot(vertex.geometry_normal, dir_in) < 0) {
+    if (dot(vertex.geometric_normal, dir_in) < 0) {
         // No light below the surface
         return {};
     }

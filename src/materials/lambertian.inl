@@ -1,6 +1,6 @@
 Spectrum eval_op::operator()(const Lambertian &bsdf) const {
-    if (dot(vertex.geometry_normal, dir_in) < 0 ||
-            dot(vertex.geometry_normal, dir_out) < 0) {
+    if (dot(vertex.geometric_normal, dir_in) < 0 ||
+            dot(vertex.geometric_normal, dir_out) < 0) {
         // No light below the surface
         return make_zero_spectrum();
     }
@@ -17,8 +17,8 @@ Spectrum eval_op::operator()(const Lambertian &bsdf) const {
 }
 
 Real pdf_sample_bsdf_op::operator()(const Lambertian &bsdf) const {
-    if (dot(vertex.geometry_normal, dir_in) < 0 ||
-            dot(vertex.geometry_normal, dir_out) < 0) {
+    if (dot(vertex.geometric_normal, dir_in) < 0 ||
+            dot(vertex.geometric_normal, dir_out) < 0) {
         // No light below the surface
         return Real(0);
     }
@@ -34,7 +34,7 @@ Real pdf_sample_bsdf_op::operator()(const Lambertian &bsdf) const {
 
 std::optional<BSDFSampleRecord> sample_bsdf_op::operator()(const Lambertian &bsdf) const {
     // For Lambertian, we importance sample the cosine hemisphere domain.
-    if (dot(vertex.geometry_normal, dir_in) < 0) {
+    if (dot(vertex.geometric_normal, dir_in) < 0) {
         // Incoming direction is below the surface.
         return {};
     }

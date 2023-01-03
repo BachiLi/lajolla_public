@@ -80,13 +80,13 @@ void sphere_intersect_func(const RTCIntersectFunctionNArguments* args) {
     if (t >= ray.tnear && t < ray.tfar) {
         // Record the intersection
         Vector3 p = ray.org + t * ray.dir;
-        Vector3 geometry_normal = p - sphere->position;
+        Vector3 geometric_normal = p - sphere->position;
         // rtc_hit->Ng doesn't need to be normalized
-        rtc_hit->Ng_x = geometry_normal.x;
-        rtc_hit->Ng_y = geometry_normal.y;
-        rtc_hit->Ng_z = geometry_normal.z;
+        rtc_hit->Ng_x = geometric_normal.x;
+        rtc_hit->Ng_y = geometric_normal.y;
+        rtc_hit->Ng_z = geometric_normal.z;
         // We use the spherical coordinates as uv
-        Vector3 cartesian = geometry_normal / sphere->radius;
+        Vector3 cartesian = geometric_normal / sphere->radius;
         // https://en.wikipedia.org/wiki/Spherical_coordinate_system#Cartesian_coordinates
         // We use the convention that y is up axis.
         Real elevation = acos(std::clamp(cartesian.y, Real(-1), Real(1)));
@@ -249,10 +249,10 @@ ShadingInfo compute_shading_info_op::operator()(const Sphere &sphere) const {
     // dpdu may not be orthogonal to shading normal:
     // subtract the projection of shading_normal onto dpdu to make them orthogonal
     Vector3 tangent = normalize(
-        dpdu - vertex.geometry_normal * dot(vertex.geometry_normal, dpdu));
+        dpdu - vertex.geometric_normal * dot(vertex.geometric_normal, dpdu));
     Frame shading_frame(tangent,
-                        normalize(cross(vertex.geometry_normal, tangent)),
-                        vertex.geometry_normal);
+                        normalize(cross(vertex.geometric_normal, tangent)),
+                        vertex.geometric_normal);
     return ShadingInfo{vertex.st,
                        shading_frame,
                        1 / sphere.radius, /* mean curvature */

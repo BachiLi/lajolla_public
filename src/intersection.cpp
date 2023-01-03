@@ -38,7 +38,7 @@ std::optional<PathVertex> intersect(const Scene &scene,
     PathVertex vertex;
     vertex.position = Vector3{ray.org.x, ray.org.y, ray.org.z} +
         Vector3{ray.dir.x, ray.dir.y, ray.dir.z} * Real(rtc_ray.tfar);
-    vertex.geometry_normal = normalize(Vector3{rtc_hit.Ng_x, rtc_hit.Ng_y, rtc_hit.Ng_z});
+    vertex.geometric_normal = normalize(Vector3{rtc_hit.Ng_x, rtc_hit.Ng_y, rtc_hit.Ng_z});
     vertex.shape_id = rtc_hit.geomID;
     vertex.primitive_id = rtc_hit.primID;
     const Shape &shape = scene.shapes[vertex.shape_id];
@@ -57,8 +57,8 @@ std::optional<PathVertex> intersect(const Scene &scene,
     vertex.uv_screen_size = vertex.ray_radius / shading_info.inv_uv_size;
 
     // Flip the geometry normal to the same direction as the shading normal
-    if (dot(vertex.geometry_normal, vertex.shading_frame.n) < 0) {
-        vertex.geometry_normal = -vertex.geometry_normal;
+    if (dot(vertex.geometric_normal, vertex.shading_frame.n) < 0) {
+        vertex.geometric_normal = -vertex.geometric_normal;
     }
 
     return vertex;
@@ -93,6 +93,6 @@ Spectrum emission(const PathVertex &v,
     return emission(light,
                     view_dir,
                     v.uv_screen_size,
-                    PointAndNormal{v.position, v.geometry_normal},
+                    PointAndNormal{v.position, v.geometric_normal},
                     scene);
 }
