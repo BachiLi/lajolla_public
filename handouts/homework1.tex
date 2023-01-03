@@ -469,7 +469,7 @@ inside the object) gives more visually pleasing results. Therefore we define:
 \end{aligned}.
 \end{equation}
 
-\paragraph{Questions (10\%).} Answer these question(s) in a text file:
+\paragraph{Questions (7\%).} Answer these question(s) in a text file:
 \begin{enumerate}
     \item What are the differences between the \lstinline{specular} and \lstinline{metallic} parameters? How do they affect the appearance?
     \item What are the differences between the \lstinline{roughness} and \lstinline{clearcoat_gloss} parameters? How do they affect the appearance?
@@ -478,7 +478,7 @@ inside the object) gives more visually pleasing results. Therefore we define:
 \end{enumerate}
 Think about these questions as you implement the BSDF.
 
-\paragraph{Task (10\%).} You will implement \lstinline{DisneyBSDF} (Equation~\ref{eq:disney_bsdf})
+\paragraph{Task (8\%).} You will implement \lstinline{DisneyBSDF} (Equation~\ref{eq:disney_bsdf})
 \begin{lstlisting}[language=c++]
 // in material.h
 struct DisneyBSDF {
@@ -524,7 +524,7 @@ Also recall from homework 0: you might need to rescale your random number $w$ fo
 
 Try out the scene \lstinline{scenes/disney_bsdf_test/disney_bsdf.xml} to see how the material look like. Play with the parameters.
 
-\paragraph{Task (5\%).} Render an image that is not in the test scenes with your Disney BSDF! Play with textures and geometry to make it look interesting. Use the Mitsuba-Blender add-on for converting the scenes (lajolla can parse the Disney BSDF parameters exported from Blender). Have fun!
+\paragraph{Task (10\%).} Render an image that is not in the test scenes with your Disney BSDF! Play with textures and geometry to make it look interesting. Use the Mitsuba-Blender add-on for converting the scenes (lajolla can parse the Disney BSDF parameters exported from Blender). Have fun!
 
 \bibliographystyle{plain}
 \bibliography{refs}
