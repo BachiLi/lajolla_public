@@ -88,12 +88,12 @@ struct get_texture_op {
 #include "materials/disney_bsdf.inl"
 
 Spectrum eval(const Material &material,
-              const Vector3 &dir_light,
-              const Vector3 &dir_view,
+              const Vector3 &dir_in,
+              const Vector3 &dir_out,
               const PathVertex &vertex,
               const TexturePool &texture_pool,
               TransportDirection dir) {
-    return std::visit(eval_op{dir_light, dir_view, vertex, texture_pool, dir}, material);
+    return std::visit(eval_op{dir_in, dir_out, vertex, texture_pool, dir}, material);
 }
 
 std::optional<BSDFSampleRecord>
@@ -109,13 +109,13 @@ sample_bsdf(const Material &material,
 }
 
 Real pdf_sample_bsdf(const Material &material,
-                     const Vector3 &dir_light,
-                     const Vector3 &dir_view,
+                     const Vector3 &dir_in,
+                     const Vector3 &dir_out,
                      const PathVertex &vertex,
                      const TexturePool &texture_pool,
                      TransportDirection dir) {
     return std::visit(pdf_sample_bsdf_op{
-        dir_light, dir_view, vertex, texture_pool, dir}, material);
+        dir_in, dir_out, vertex, texture_pool, dir}, material);
 }
 
 TextureSpectrum get_texture(const Material &material) {
