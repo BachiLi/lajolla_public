@@ -23,7 +23,7 @@ For the questions, as long as you say something plausible, you will get full sco
 Some questions do not have a single correct answer.
 Do think hard about the questions though. We want you to get the high-level concepts correct, rather than trying to match every single detail.
 
-\paragraph{Notation and convention.} In the following, $\omega_{\text{in}}$ is the \emph{incoming} direction of the BSDF (usually represent the view direction), and $\omega_{\text{out}}$ is the \emph{outgoing} direction of the BSDF (usually represent the light direction), both pointing \emph{outwards} from the surface. $n$ is the shading normal, $n_g$ is the geometry normal, $h$ is the half-vector $h = \frac{\omega_{\text{in}} + \omega_{\text{out}}}{\|\omega_{\text{in}} + \omega_{\text{out}}\|}$. All of our BSDF include the cosine term $|n \cdot \omega_{\text{out}}|$. $\eta$ is the ratio of index of refraction of the medium below divided by the medium above the surface $\frac{\text{IOR}_{\text{internal}}}{\text{IOR}_{\text{external}}}$. All parameters of Disney BSDF are normalized within $[0, 1]$, except for the index of refraction whose acceptable range is $[1, 2]$.
+\paragraph{Notation and convention.} In the following, $\omega_{\text{in}}$ is the \emph{incoming} direction of the BSDF (usually represent the view direction), and $\omega_{\text{out}}$ is the \emph{outgoing} direction of the BSDF (usually represent the light direction), both pointing \emph{outwards} from the surface. $n$ is the shading normal, $n_g$ is the geometry normal, $h$ is the half-vector $h = \frac{\omega_{\text{in}} + \omega_{\text{out}}}{\|\omega_{\text{in}} + \omega_{\text{out}}\|}$. All of our BSDF include the cosine term $|n \cdot \omega_{\text{out}}|$. $\eta$ is the ratio of index of refraction of the medium below divided by the medium above the surface $\frac{\text{IOR}_{\text{internal}}}{\text{IOR}_{\text{external}}}$. All parameters of Disney BSDF are normalized within $[0, 1]$, except for the index of refraction whose acceptable range is $(1, 2]$.
 
 \paragraph{Variant-based material systems.} As mentioned in homework 0, lajolla applies variant-based polymorphism instead of object-oriented polymorphism. The material \lstinline{struct}s in lajolla looks like the following:
 \begin{lstlisting}[language=c++]
@@ -188,7 +188,7 @@ F_m = \text{baseColor} + (1 - \text{baseColor}) (1 - |h \cdot \omega_{\text{out}
 \end{equation}
 Note that the Fresnel term depends on the micronormal 
 $h = \frac{\omega_{\text{in}} + \omega_{\text{out}}}{\left| \omega_{\text{in}} + \omega_{\text{out}} \right|}$ 
-instead of the macro shading normal $n$. The reason why they use an approximation instead of the true Fresnel equation is not just for the performance. For metallic surfaces, or \emph{conductors}, Fresnel equation requires us to have the complex index of refraction of the conductor for each wavelength. This parameter is not only unintuitive, but nor is it physically accurate when we only consider the RGB spectrum.\footnote{See \href{http://renderwonk.com/publications/mam2019/}{``Fresnel Equations Considered Harmful''} by Naty Hoffman. \href{https://www.youtube.com/watch?v=kEcDbl7eS0w}{Here} is his presentation video.} 
+instead of the macro shading normal $n$. The reason why they use an approximation instead of the true Fresnel equation is not just for the performance. For metallic surfaces, or \emph{conductors}, Fresnel equation requires us to have the complex index of refraction of the conductor for each wavelength. The complex index of refraction is not only unintuitive, but nor is it physically accurate when we only consider the RGB spectrum.\footnote{See \href{http://renderwonk.com/publications/mam2019/}{``Fresnel Equations Considered Harmful''} by Naty Hoffman. \href{https://www.youtube.com/watch?v=kEcDbl7eS0w}{Here} is his presentation video.} 
 
 For the normal distribution function $D_m$, Burley uses the anisotropic Trowbridge-Reitz distribution~\cite{Trowbridge:1975:AIR}, popularized by Walter et al.~\cite{Walter:2007:MMR} in graphics and it is known as \emph{GGX} (Ground Glass X):
 \begin{equation}
@@ -200,8 +200,8 @@ $\alpha_x, \alpha_y$ are parameters for modeling the smoothness of the material.
 \begin{equation}
 \begin{aligned}
 \text{aspect} &= \sqrt{1 - 0.9 \text{anisotropic}} \\
-\alpha_x &= max(\alpha_{\text{min}}, \text{roughness}^2 / \text{aspect}) \\
-\alpha_y &= max(\alpha_{\text{min}}, \text{roughness}^2 \cdot \text{aspect})
+\alpha_x &= \max(\alpha_{\text{min}}, \text{roughness}^2 / \text{aspect}) \\
+\alpha_y &= \max(\alpha_{\text{min}}, \text{roughness}^2 \cdot \text{aspect})
 \end{aligned},
 \end{equation}
 where $\text{anisotropic}$ and $\text{roughness}$ are the parameters, and $\alpha_{\text{min}} = 0.0001$.
