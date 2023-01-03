@@ -17,7 +17,7 @@
 		<float name="radius" value="1.0"/>
 
 		<emitter type="area">
-			<spectrum name="radiance" value="1"/>
+			<rgb name="radiance" value="0.4 2.32 3.2"/>
 		</emitter>
 
 		<bsdf type="diffuse">
