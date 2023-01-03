@@ -14,7 +14,7 @@ In this homework, we will build a volumetric path tracer that can handle scatter
 
 \href{https://cs.dartmouth.edu/~wjarosz/publications/novak18monte-sig.html}{This SIGGRAPH course note} is a good reference if you fail to understand the handout. Steve Marschner's course note in the footnote is also very useful. Most of the math in the last part is from Miller et al.~\cite{Miller:2019:NPI} and Georgiev et al.~\cite{Georgiev:2019:IFV}'s articles.
 
-\paragraph{Submission and grading.} Please upload a zip file to Canvas including your code, and a text file (readme.txt) answering the questions below. For the questions, as long as you say something plausible, you will get full scores.
+\paragraph{Submission and grading.} Please upload a zip file to Canvas including your code, and a text file (readme.txt) answering the questions below. For the questions, as long as you say something plausible, you will get full scores. As usual, think hard about the questions. We want you to get the high-level concepts correct, rather than trying to match every single detail.
 
 Participating media are volumes with many infinitesimal particles absorbing and scattering lights. Given a ray inside the volume parametrized by distance $\mathbf{p}(t)$, the radiance along the ray is modeled by the \emph{radiative transfer equation}:
 \begin{equation}
@@ -23,7 +23,7 @@ Participating media are volumes with many infinitesimal particles absorbing and 
 \end{equation}
 where $L$ is the radiance, $\sigma_a$ is the \emph{absorption coefficient}, $\sigma_s$ is the \emph{scattering coefficient}, $L_e$ is the (volumetric) emission, $\rho$ is the \emph{phase function} that is akin to BSDFs in surface rendering, and $S^2$ is the spherical domain.
 
-This looks a bit scary, so let's break it down. For now, we'll drop the arguments for $\sigma_a$ and $\sigma_s$, but in general, they can still be spatially varying. The radiative transfer equation is made of four components: \textbf{absorption}, \textbf{emission}, \textbf{in-scattering}, and \textbf{out-scattering}. Absorption and emission handle particles that absorb and emit lights:
+This looks a bit scary, so let's break it down. For now, we'll drop the arguments for $\sigma_a$ and $\sigma_s$, but in general, they can still be spatially varying. The radiative transfer equation is made of four components: \textbf{absorption}, \textbf{emission}, \textbf{in-scattering}, and \textbf{out-scattering}. Absorption and emission handle particles that absorb and emit lights\footnote{Some text will formulate the emission as $\frac{\mathrm{d}}{\mathrm{d}t} L_a(\mathbf{p}(t), \omega) = \sigma_a L_e(\mathbf{p}(t), \omega)$. This is effectively the same with a slight reparameterization $L_e \rightarrow \sigma_a L_e$.}:
 \begin{equation}
 \frac{\mathrm{d}}{\mathrm{d}t} L_a(\mathbf{p}(t), \omega) = -\sigma_a L_a(\mathbf{p}(t), \omega) + L_e(\mathbf{p}(t), \omega).
 \end{equation}
@@ -173,7 +173,15 @@ While our volumes are monochromatic, the light can be colored, so the final resu
 \label{fig:volpath1}
 \end{figure}
 
-\paragraph{Task (13\%).} You will implement the algorithm above in the \lstinline{vol_path_tracing_1} function in \lstinline{vol_path_tracing.h}. You might want to first look at the surface path tracing code in \lstinline{path_tracing.h} to understand lajolla's API better. Test your rendering using the scene \lstinline{scenes/volpath_test/volpath_test1.xml}. You should get an image that looks like Figure~\ref{fig:volpath1}.
+\paragraph{Question(s) (8\%).} 
+Answer these questions in a text file:
+\begin{enumerate}
+    \item Change the absorption parameters to zero in \lstinline{scenes/volpath_test/volpath_test1.xml}. What do you see? Why?
+    \item In the homework, we assume the volume being not emissive. If you were tasked to modify the pseudo code above to add volume emission, how would you do it? Briefly describe your approach.
+\end{enumerate}
+Think about these questions as you write the code.
+
+\paragraph{Task (10\%).} You will implement the algorithm above in the \lstinline{vol_path_tracing_1} function in \lstinline{vol_path_tracing.h}. You might want to first look at the surface path tracing code in \lstinline{path_tracing.h} to understand lajolla's API better. Test your rendering using the scene \lstinline{scenes/volpath_test/volpath_test1.xml}. You should get an image that looks like Figure~\ref{fig:volpath1}.
 
 \paragraph{Ray differentials.} In the surface path tracer, lajolla uses ray differential for texture lookup. Determining ray differentials for volumetric scattering is an unsolved problem. For this homework, we will disable ray differentials by setting it to 0 and do not change it:
 \begin{lstlisting}[language=c++]
@@ -181,8 +189,6 @@ RayDifferential ray_diff = RayDifferential{Real(0), Real(0)};
 \end{lstlisting}
 
 \paragraph{Environment maps.} Throughout the homework, we assume there is no environment map in the scene. 
-
-\paragraph{Question(s) (5\%).} Change the absorption parameters to zero in \lstinline{scenes/volpath_test/volpath_test1.xml}. What do you see? Why?
 
 \section{Single monochromatic homogeneous volume with absorption and single-scattering, no surface lighting}
 \begin{figure}
@@ -196,7 +202,7 @@ Our next renderer adds single scattering to the volume (Figure~\ref{fig:volpath2
     \item There is only a single, homogeneous ($\sigma_a$ and $\sigma_s$ are constants over space) volume.
     \item The surfaces in the scene only emit lights (with intensity $L_e$) and do not reflect/transmit lights.
     \item The volume is monochromatic: the three color channels of $\sigma_s$ and $\sigma_a$ have the same values.
-    \item Light only scatter (changes direction) once in the volume.
+    \item Light only scatters (changes direction) once in the volume.
 \end{itemize}
 
 Now we need to solve the radiative transfer equation (Equation~\ref{eq:rte}), except the spherical integral only recurse once:
@@ -221,7 +227,8 @@ To sample this integral, we importance sample the transmittance $\exp\left(-\sig
 \begin{equation}
 \int_{0}^{t} \exp\left(-\sigma_t s\right) \mathrm{d}s = -\frac{exp(-\sigma_t * t)}{\sigma_t} + \frac{1}{\sigma_t}.
 \end{equation}
-We thus know that $p(t) = \sigma_t\exp\left(-\sigma_t t\right)$ (setting $t \rightarrow \infty$ we can get our normalization factor). Integrating $p(t)$ to get the CDF we get
+We thus know that $p(t) = \sigma_t\exp\left(-\sigma_t t\right)$ (why?). 
+Integrating $p(t)$ to get the CDF we get
 \begin{equation}
 T_{\text{exp}}^{-1}(t) = -\exp\left(-\sigma_t * t\right) + 1 = u.
 \end{equation}
@@ -236,7 +243,7 @@ P(t \geq t_{\text{hit}}) = \int_{t_{\text{hit}}}^{\infty} \sigma_t\exp\left(-\si
 \label{eq:hit_surface_prob}
 \end{equation}
 
-Thus our rendering algorithm (that generate a sample for a pixel) looks like this:
+Thus our rendering algorithm (that generates a sample for a pixel) looks like this:
 \begin{lstlisting}[language=python]
 def L(screen_pos, rng):
   camera_ray = sample_primary(camera, screen_pos, rng)
@@ -269,10 +276,17 @@ def L(screen_pos, rng):
 \label{fig:volpath2}
 \end{figure}
 
-\paragraph{Task (13\%).} You will implement the algorithm above in the \lstinline{vol_path_tracing_2} function in \lstinline{vol_path_tracing.h}. For evaluating the phase function $\rho$, use the \lstinline{eval} function in \lstinline{phase_function.h}.
-Test your rendering using the scene \lstinline{scenes/volpath_test/volpath_test2.xml}. You should get an image that looks like Figure~\ref{fig:volpath2}. Note that the rendered image will be a bit noisy even a high sampling count. This is expected, since we are not importance sampling the geometry term $\frac{\left| \omega' \cdot \mathbf{n}_{\mathbf{p}'} \right|}{{\left\| \mathbf{p}(t) - \mathbf{p}' \right\|}^2} \text{visible}(\mathbf{p}(t), \mathbf{p}')$ along $t$. Such importance sampling scheme is called the \emph{equiangular sampling}~\cite{Kulla:2012:IST} (or \emph{track-length estimator} in nuclear engineering~\cite{Rief:1984:TLE}). Equiangular sampling is out of the scope for this homework, but you're free to implement it!
+\paragraph{Question(s) (8\%).} 
+Answer these questions in a text file:
+\begin{enumerate}
+    \item In the derivation above, how did we get from $p(t) \propto \exp(-\sigma_t t)$ to $p(t) = \sigma_t \exp(\sigma_t t)$? 
+    \item How was Equation~\eqref{eq:hit_surface_prob} incorporated into the pseudo code above? Why is it done this way?
+    \item Play with the parameters $\sigma_s$ and $\sigma_a$, how do they affect the final image? Why? (we assume monochromatic volumes, so don't set the parameters to be different for each channel.)
+    \item Change the phase function from isotropic (the default one) to Henyey-Greenstein by uncommenting the phase function specification in the scene \lstinline{scenes/volpath_test/volpath_test2.xml}. Play with the parameter $g$ (the valid range is $(-1, 1)$). What does $g$ mean? How does the $g$ parameter change the appearance? Why?
+\end{enumerate}
 
-\paragraph{Question(s) (5\%).} Play with the parameters $\sigma_s$ and $\sigma_a$, how do they affect the final image? Why? (we assume monochromatic volumes, so don't set the parameters to be different for each channel.)
+\paragraph{Task (10\%).} You will implement the algorithm above in the \lstinline{vol_path_tracing_2} function in \lstinline{vol_path_tracing.h}. For evaluating the phase function $\rho$, use the \lstinline{eval} function in \lstinline{phase_function.h}.
+Test your rendering using the scene \lstinline{scenes/volpath_test/volpath_test2.xml}. You should get an image that looks like Figure~\ref{fig:volpath2}. Note that the rendered image will be a bit noisy even a high sampling count. This is expected, since we are not importance sampling the geometry term $\frac{\left| \omega' \cdot \mathbf{n}_{\mathbf{p}'} \right|}{{\left\| \mathbf{p}(t) - \mathbf{p}' \right\|}^2} \text{visible}(\mathbf{p}(t), \mathbf{p}')$ along $t$. Such importance sampling scheme is called the \emph{equiangular sampling}~\cite{Kulla:2012:IST} (or \emph{track-length estimator} in nuclear engineering~\cite{Rief:1984:TLE}). Equiangular sampling is out of the scope for this homework, but you're free to implement it!
 
 \paragraph{Bonus (25\%).} Implement the \emph{equiangular sampling}~\cite{Kulla:2012:IST} sampling strategy. Potentially combine it with the transmittance sampling using multiple importance sampling. (I do not recommend you implement this until you've finished the whole homework.) If you implement this bonus, please mention it in the README file, and provide rendering comparisons.
 
