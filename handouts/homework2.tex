@@ -406,10 +406,20 @@ is different from the exterior medium.
 \label{fig:volpath3}
 \end{figure}
 
-\paragraph{Task (13\%).} You will implement the algorithm above in the \lstinline{vol_path_tracing_3} function in \lstinline{vol_path_tracing.h}. For sampling the phase function $\rho$, use the \lstinline{sample_phase_function} and \lstinline{pdf_sample_phase} functions in \lstinline{phase_function.h}.
-Test your rendering using the scene \lstinline{scenes/volpath_test/volpath_test3.xml}. You should get an image that looks like Figure~\ref{fig:volpath3}. Again, the image can be a bit noisy since we have not implemented next event estimation.
+\paragraph{Question(s) (8\%).}
+Answer these questions in a text file:
+\begin{enumerate}
+    \item Play with the parameters $\sigma_s$, $\sigma_a$ of different volumes, and change \lstinline{max_depth}, how do they affect the final image?
+    How does increasing/decreasing $\sigma_s$ and $\sigma_a$ of \lstinline{medium1} and \lstinline{medium2} affect the appearance, respectively?
+    Why?
+    Do different $\sigma_s$ and $\sigma_a$ values affect how high you should set \lstinline{max_depth}?
+    \item Switch to the Henyey-Greenstein phase function again. How does changing the $g$ parameter affect the appearance? Why?
+    \item Propose a phase function yourself (don't have to describe the exact mathematical form). How would you design the shape of the phase function? What parameter would you set to control it?
+\end{enumerate}
+Think about these questions as you write the code.
 
-\paragraph{Question(s) (5\%).} Play with the parameters $\sigma_s$, $\sigma_a$ of different volumes, and change \lstinline{max_depth}, how do they affect the final image? Why?
+\paragraph{Task (10\%).} You will implement the algorithm above in the \lstinline{vol_path_tracing_3} function in \lstinline{vol_path_tracing.h}. For sampling the phase function $\rho$, use the \lstinline{sample_phase_function} and \lstinline{pdf_sample_phase} functions in \lstinline{phase_function.h}.
+Test your rendering using the scene \lstinline{scenes/volpath_test/volpath_test3.xml}. You should get an image that looks like Figure~\ref{fig:volpath3}. Again, the image can be a bit noisy since we have not implemented next event estimation.
 
 \section{Multiple monochromatic homogeneous volumes with absorption and multiple-scattering with both phase function sampling and next event estimation, no surface lighting}
 
