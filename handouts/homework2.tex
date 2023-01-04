@@ -579,10 +579,13 @@ We are finally adding surface lighting to our volumetric renderer. This should b
 \label{fig:volpath5_cbox}
 \end{figure}
 
-\paragraph{Task (13\%).} You will add surface lighting in the \lstinline{vol_path_tracing_5} function in \lstinline{vol_path_tracing.h}. Test your rendering using the scenes \lstinline{scenes/volpath_test/volpath_test5.xml} and \lstinline{scenes/volpath_test/volpath_test5_2.xml}. You should get images that look like the ones in Figure~\ref{fig:volpath5}. Also check out \lstinline{scenes/volpath_test/vol_cbox.xml} and \lstinline{scenes/volpath_test/vol_cbox_teapot.xml} to see what we can render now (Figure~\ref{fig:volpath5_cbox})!
+\paragraph{Question(s) (8\%).} 
+\begin{enumerate}
+    \item Play with the index of refraction parameter of the dielectric interface in \\ \lstinline{scenes/volpath_test/volpath_test5_2.xml}. How does that affect appearance? Why?
+    \item In the scene \lstinline{{scenes/volpath_test/vol_cbox_teapot.xml}, we model the glass teapot as a transparent glass with blue homogeneous medium inside. What is the difference in terms of appearance between this approach and just making the color of the glass blue without any medium inside?
+\end{enumerate}
 
-\paragraph{Question(s) (5\%).} Play with the index of refraction parameter of the dielectric interface in \\
-\lstinline{scenes/volpath_test/volpath_test5_2.xml}. How does that affect appearance? Why?
+\paragraph{Task (10\%).} You will add surface lighting in the \lstinline{vol_path_tracing_5} function in \lstinline{vol_path_tracing.h}. Test your rendering using the scenes \lstinline{scenes/volpath_test/volpath_test5.xml} and \lstinline{scenes/volpath_test/volpath_test5_2.xml}. You should get images that look like the ones in Figure~\ref{fig:volpath5}. Also check out \lstinline{scenes/volpath_test/vol_cbox.xml} and \lstinline{scenes/volpath_test/vol_cbox_teapot.xml} to see what we can render now (Figure~\ref{fig:volpath5_cbox})!
 
 \section{Multiple chromatic heterogeneous volumes with absorption and multiple-scattering with both phase function sampling and next event estimation, with surface lighting}
 
@@ -794,9 +797,15 @@ Same when computing multiple importance sampling.
 \label{fig:hetvol}
 \end{figure}
 
-\paragraph{Task (15\%).} You will implement the algorithms above in the \lstinline{vol_path_tracing} function in \lstinline{vol_path_tracing.h}. For getting the majorant, use \lstinline{get_majorant} defined in \lstinline{medium.h}. For accessing \lstinline{max_null_collisions}, use \lstinline{scene.options.max_null_collisions}. Test your rendering using the scenes \lstinline{scenes/volpath_test/volpath_test6.xml} (chromatic homogeneous medium), \lstinline{scenes/volpath_test/hetvol.xml},  \lstinline{scenes/volpath_test/hetvol_colored.xml}. You should get images that look like the ones in Figure~\ref{fig:gallery},~\ref{fig:volpath6}, and~\ref{fig:hetvol}.
+\paragraph{Question (s) (8\%).} 
+\begin{enumerate}
+    \item For heterogeneous volumes, what kind of distribution of the volume density makes the null scattering efficient/inefficient? Can you think of a way to improve our current sampling scheme in the inefficient case?
+    \item How do we make the null-scattering work for emissive volumes? Briefly describe a solution.
+    \item Why is it important to have an unbiased solution for volume rendering? Would it be sensible to have something that is biased but faster? 
+\end{enumerate}
+% Play with the \lstinline{g} parameter of the Henyey-Greenstein phase function in \lstinline{scenes/volpath_test/hetvol.xml} (the valid range is $(-1, 1)$). How does it change the appearance? Why? 
 
-\paragraph{Question (s) (5\%).} Play with the \lstinline{g} parameter of the Henyey-Greenstein phase function in \lstinline{scenes/volpath_test/hetvol.xml} (the valid range is $(-1, 1)$). How does it change the appearance? Why? 
+\paragraph{Task (12\%).} You will implement the algorithms above in the \lstinline{vol_path_tracing} function in \lstinline{vol_path_tracing.h}. For getting the majorant, use \lstinline{get_majorant} defined in \lstinline{medium.h}. For accessing \lstinline{max_null_collisions}, use \lstinline{scene.options.max_null_collisions}. Test your rendering using the scenes \lstinline{scenes/volpath_test/volpath_test6.xml} (chromatic homogeneous medium), \lstinline{scenes/volpath_test/hetvol.xml},  \lstinline{scenes/volpath_test/hetvol_colored.xml}. You should get images that look like the ones in Figure~\ref{fig:gallery},~\ref{fig:volpath6}, and~\ref{fig:hetvol}.
 
 \paragraph{Bonus (10\%).} Generate some heterogeneous volumes yourself and render them! Look at \lstinline{volume.cpp} for the format of the 3D volume grid. If you did this bonus, please submit the scene files and rendering and mention it in the README file.
 
