@@ -8,30 +8,53 @@
 
 	<medium type="homogeneous" id="medium1">
 		<rgb name="sigmaA" value="1 1 1"/>
-		<rgb name="sigmaS" value="1 1 1"/>
+		<rgb name="sigmaS" value="5 5 5"/>
 		<float name="scale" value="0.05"/>
+
+<!-- 		<phase type="hg">
+			<float name="g" value="0.5"/>
+		</phase> -->
 	</medium>
 
 	<medium type="homogeneous" id="medium2">
-		<rgb name="sigmaA" value="10 10 10"/>
+		<rgb name="sigmaA" value="1 1 1"/>
 		<rgb name="sigmaS" value="0.5 0.5 0.5"/>
 		<float name="scale" value="1"/>
+
+<!-- 		<phase type="hg">
+			<float name="g" value="0.5"/>
+		</phase> -->
 	</medium>
 
 	<shape type="sphere">
 		<point name="center" x="0" y="0" z="0"/>
-		<float name="radius" value="1"/>
+		<float name="radius" value="0.75"/>
 
 		<ref name="interior" id="medium2"/>
 		<ref name="exterior" id="medium1"/>
 	</shape>
 
 	<shape type="sphere">
-		<point name="center" x="1" y="1" z="-1"/>
+		<point name="center" x="1.5" y="1.5" z="2"/>
 		<float name="radius" value="0.25"/>
 
 		<emitter type="area">
-			<spectrum name="radiance" value="100"/>
+			<rgb name="radiance" value="8 46.4 64"/>
+		</emitter>
+
+		<ref name="exterior" id="medium1"/>
+
+		<bsdf type="diffuse">
+			<rgb name="reflectance" value="0.0 0.0 0.0"/>
+		</bsdf>
+	</shape>
+
+	<shape type="sphere">
+		<point name="center" x="-1.5" y="1.5" z="2"/>
+		<float name="radius" value="2"/>
+
+		<emitter type="area">
+			<rgb name="radiance" value="2.4, 1, 2.4"/>
 		</emitter>
 
 		<ref name="exterior" id="medium1"/>
@@ -49,7 +72,7 @@
 		</transform>
 
 		<sampler type="independent">
-			<integer name="sampleCount" value="256"/>
+			<integer name="sampleCount" value="1024"/>
 		</sampler>
 
 		<film type="hdrfilm" id="film">
