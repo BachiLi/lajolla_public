@@ -470,7 +470,7 @@ def next_event_estimation(p, current_medium):
         # we want to pass through -- this introduces
         # one extra connection vertex
         shadow_bounces += 1
-        if max_depth != -1 and bounces + shadow_bounces >= max_depth:
+        if max_depth != -1 and bounces + shadow_bounces + 1 >= max_depth:
           # Reach the max no. of vertices
           return 0
 
@@ -516,11 +516,11 @@ def L(screen_pos, rng):
 \end{lstlisting}
 
 We update these cache variables accordingly, and then when we hit a light source in the main loop, we use them to
-compute the multiple importance sampling weight:
+compute the multiple importance sampling weight (we also introduce a new flag \lstinline{never_scatter} to indicate that the light path has never scattered so far):
 \begin{lstlisting}[language=python]
 # If we reach a surface and didn't scatter, include the emission.
 if not scatter:
-  if bounces == 0:
+  if never_scatter:
     # This is the only way we can see the light source, so
     # we don't need multiple importance sampling.
     radiance += current_path_throughput * Le(isect);
@@ -550,9 +550,14 @@ if not scatter:
 
 \paragraph{Debugging tip.} Implement the method first without multiple importance sampling. Render the previous scene in our third volumetric path tracer. Make sure it converges to the same image.
 
-\paragraph{Task (13\%).} You will implement the algorithm above in the \lstinline{vol_path_tracing_4} function in \lstinline{vol_path_tracing.h}. Test your rendering using the scenes \lstinline{scenes/volpath_test/volpath_test4.xml} and \lstinline{scenes/volpath_test/volpath_test4_2.xml}. You should get images that look like the ones in Figure~\ref{fig:volpath4}.
+\paragraph{Question(s) (8\%).} 
+\begin{enumerate}
+    \item When will next event estimation be more efficient than phase function sampling? In our test scenes, which one is more efficient? Why?
+    \item In \lstinline{scenes/volpath_test/volpath_test4_2.xml}, we render a scene with an object composed of dense volume. How does it compare to rendering the object directly with a Lambertian material? Why are they alike or different?
+    \item Jim Kajiya famously has predicted in 1991 that \emph{in 10 years, all rendering will be volume rendering}. What do you think that makes him think so? Why hasn't it happened yet?
+\end{enumerate}
 
-\paragraph{Question(s) (5\%).} In \lstinline{scenes/volpath_test/volpath_test4_2.xml}, we render a scene with an object composed of dense volume. How does it compare to rendering the object directly with a Lambertian material? Why are they alike or different?
+\paragraph{Task (13\%).} You will implement the algorithm above in the \lstinline{vol_path_tracing_4} function in \lstinline{vol_path_tracing.h}. Test your rendering using the scenes \lstinline{scenes/volpath_test/volpath_test4.xml} and \lstinline{scenes/volpath_test/volpath_test4_2.xml}. You should get images that look like the ones in Figure~\ref{fig:volpath4}.
 
 \section{Multiple monochromatic homogeneous volumes with absorption and multiple-scattering with both phase function sampling and next event estimation, with surface lighting}
 
