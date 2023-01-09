@@ -4,7 +4,7 @@
 
 \header{3}{Final Project}
 
-The final project will be a project of your choice. Ideally it will be a rendering-related research project with a new algorithm or system. It is also fine for you to implement some non-trivial rendering algorithms in the lajolla renderer (or your own renderer!).
+The final project will be a project of your choice. You can implement some non-trivial rendering algorithms, or render some interesting scenes in lajolla or your own renderer. It can also be a rendering-related research project with a new algorithm or system. 
 Below we provide some options for you to think about, but feel free to come up with your own ones.
 
 \paragraph{Grading.} 
@@ -16,11 +16,100 @@ For example, if you aim to work on a research idea that is novel enough to be pu
 It is sufficient to show your work and the initial prototypes and experiments you develop, even if the initial result does not show practical benefit yet.
 
 \paragraph{Logistics.}
-Before 2/13, please let us know what you plan to do for the final project by sending an email to me (tzli@ucsd.edu), and have a brief plan in one or two paragraphs.
+Before 2/27, please let us know what you plan to do for the final project by submitting a 1-2 pages brief report to Canvas.
 Schedule a chat with us if you have any question. 
-We will have two checkpoints at 2/27 and 3/13: send us a brief progress report in a few paragraphs (ideally provide results and images) describing what you did and what you plan to do next.
+We will have a checkpoint at 3/13: send us a brief progress report in a few pages on Canvas (ideally provide results and images) describing what you did and what you plan to do next.
 Let's have a maximum of two people in a group. 
 For the research type projects, to avoid conflicts, if multiple groups want to work on the same project, we will consider merging the groups. 
+
+\section{Implementation ideas}
+
+Following are projects that are less novel, but could produce cool images. 
+They are usually about the implementation of the papers we talked about in the class.
+I did not sort them in terms of difficulty.
+
+\paragraph{Energy-preserving microfacet BSDFs.} 
+Implement Heitz et al.'s multiple-scattering microfacet BSDF~\cite{Heitz:2016:MMB} in lajolla.
+Alternatively, implement the position-free variant~\cite{Wang:2022:PMC}.
+As a bonus, compare them to the energy compensation technique introduced by Kulla and Conty\footnote{\url{https://blog.selfshadow.com/publications/s2017-shading-course/imageworks/s2017_pbs_imageworks_slides_v2.pdf}}, and show the pros and cons.
+
+\paragraph{Normal map and displacement map filtering.}
+Implement LEAN~\cite{Olano:2010:LM} and use it for rendering high resolution normal map in lajolla.
+Compare it to a high sample count reference.
+When does it work well and when does it fail?
+As a bonus, implement LEADR~\cite{Dupuy:2013:LEA} for filtering displacement map.
+First you will need to implement displacement mapping in lajolla.
+This can be done in a preprocessing pass to convert meshes with displacement map textures into tesselated mesh, or in an on-the-fly manner~\cite{Thonat:2021:TDM}.
+Alternatively, implement Yan et al.'s normal map filtering technique~\cite{Yan:2014:RGH} in lajolla. 
+
+\paragraph{Layered BSDF.}
+Implement the position-free layered BSDF simulator from Guo et al.~\cite{Guo:2018:PMC} in lajolla.
+As a starting point, maybe start with a two layer BSDF with no volumetric scattering in between.
+Implementing the unidirectional version is good enough.
+As a bonus, read Gamboa et al.'s work~\cite{Gamboa:2020:ETE} and implement their sampling strategy.
+
+\paragraph{Hair BCSDF.}
+Implement Marschner's hair scattering model~\cite{Marschner:2003:LSH} in lajolla.
+You'll have to implement a ray-curve intersection routine (it is acceptable to reuse the one from Embree) and a hair BCSDF.
+You may want to read Matt Pharr's note on implement hair rendering in pbrt.\footnote{See \url{https://www.pbrt.org/hair.pdf}}. 
+
+\paragraph{Thin-film iridescence BSDF.}
+Implement Belcour's thin-film iridescence BSDF~\cite{Belcour:2017:PEM} in lajolla.
+Feel free to look at Belcour's source code.
+
+\paragraph{Efficient transmittance estimation.}
+Implement Kettunen et al.'s unbiased ray marching estimator~\cite{Kettunen:2021:URT}.
+You can extend your volumetric path tracer in homework 2 for this.
+Replace your ratio tracker with the new ray marching estimator.
+Compare to the ratio tracker and analyze their variance reduction properties.
+
+\paragraph{BSSRDF.}
+Implement a BSSRDF in lajolla.
+You can use the one from Christensen and Burley~\cite{Christensen:2015:ARP}.
+For importance sampling the BSSRDF, check out King et al.'s talk\footnote{\url{https://pdfs.semanticscholar.org/90da/5211ce2a6f63d50b8616736c393aaf8bf4ca.pdf}}.
+You are encouraged to read pbrt's code\footnote{\url{https://www.pbr-book.org/3ed-2018/Light_Transport_II_Volume_Rendering/Sampling_Subsurface_Reflection_Functions}}.
+
+\paragraph{Single scattering.}
+Implement Chen et al.'s 1D Min-Max mipmap shadow mapping technique for rendering single scattering volumes~\cite{Chen:2011:RVS}.
+You don't have to implement it on GPUs or show real-time performance.
+
+\paragraph{Stratification.}
+Implement low-discrepancy sampling in lajolla.
+A simpler starting point is Halton sequence.
+Read the related chapters in pbrt\footnote{\url{https://www.pbr-book.org/3ed-2018/Sampling_and_Reconstruction/The_Halton_Sampler}} for the reference.
+Smallppm\footnote{\url{https://cs.uwaterloo.ca/~thachisu/smallppm_exp.cpp}} from Toshiya Hachisuka also contains a low discrepenacy photon mapper using Halton sequence.
+
+\paragraph{Bidirectional path tracing.}
+Implement a bidirectional path tracer in lajolla.
+Read the related chapters in pbrt\footnote{\url{https://www.pbr-book.org/3ed-2018/Light_Transport_III_Bidirectional_Methods/Bidirectional_Path_Tracing}} for the reference.
+Another good reference code is \textit{smallpssmlt}\footnote{\url{https://cs.uwaterloo.ca/~thachisu/smallpssmlt.cpp}} from Toshiya Hachisuka.
+
+\paragraph{Progressive photon mapping.}
+Implement progressive photon mapping~\cite{Hachisuka:2008:PPM} in lajolla.
+Read the related chapters in pbrt\footnote{\url{https://www.pbr-book.org/3ed-2018/Light_Transport_III_Bidirectional_Methods/Stochastic_Progressive_Photon_Mapping}}.
+Another good reference code is \textit{smallppm}\footnote{\url{https://cs.uwaterloo.ca/~thachisu/smallppm_exp.cpp}} from Toshiya Hachisuka.
+You can also implement the probabilistic variant from Knaus et al.~\cite{Knaus:2011:PPM}.
+
+\paragraph{Gradient-domain path tracing.} 
+Implement gradient-domain path tracing~\cite{Kettunen:2015:GPT} in lajolla.
+A good reference code is smallgdpt from me\footnote{\url{https://gist.github.com/BachiLi/4f5c6e5a4fef5773dab1}}.
+
+\paragraph{Metropolis light transport.} Implement Kelemen-style Metropolis light transport~\cite{Kelemen:2002:SRM} in lajolla. Read the relevant chapters in pbrt\footnote{\url{https://www.pbr-book.org/3ed-2018/Light_Transport_III_Bidirectional_Methods/Metropolis_Light_Transport}}. Another good reference code is \textit{smallpssmlt}\footnote{\url{https://cs.uwaterloo.ca/~thachisu/smallpssmlt.cpp}} and \textit{smallmmlt}\footnote{\url{https://cs.uwaterloo.ca/~thachisu/smallmmlt.cpp}} from Toshiya Hachisuka.
+
+\paragraph{Optimal multiple importance sampling.}
+Implement \emph{optimal} multiple importance sampling using control variates from Kondapaneni et al.~\cite{Kondapaneni:2019:OMI} in lajolla.
+Ideally, apply their method for a unidirectional path tracer or even a bidirectional path tracer (instead of just applying it for direct lighting) -- what kind of data structure do you need for maintaining the required statistics?
+
+\paragraph{Lightcuts.}
+Implement stochastic lightcuts~\cite{Yuksel:2019:SL} from Yuksel et al. in lajolla for rendering scenes with millions of lights.
+As a bonus, implement the data-driven version from Wang et al.~\cite{Wang:2021:LCR}.
+
+\paragraph{ReSTIR.}
+Implement ReSTIR~\cite{Bitterli:2020:SRR} in lajolla for rendering scenes with many lights.
+You don't need to implement the temporal reuse, but you should explore spatial reuse.
+
+\paragraph{GPU rendering.}
+Port most of lajolla to Vulkan/DirectX 12/CUDA/OpenCL/Metal.
 
 \section{Research project ideas}
 These projects are likely publishable in a conference or a journal if done well (you will likely need to work on it longer even after the course ends for this to happen though).
@@ -53,7 +142,7 @@ Path guiding algorithms build data structures that record contributions of light
 These data structures typically are fitted in a per-frame basis and do not easily extend to animation rendering. 
 In this project, we will explore ways to update the path guiding data structures over time.
 A potential point of reference is the neural radiance caching work from Muller et al.~\cite{Muller:2021:RNR}.
-A relatively simple starting point is to implement a simple exponential weighted moving average update for the 5D tree data structure of Mueller et al.~\cite{Mueller:2017:PPG}.
+A relatively simple starting point is to implement a simple exponential weighted moving average update for the 5D tree data structure of Muller et al.~\cite{Muller:2017:PPG}.
 Can you come up with heuristics to account for occlusion and parallax? What kind of information we can extract from a renderer that can help updating the data structure?
 
 \paragraph{Denoising Metropolis light transport rendering.}
@@ -88,96 +177,6 @@ However, similar to the situation of NeRF, existing neural signed distance field
 In this project, we will explore modeling a spatially varying BSDF for neural signed distance fields.
 The network architecture can be a 7D coordinate network that takes a 3D position and two 2D directions and outputs the BSDF response.
 For importance sampling, it might be useful to make the network a normalizing flow~\cite{Muller:2019:NIS} conditioned on the position and incoming direction. Similar to above, I would recommend starting from known lighting (e.g., an environment map) and direct lighting to make the problem easier.
-
-\section{Implementation ideas}
-
-Following are projects that are less novel, but could also produce cool images. 
-They are usually about the implementation of the papers we talked about in the class.
-I did not sort them in terms of difficulty.
-
-\paragraph{Energy-preserving microfacet BSDFs.} 
-Implement Heitz et al.'s multiple-scattering microfacet BSDF~\cite{Heitz:2016:MMB} in lajolla.
-Alternatively, implement the position-free variant~\cite{Wang:2022:PMC}.
-As a bonus, compare them to the energy compensation technique introduced by Kulla and Conty\footnote{\url{https://blog.selfshadow.com/publications/s2017-shading-course/imageworks/s2017_pbs_imageworks_slides_v2.pdf}}, and show the pros and cons.
-
-\paragraph{Normal map and displacement map filtering.}
-Implement LEAN~\cite{Olano:2010:LM} and use it for rendering high resolution normal map in lajolla.
-Compare it to a high sample count reference.
-When does it work well and when does it fail?
-As a bonus, implement LEADR~\cite{Dupuy:2013:LEA} for filtering displacement map.
-First you will need to implement displacement mapping in lajolla.
-This can be done in a preprocessing pass to convert meshes with displacement map textures into tesselated mesh, or in an on-the-fly manner~\cite{Thonat:2021:TDM}.
-Alternatively, implement Yan et al.'s normal map filtering technique~\cite{Yan:2014:RGH} in lajolla. 
-
-\paragraph{Layered BSDF.}
-Implement the position-free layered BSDF simulator from Guo et al.~\cite{Guo:2018:PMC} in lajolla.
-As a starting point, maybe start with a two layer BSDF with no volumetric scattering in between.
-Implementing the unidirectional version is good enough.
-As a bonus, read Gamboa et al.'s work~\cite{Gamboa:2020:ETE} and implement their sampling strategy.
-
-\paragraph{Hair BCSDF.}
-Implement Marschner's hair scattering model~\cite{Marschner:2003:LSH} in lajolla.
-You'll have to implement a ray-curve intersection routine and a hair BCSDF.
-You may want to read Matt Pharr's note on implement hair rendering in pbrt.\footnote{See \url{https://www.pbrt.org/hair.pdf}}. 
-
-\paragraph{Thin-film iridescence BSDF.}
-Implement Belcour's thin-film iridescence BSDF~\cite{Belcour:2017:PEM} in lajolla.
-Feel free to look at Belcour's source code.
-
-\paragraph{Efficient transmittance estimation.}
-Implement Kettunen et al.'s unbiased ray marching estimator~\cite{Kettunen:2021:URT}.
-You can extend your volumetric path tracer in homework 2 for this.
-Replace your ratio tracker with the new ray marching estimator.
-Compare to the ratio tracker and analyze their variance reduction properties.
-
-\paragraph{BSSRDF.}
-Implement a BSSRDF in lajolla.
-You can use the one from Christensen and Burley~\cite{Christensen:2015:ARP}.
-For importance sampling the BSSRDF, check out King et al.'s talk\footnote{\url{https://pdfs.semanticscholar.org/90da/5211ce2a6f63d50b8616736c393aaf8bf4ca.pdf}}.
-You are encouraged to read pbrt's code\footnote{\url{https://www.pbr-book.org/3ed-2018/Light_Transport_II_Volume_Rendering/Sampling_Subsurface_Reflection_Functions}}.
-
-\paragraph{Single scattering.}
-Implement Chen et al.'s 1D Min-Max mipmap shadow mapping technique for rendering single scattering volumes~\cite{Chen:2011:RVS}.
-You don't have to implement it on GPUs or show real-time performance.
-
-\paragraph{Stratification.}
-Implement low-discrepancy sampling in lajolla.
-A simpler starting point is Halton sequence.
-Read the related chapters in pbrt\footnote{\url{https://www.pbr-book.org/3ed-2018/Sampling_and_Reconstruction/The_Halton_Sampler}} for the reference.
-Smallppm\footnote{\url{https://cs.uwaterloo.ca/~thachisu/smallppm_exp.cpp}} from Toshiya Hachisuka also contains a low discrepenacy photon mapper using Halton sequence.
-
-
-\paragraph{Bidirectional path tracing.}
-Implement a bidirectional path tracer in lajolla.
-Read the related chapters in pbrt\footnote{\url{https://www.pbr-book.org/3ed-2018/Light_Transport_III_Bidirectional_Methods/Bidirectional_Path_Tracing}} for the reference.
-Another good reference code is \textit{smallpssmlt}\footnote{\url{https://cs.uwaterloo.ca/~thachisu/smallpssmlt.cpp}} from Toshiya Hachisuka.
-
-\paragraph{Progressive photon mapping.}
-Implement progressive photon mapping~\cite{Hachisuka:2008:PPM} in lajolla.
-Read the related chapters in pbrt\footnote{\url{https://www.pbr-book.org/3ed-2018/Light_Transport_III_Bidirectional_Methods/Stochastic_Progressive_Photon_Mapping}}.
-Another good reference code is \textit{smallppm}\footnote{\url{https://cs.uwaterloo.ca/~thachisu/smallppm_exp.cpp}} from Toshiya Hachisuka.
-You can also implement the probabilistic variant from Knaus et al.~\cite{Knaus:2011:PPM}.
-
-\paragraph{Gradient-domain path tracing.} 
-Implement gradient-domain path tracing~\cite{Kettunen:2015:GPT} in lajolla.
-A good reference code is smallgdpt from me~\footnote{\url{https://gist.github.com/BachiLi/4f5c6e5a4fef5773dab1}}.
-
-\paragraph{Metropolis light transport.} Implement Kelemen-style Metropolis light transport~\cite{Kelemen:2002:SRM} in lajolla. Read the relevant chapters in pbrt\footnote{\url{https://www.pbr-book.org/3ed-2018/Light_Transport_III_Bidirectional_Methods/Metropolis_Light_Transport}}. Another good reference code is \textit{smallpssmlt}\footnote{\url{https://cs.uwaterloo.ca/~thachisu/smallpssmlt.cpp}} and \textit{smallmmlt}\footnote{\url{https://cs.uwaterloo.ca/~thachisu/smallmmlt.cpp}} from Toshiya Hachisuka.
-
-\paragraph{Optimal multiple importance sampling.}
-Implement \emph{optimal} multiple importance sampling using control variates from Kondapaneni et al.~\cite{Kondapaneni:2019:OMI} in lajolla.
-Ideally, apply their method for a unidirectional path tracer or even a bidirectional path tracer (instead of just applying it for direct lighting) -- what kind of data structure do you need for maintaining the required statistics?
-
-\paragraph{Lightcuts.}
-Implement stochastic lightcuts~\cite{Yuksel:2019:SL} from Yuksel et al. in lajolla for rendering scenes with millions of lights.
-As a bonus, implement the data-driven version from Wang et al.~\cite{Wang:2021:LCR}.
-
-\paragraph{ReSTIR.}
-Implement ReSTIR~\cite{Bitterli:2020:SRR} in lajolla for rendering scenes with many lights.
-You don't need to implement the temporal reuse, but you should explore spatial reuse.
-
-\paragraph{GPU rendering.}
-Port most of lajolla to Vulkan/DirectX 12/CUDA/OpenCL/Metal.
 
 \bibliographystyle{plain}
 \bibliography{refs}
