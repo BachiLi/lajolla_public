@@ -15,7 +15,7 @@ TriangleMesh parse_ply(const fs::path &filename, const Matrix4x4 &to_world) {
     try {
         vertices = ply_file.request_properties_from_element("vertex", { "x", "y", "z" }); 
     } catch (const std::exception & e) { 
-        Error(std::string("Vertex positions not found in ") + filename.c_str());
+        Error(std::string("Vertex positions not found in ") + filename.string());
     }
     try {
         uvs = ply_file.request_properties_from_element("vertex", { "u", "v" });
@@ -30,7 +30,7 @@ TriangleMesh parse_ply(const fs::path &filename, const Matrix4x4 &to_world) {
     try {
         faces = ply_file.request_properties_from_element("face", { "vertex_indices" }); 
     } catch (const std::exception & e) { 
-        Error(std::string("Vertex indices not found in ") + filename.c_str());
+        Error(std::string("Vertex indices not found in ") + filename.string());
     }
 
     ply_file.read(ifs);
