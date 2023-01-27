@@ -18,8 +18,8 @@
 // put emphasis on the absolute performance. 
 // We choose double so that we do not need to worry about
 // numerical accuracy as much when we render.
-// Switching to Realing point computation is easy --
-// just set Real = Real.
+// Switching to floating point computation is easy --
+// just set Real = float.
 using Real = double;
 
 // Lots of PIs!
