@@ -5,7 +5,7 @@ TableDist1D make_table_dist_1d(const std::vector<Real> &f) {
     std::vector<Real> cdf(f.size() + 1);
     cdf[0] = 0;
     for (int i = 0; i < (int)f.size(); i++) {
-        assert(pmf[i] > 0);
+        assert(pmf[i] >= 0);
         cdf[i + 1] = cdf[i] + pmf[i];
     }
     Real total = cdf.back();
