@@ -221,3 +221,11 @@ inline CheckerboardTexture<Spectrum> make_checkerboard_spectrum_texture(
     return CheckerboardTexture<Spectrum>{
         color0, color1, uscale, vscale, uoffset, voffset};
 }
+
+inline CheckerboardTexture<Real> make_checkerboard_float_texture(
+        Real color0, Real color1,
+        Real uscale = 1, Real vscale = 1,
+        Real uoffset = 0, Real voffset = 0) {
+    return CheckerboardTexture<Real>{
+        color0, color1, uscale, vscale, uoffset, voffset};
+}

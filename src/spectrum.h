@@ -33,6 +33,10 @@ inline Real luminance(const Spectrum &s) {
     return s.x * Real(0.212671) + s.y * Real(0.715160) + s.z * Real(0.072169);
 }
 
+inline Real avg(const Spectrum &s) {
+    return (s.x + s.y + s.z) / 3;
+}
+
 inline Vector3 toRGB(const Spectrum &s) {
     return s;
 }
