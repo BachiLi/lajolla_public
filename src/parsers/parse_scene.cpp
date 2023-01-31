@@ -871,10 +871,10 @@ Texture<Real> alpha_to_roughness(pugi::xml_node node,
             return make_image_float_texture(
                 ref_id, roughness_img, texture_pool, t.uscale, t.vscale);
         } else if (t.type == TextureType::CHECKERBOARD) {
-            Real alpha0 = sqrt(avg(t.color0));
-            Real alpha1 = sqrt(avg(t.color1));
+            Real roughness0 = sqrt(avg(t.color0));
+            Real roughness1 = sqrt(avg(t.color1));
             return make_checkerboard_float_texture(
-                alpha0, alpha1, t.uscale, t.vscale, t.uoffset, t.voffset);
+                roughness0, roughness1, t.uscale, t.vscale, t.uoffset, t.voffset);
         } else {
             return make_constant_float_texture(Real(0.1));
         }
@@ -900,10 +900,10 @@ Texture<Real> alpha_to_roughness(pugi::xml_node node,
             return make_image_float_texture(
                 tmp_ref_name, t.filename, texture_pool, t.uscale, t.vscale, t.uoffset, t.voffset);
         } else if (t.type == TextureType::CHECKERBOARD) {
-            Real alpha0 = sqrt(avg(t.color0));
-            Real alpha1 = sqrt(avg(t.color1));
+            Real roughness0 = sqrt(avg(t.color0));
+            Real roughness1 = sqrt(avg(t.color1));
             return make_checkerboard_float_texture(
-                alpha0, alpha1, t.uscale, t.vscale, t.uoffset, t.voffset);
+                roughness0, roughness1, t.uscale, t.vscale, t.uoffset, t.voffset);
         } else {
             return make_constant_float_texture(Real(0.1));
         }
