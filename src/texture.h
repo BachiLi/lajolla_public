@@ -18,6 +18,11 @@ struct TexturePool {
     std::vector<Mipmap3> image3s;
 };
 
+inline bool texture_id_exists(const TexturePool &pool, const std::string &texture_name) {
+    return pool.image1s_map.find(texture_name) != pool.image1s_map.end() ||
+           pool.image3s_map.find(texture_name) != pool.image3s_map.end();
+}
+
 inline int insert_image1(TexturePool &pool, const std::string &texture_name, const fs::path &filename) {
     if (pool.image1s_map.find(texture_name) != pool.image1s_map.end()) {
         // We don't check if img is the same as the one in the cache!
