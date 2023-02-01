@@ -682,6 +682,7 @@ Starting from $z=t'$, we sample a distance $z_d$ such that $p(z_d) \propto \exp\
 Combining all of these, let's look at the pseudo-code. For homogenized free-flight sampling, it looks like this:
 \begin{lstlisting}[language=python]
 scatter = False
+never_scatter = True
 transmittance = make_const_spectrum(1)
 trans_dir_pdf = make_const_spectrum(1) # PDF for free-flight sampling
 trans_nee_pdf = make_const_spectrum(1) # PDF for next event estimation
@@ -707,6 +708,7 @@ if in_medium():
       if next(rng) < real_prob[channel]:
         # hit a "real" particle
         scatter = true
+        never_scatter = False
         transmittance *= exp(-majorant * t) / max(majorant)
         trans_dir_pdf *= exp(-majorant * t) * majorant * real_prob / max(majorant)
         # don't need to account for trans_nee_pdf since we scatter
