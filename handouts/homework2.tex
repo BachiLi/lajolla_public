@@ -433,10 +433,10 @@ Sampling only using the phase function is inefficient, especially when the light
 
 Mathematically, the next event estimation is a change of variable of the spherical single scattering integral:
 \begin{equation}
-\int_{S^2} \rho(\mathbf{p}, \omega, \omega') \tau(\mathbf{p}, \mathbf{p}') L_e(\mathbf{p}') \mathrm{d} \omega' =
-\int_{E} \rho(\mathbf{p}, \omega, \omega') \tau(\mathbf{p}, \mathbf{p}') L_e(\mathbf{p}') \frac{\left|\omega' \cdot \mathbf{n}_{\mathbf{p}'}\right|}{\left|\mathbf{p} - \mathbf{p}'\right|^2} \mathrm{d} \mathbf{p}',
+\int_{S^2} \rho(\mathbf{p}, \omega, \omega') T(\mathbf{p}, \mathbf{p}') L_e(\mathbf{p}') \mathrm{d} \omega' =
+\int_{E} \rho(\mathbf{p}, \omega, \omega') T(\mathbf{p}, \mathbf{p}') L_e(\mathbf{p}') \frac{\left|\omega' \cdot \mathbf{n}_{\mathbf{p}'}\right|}{\left|\mathbf{p} - \mathbf{p}'\right|^2} \mathrm{d} \mathbf{p}',
 \end{equation}
-where $\mathbf{p}'$ are points on the light sources, $\tau(\mathbf{p}, \mathbf{p}')$ is the transmittance between point $\mathbf{p}$ and $\mathbf{p}'$. We also need to include the geometry term $\frac{\left|\omega' \cdot \mathbf{n}_{\mathbf{p}'}\right|}{\left|\mathbf{p} - \mathbf{p}'\right|^2}$ as the Jacobian of the change of variable.
+where $\mathbf{p}'$ are points on the light sources, $T(\mathbf{p}, \mathbf{p}')$ is the transmittance between point $\mathbf{p}$ and $\mathbf{p}'$. We also need to include the geometry term $\frac{\left|\omega' \cdot \mathbf{n}_{\mathbf{p}'}\right|}{\left|\mathbf{p} - \mathbf{p}'\right|^2}$ as the Jacobian of the change of variable.
 
 The pseudo-code for the volumetric next event estimation looks like this:
 \begin{lstlisting}[language=python]
@@ -508,7 +508,7 @@ def L(screen_pos, rng):
   current_path_throughput = 1
   radiance = 0
   bounces = 0
-  dir_pdf = 0 // in solid angle measure
+  dir_pdf = 0 # in solid angle measure
   nee_p_cache = None
   multi_trans_pdf = 1
   while True:
@@ -582,7 +582,7 @@ We are finally adding surface lighting to our volumetric renderer. This should b
 \paragraph{Question(s) (8\%).} 
 \begin{enumerate}
     \item Play with the index of refraction parameter of the dielectric interface in \\ \lstinline{scenes/volpath_test/volpath_test5_2.xml}. How does that affect appearance? Why?
-    \item In the scene \lstinline{{scenes/volpath_test/vol_cbox_teapot.xml}, we model the glass teapot as a transparent glass with blue homogeneous medium inside. What is the difference in terms of appearance between this approach and just making the color of the glass blue without any medium inside?
+    \item In the scene \lstinline{scenes/volpath_test/vol_cbox_teapot.xml}, we model the glass teapot as a transparent glass with blue homogeneous medium inside. What is the difference in terms of appearance between this approach and just making the color of the glass blue without any medium inside?
 \end{enumerate}
 
 \paragraph{Task (10\%).} You will add surface lighting in the \lstinline{vol_path_tracing_5} function in \lstinline{vol_path_tracing.h}. Test your rendering using the scenes \lstinline{scenes/volpath_test/volpath_test5.xml} and \lstinline{scenes/volpath_test/volpath_test5_2.xml}. You should get images that look like the ones in Figure~\ref{fig:volpath5}. Also check out \lstinline{scenes/volpath_test/vol_cbox.xml} and \lstinline{scenes/volpath_test/vol_cbox_teapot.xml} to see what we can render now (Figure~\ref{fig:volpath5_cbox})!
@@ -599,12 +599,12 @@ with boundary condition $L(\mathbf{p}(t_{\text{hit}}), \omega) = L_{\text{surfac
 
 Integrating over distance, we get our integral volume rendering equation:
 \begin{equation}
-L(\mathbf{p}(t), \omega) = \int_{0}^{t_{\text{hit}}} \tau(\mathbf{p}(0), \mathbf{p}(t'))
-\left(\sigma_s(\mathbf{p}(t')) \int_{S^2} \rho(\omega, \omega') L(\mathbf{p}(t'), \omega') \mathrm{d}\omega' \right) \mathrm{d}t' + \tau(\mathbf{p}(0), \mathbf{p}(t_{\text{hit}})) L_{\text{surface}}(\mathbf{p}(t_{\text{hit}})),
+L(\mathbf{p}(t), \omega) = \int_{0}^{t_{\text{hit}}} T(\mathbf{p}(0), \mathbf{p}(t'))
+\left(\sigma_s(\mathbf{p}(t')) \int_{S^2} \rho(\omega, \omega') L(\mathbf{p}(t'), \omega') \mathrm{d}\omega' \right) \mathrm{d}t' + T(\mathbf{p}(0), \mathbf{p}(t_{\text{hit}})) L_{\text{surface}}(\mathbf{p}(t_{\text{hit}})),
 \end{equation}
-where $\tau$ is the transmittance:
+where $T$ is the transmittance:
 \begin{equation}
-\tau(\mathbf{p}(0), \mathbf{p}(t')) = \exp\left(-\int_{0}^{t'} \sigma_t\left(\mathbf{p}(t'')\right) \mathrm{d}t'' \right).
+T(\mathbf{p}(0), \mathbf{p}(t')) = \exp\left(-\int_{0}^{t'} \sigma_t\left(\mathbf{p}(t'')\right) \mathrm{d}t'' \right).
 \end{equation}
 
 The transmittance has a closed-form when the volume is homogeneous. However when we have heterogeneous volumes (i.e. $\sigma_t$ changes with position), we need to use Monte Carlo to estimate the transmittance. The exponential makes it tricky to do an unbiased estimation: $E[\exp(X)] \neq \exp(E[X])$ for most random variable $X$, where $E$ is expectation. This means that when we have an estimation of the integral $X \approx \int_{0}^{t'} \sigma_t\left(\mathbf{p}(t'') \mathrm{d}t''\right)$, even if $X$ is unbiased ($E[X] = \int_{0}^{t'} \sigma_t\left(\mathbf{p}(t'')\right) \mathrm{d}t''$), the exponentiation of $X$ won't be an unbiased estimation of the exponentiation of the integral.
@@ -620,17 +620,17 @@ Now, if we choose the fake particle density $\sigma_n(\mathbf{p}(t))$ such that 
 What constant should we choose? A common choice is the upper bound of $\sigma_t(\mathbf{p}(t))$ for all $t$, so that $\sigma_n(\mathbf{p}(t)) \geq 0$. We call the upper bound the \emph{majorant} ($\sigma_m$). Now we can write the volume integral equation as:
 \begin{equation}
 \begin{aligned}
-L(\mathbf{p}(t), \omega) = &\int_{0}^{t_{\text{hit}}} \tau_m(\mathbf{p}(0), \mathbf{p}(t'))
+L(\mathbf{p}(t), \omega) = &\int_{0}^{t_{\text{hit}}} T_m(\mathbf{p}(0), \mathbf{p}(t'))
 \left(\sigma_n(\mathbf{p}(t')) L(\mathbf{p}(t'), \omega) + \sigma_s(\mathbf{p}(t')) \int_{S^2} \rho(\omega, \omega') L(\mathbf{p}(t'), \omega') \mathrm{d}\omega' \right) \mathrm{d}t' + \\
-&\tau_m(\mathbf{p}(0), \mathbf{p}(t_{\text{hit}})) L_{\text{surface}}(\mathbf{p}(t_{\text{hit}})),
+&T_m(\mathbf{p}(0), \mathbf{p}(t_{\text{hit}})) L_{\text{surface}}(\mathbf{p}(t_{\text{hit}})),
 \end{aligned}
 \end{equation}
-where $\tau_m$ is the \emph{homogenized} transmittance:
+where $T_m$ is the \emph{homogenized} transmittance:
 \begin{equation}
-\tau_m(\mathbf{p}(0), \mathbf{p}(t')) = \exp\left(-\sigma_m t'\right).
+T_m(\mathbf{p}(0), \mathbf{p}(t')) = \exp\left(-\sigma_m t'\right).
 \end{equation}
 
-To evaluate $L$, we importance sample the homogenized transmittance $\tau_m$. Every time we sample a distance $t'$ based on the homogenized transmittance, three things can happen:
+To evaluate $L$, we importance sample the homogenized transmittance $T_m$. Every time we sample a distance $t'$ based on the homogenized transmittance, three things can happen:
 \begin{enumerate}
     \item We hit the surface ($t' \geq t_{\text{hit}}$), and need to compute $L_{\text{surface}}$.
     \item We hit a \emph{real} particle, and need to compute the $S^2$ integral to scatter the particle.
@@ -643,36 +643,36 @@ The probability that the first event happenning is the same as Equation~\ref{eq:
 We will use the same homogenization trick.
 We have the following integral to estimate between two points $\mathbf{p}(0)$ and $\mathbf{p}(t')$:
 \begin{equation}
-\tau(\mathbf{p}(0), \mathbf{p}(t')) = \tau_\mathbf{p}(t') = \exp\left(-\int_{0}^{t'}\sigma_t(\mathbf{p}(t''))\mathrm{d}t''\right).
+T(\mathbf{p}(0), \mathbf{p}(t')) = T_\mathbf{p}(t') = \exp\left(-\int_{0}^{t'}\sigma_t(\mathbf{p}(t''))\mathrm{d}t''\right).
 \end{equation}
-We again observe that $\tau_\mathbf{p}(t')$ is the solution of an ordinary differential equation
+We again observe that $T_\mathbf{p}(t')$ is the solution of an ordinary differential equation
 \begin{equation}
 \begin{aligned}
-\frac{\mathrm{d}\tau_\mathbf{p}\left(t'\right)}{\mathrm{d}t'} &= -\sigma_t(\mathbf{p}(t'))\tau_\mathbf{p}\left(t'\right) = -\sigma_m \tau_\mathbf{p}\left(t'\right) + \sigma_n(\mathbf{p}(t))\tau_\mathbf{p}\left(t'\right). \\
-\tau_\mathbf{p}(0) &= 1
+\frac{\mathrm{d}T_\mathbf{p}\left(t'\right)}{\mathrm{d}t'} &= -\sigma_t(\mathbf{p}(t'))T_\mathbf{p}\left(t'\right) = -\sigma_m T_\mathbf{p}\left(t'\right) + \sigma_n(\mathbf{p}(t))T_\mathbf{p}\left(t'\right). \\
+T_\mathbf{p}(0) &= 1
 \end{aligned}
 \end{equation}
 where we homogenize the ODE using the majorant $\sigma_t(\mathbf{p}(t')) = \sigma_m - \sigma_n(\mathbf{p}(t'))$.
 
-To solve this ODE, we apply a change of variable $\tilde{\tau}_{\mathbf{p}}(t') = \exp\left(\sigma_m t'\right) \tau_{\mathbf{p}}(t')$. This gives us
+To solve this ODE, we apply a change of variable $\tilde{T}_{\mathbf{p}}(t') = \exp\left(\sigma_m t'\right) T_{\mathbf{p}}(t')$. This gives us
 \begin{equation}
 \begin{aligned}
-\frac{\mathrm{d}}{\mathrm{d}t'}\tilde{\tau}_{\mathbf{p}}(t') &= \frac{\mathrm{d}}{\mathrm{d}t'}\left(\exp\left(\sigma_m t'\right) \tau_{\mathbf{p}}(t')\right) = \sigma_n(\mathbf{p}(t')) \tilde{\tau}_{\mathbf{p}}(t') \\
-\tilde{\tau}_{\mathbf{p}}(0) &= 1
+\frac{\mathrm{d}}{\mathrm{d}t'}\tilde{T}_{\mathbf{p}}(t') &= \frac{\mathrm{d}}{\mathrm{d}t'}\left(\exp\left(\sigma_m t'\right) T_{\mathbf{p}}(t')\right) = \sigma_n(\mathbf{p}(t')) \tilde{T}_{\mathbf{p}}(t') \\
+\tilde{T}_{\mathbf{p}}(0) &= 1
 \end{aligned}.
 \end{equation}
 
-Instead of solving the ODE above using exponentiation (which gives us back the exponential integral), we simply integrate both sides and get $\tilde{\tau}_{\mathbf{p}}(t') = 1 + \int_0^{t'} \sigma_n(\mathbf{p}(t'')) \tilde{\tau}_{\mathbf{p}}(t'') \mathrm{d}t''$. Changing the variable back to $\tau$ from $\tilde{\tau}$ gives us:
+Instead of solving the ODE above using exponentiation (which gives us back the exponential integral), we simply integrate both sides and get $\tilde{T}_{\mathbf{p}}(t') = 1 + \int_0^{t'} \sigma_n(\mathbf{p}(t'')) \tilde{T}_{\mathbf{p}}(t'') \mathrm{d}t''$. Changing the variable back to $T$ from $\tilde{T}$ gives us:
 \begin{equation}
 \begin{aligned}
-\tau_{\mathbf{p}}(t') = \frac{\tilde{\tau}_{\mathbf{p}}(t')}{\exp\left(\sigma_m t'\right)} &= \exp\left(-\sigma_m t'\right) \left(1 + \int_{0}^{t'} \exp\left(\sigma_m t''\right) \sigma_n(\mathbf{p}(t'')) \tau_{\mathbf{p}}(t'') \mathrm{d}t'' \right) \\
-&= \exp\left(-\sigma_m t'\right) + \int_{0}^{t'} \exp\left(\sigma_m (t''-t')\right) \sigma_n(\mathbf{p}(t'')) \tau_{\mathbf{p}}(t'') \mathrm{d}t'',
+T_{\mathbf{p}}(t') = \frac{\tilde{T}_{\mathbf{p}}(t')}{\exp\left(\sigma_m t'\right)} &= \exp\left(-\sigma_m t'\right) \left(1 + \int_{0}^{t'} \exp\left(\sigma_m t''\right) \sigma_n(\mathbf{p}(t'')) T_{\mathbf{p}}(t'') \mathrm{d}t'' \right) \\
+&= \exp\left(-\sigma_m t'\right) + \int_{0}^{t'} \exp\left(\sigma_m (t''-t')\right) \sigma_n(\mathbf{p}(t'')) T_{\mathbf{p}}(t'') \mathrm{d}t'',
 \end{aligned}
 \label{eq:transmittance_recursive_integral}
 \end{equation}
-and now we have a recursive integral equation that we can directly estimate using Monte Carlo. (we can get an integral that does not involve homogenization nor exponentiation by just integrating both sides of $\frac{\mathrm{d}\tau_\mathbf{p}\left(t'\right)}{\mathrm{d}t'} = -\sigma_t(\mathbf{p}(t'))\tau_\mathbf{p}\left(t'\right)$, but Monte Carlo sampling of this integral turns out to be very very slow. See Georgiev et al.'s article for a deeper discussion~\cite{Georgiev:2019:IFV}.) This change of variable trick is called an \emph{exponential integrator} in ODE literature (Google it if you're interested ;).
+and now we have a recursive integral equation that we can directly estimate using Monte Carlo. (we can get an integral that does not involve homogenization nor exponentiation by just integrating both sides of $\frac{\mathrm{d}T_\mathbf{p}\left(t'\right)}{\mathrm{d}t'} = -\sigma_t(\mathbf{p}(t'))T_\mathbf{p}\left(t'\right)$, but Monte Carlo sampling of this integral turns out to be very very slow. See Georgiev et al.'s article for a deeper discussion~\cite{Georgiev:2019:IFV}.) This change of variable trick is called an \emph{exponential integrator} in ODE literature (Google it if you're interested ;).
 
-The Monte Carlo sampler we will apply for solving Equation~\ref{eq:transmittance_recursive_integral} is called the \emph{ratio tracking} method. The idea is to use a path tracing like algorithm with Russian roulette. We notice that the recursive integral is a bit like the rendering equation: we have the \emph{light source term} $\exp\left(-\sigma_m t'\right)$, and the recursive integral $\int_{0}^{t'} \exp\left(\sigma_m (t''-t')\right) \sigma_n(\mathbf{p}(t'')) \tau_{\mathbf{p}}(t'') \mathrm{d}t''$. 
+The Monte Carlo sampler we will apply for solving Equation~\ref{eq:transmittance_recursive_integral} is called the \emph{ratio tracking} method. The idea is to use a path tracing like algorithm with Russian roulette. We notice that the recursive integral is a bit like the rendering equation: we have the \emph{light source term} $\exp\left(-\sigma_m t'\right)$, and the recursive integral $\int_{0}^{t'} \exp\left(\sigma_m (t''-t')\right) \sigma_n(\mathbf{p}(t'')) T_{\mathbf{p}}(t'') \mathrm{d}t''$. 
 Starting from $z=t'$, we sample a distance $z_d$ such that $p(z_d) \propto \exp\left(\sigma_m z_d\right)$ and update $z$. If we reach 0, then we evaluate the light source term. Otherwise, we evaluate the recursive term. One way to think about this is that we hit the fake particle if we choose to evaluate the recursive term. The probability for evaluating the light source term is $\exp\left(-\sigma_m z\right)$ (Equation~\ref{eq:hit_surface_prob}), and the probability density for evaluating the recursive term is $\exp\left(-\sigma_m z_d\right) \sigma_m$. We accumulate these probabilities by multiplying them, while also accounting for the integrand.
 
 \paragraph{Dealing with chromatic media.} Finally, we need to deal with colors. So far, we have been assuming that $\sigma_a$ and $\sigma_s$ are monochromatic, but in practice, they can be RGB colors (or even a vector representing response per wavelength). We deal with this by sampling a channel (R, G, or B) whenever we need to sample distance. Importantly, when computing probability density, we take the average probability density over all channels: this is a form of multiple importance sampling (called the one-sample multiple importance sampling~\cite{Veach:1995:OCS}).
