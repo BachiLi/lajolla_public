@@ -19,7 +19,7 @@ Try
 cd build
 ./lajolla ../scenes/cbox/cbox.xml
 ```
-This will generate an image "image.pfm".
+This will generate an image "image.exr".
 
 To view the image, use [hdrview](https://github.com/wkjarosz/hdrview), or [tev](https://github.com/Tom94/tev).
 
