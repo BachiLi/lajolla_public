@@ -15,6 +15,9 @@ To encourage people to pursue ambitious projects, the more ambitious the project
 For example, if you aim to work on a research idea that is novel enough to be published at SIGGRAPH, we will not judge you using the standard of a technical paper.
 It is sufficient to show your work and the initial prototypes and experiments you develop, even if the initial result does not show practical benefit yet.
 
+\paragraph{Teaming up.}
+For the final project, you can either do it alone or form a group of two people. We do expect that you'll do more difficult projects with two people, but only slightly so. As every software developer know, more people doesn't immediately lead to faster progress, so be careful. What teamwork buys you is probably more capacity to brainstorm ideas and the friendship.
+
 \paragraph{Logistics.}
 Before 2/27, please let us know what you plan to do for the final project by submitting a 1-2 pages brief report to Canvas.
 Schedule a chat with us if you have any question. 
@@ -63,6 +66,9 @@ You can extend your volumetric path tracer in homework 2 for this.
 Replace your ratio tracker with the new ray marching estimator.
 Compare to the ratio tracker and analyze their variance reduction properties.
 
+\paragraph{SGGX.}
+Implement the SGGX microflake phase function~\cite{Heitz:2015:SMD} in lajolla. Use it for rendering something like anisotropic volume appearance or level of details.
+
 \paragraph{BSSRDF.}
 Implement a BSSRDF in lajolla.
 You can use the one from Christensen and Burley~\cite{Christensen:2015:ARP}.
@@ -72,6 +78,9 @@ You are encouraged to read pbrt's code\footnote{\url{https://www.pbr-book.org/3e
 \paragraph{Single scattering.}
 Implement Chen et al.'s 1D Min-Max mipmap shadow mapping technique for rendering single scattering volumes~\cite{Chen:2011:RVS}.
 You don't have to implement it on GPUs or show real-time performance.
+
+\paragraph{Differentiable rendering.}
+Implement edge sampling or warped area sampling in \href{https://developer.nvidia.com/blog/differentiable-slang-example-applications/}{Slang} (if you want you can do it in lajolla, but it's likely to be a lot of work). 
 
 \paragraph{Stratification.}
 Implement low-discrepancy sampling in lajolla.
@@ -96,6 +105,8 @@ A good reference code is smallgdpt from me\footnote{\url{https://gist.github.com
 
 \paragraph{Metropolis light transport.} Implement Kelemen-style Metropolis light transport~\cite{Kelemen:2002:SRM} in lajolla. Read the relevant chapters in pbrt\footnote{\url{https://www.pbr-book.org/3ed-2018/Light_Transport_III_Bidirectional_Methods/Metropolis_Light_Transport}}. Another good reference code is \textit{smallpssmlt}\footnote{\url{https://cs.uwaterloo.ca/~thachisu/smallpssmlt.cpp}} and \textit{smallmmlt}\footnote{\url{https://cs.uwaterloo.ca/~thachisu/smallmmlt.cpp}} from Toshiya Hachisuka.
 
+\paragraph{Manifold exploration.} Implement Zeltner's specular manifold sampling~\cite{Zeltner:2020:SMS} in lajolla. Start with a basic LSDE path with reflective objects (instead of refraction).
+
 \paragraph{Optimal multiple importance sampling.}
 Implement \emph{optimal} multiple importance sampling using control variates from Kondapaneni et al.~\cite{Kondapaneni:2019:OMI} in lajolla.
 Ideally, apply their method for a unidirectional path tracer or even a bidirectional path tracer (instead of just applying it for direct lighting) -- what kind of data structure do you need for maintaining the required statistics?
@@ -105,17 +116,17 @@ Implement stochastic lightcuts~\cite{Yuksel:2019:SL} from Yuksel et al. in lajol
 As a bonus, implement the data-driven version from Wang et al.~\cite{Wang:2021:LCR}.
 
 \paragraph{ReSTIR.}
-Implement ReSTIR~\cite{Bitterli:2020:SRR} in lajolla for rendering scenes with many lights.
+Implement ReSTIR~\cite{Bitterli:2020:SRR} in lajolla for rendering scenes with many lights or even ReSTIR PT~\cite{Lin:2022:GRI}.
 You don't need to implement the temporal reuse, but you should explore spatial reuse.
 
 \paragraph{GPU rendering.}
-Port most of lajolla to Vulkan/DirectX 12/CUDA/OpenCL/Metal.
+Port most of lajolla to Vulkan/DirectX 12/CUDA/OpenCL/Metal/Slang.
 
 \section{Research project ideas}
 These projects are likely publishable in a conference or a journal if done well (you will likely need to work on it longer even after the course ends for this to happen though).
 They are for students who are more motivated and want to get into rendering research.
 If you choose to work on these projects, it is possible that they will not be finished at the end of the quarter. This is totally fine and you will still get high/full points if you show your work.
-We are happy to work with you after the quarter to finish the project if you did well and are interested.
+We are happy to work with you after the quarter to finish the project if you did well and are interested (and if we have the capacity).
 
 For anything below, feel free to reach out to us for clarification about details of the project.
 I did not sort them in terms of difficulty.
@@ -126,6 +137,12 @@ In this project, we will develop a differentiable renderer~\cite{Li:2018:DMC} th
 I would recommend porting pbrt's hair rendering code\footnote{\url{https://www.pbrt.org/hair.pdf}} to Mitsuba 3\footnote{\url{https://github.com/mitsuba-renderer/mitsuba3}}'s automatic differentiation utility for derivative computation.
 For the scope of the final project, it is sufficient to only consider the hair BSDF parameters and ignore the curve geometry.
 To handle the geometry derivatives, you can likely adapt Bangaru et al.'s differentiable signed distance field rendering algorithm~\cite{Bangaru:2022:DRN} (since the computation of ray-curve intersection relies on the distance between the ray and the curve).
+
+\paragraph{Differentiable curved surfaces rendering.}
+Most of the discontinuity handling methods in differentiable rendering currently focuses on triangle meshes and signed distance fields. In Computer Aided Design, parametric surfaces such as NURBS or Beizer patches are often used (see Bartosz Ciechanowski's \href{https://ciechanow.ski/curves-and-surfaces/}{blog post} for an excellent introduction). Can you design a method to handle the discontinuity when differentiating curved surface rendering? Note that existing work handled this by first converting the geometry to triangle meshes~\cite{Worchel:2023:DRP}, and we are aiming for an exact method without the conversion. You may find the technique of \href{https://web.mit.edu/hyperbook/Patrikalakis-Maekawa-Cho/node68.html}{``implicitization''} useful -- it converts a polynomial parametric surface into an implicit surface, you can then apply our differentiable SDF rendering technique~\cite{Bangaru:2022:DRN}.
+
+\paragraph{Theoretical analysis of warped-area sampling.}
+While we have a sketch of correctness analysis in the warped-area sampling papers~\cite{Bangaru:2020:UWS,Bangaru:2022:DRN,Xu:2023:PSDR-WAS}, the theoretical properties of the velocity field interpolation is not very well-understood. What is the optimal interpolation? When will the integral diverge? If you choose to work on this, you likely don't need to write much code (other than to verify your intuition) and it's mostly about writing down the formalism.
 
 \paragraph{Guided tri-directional path tracing.}
 From Veach's path-space formulation, it is clear that in addition to tracing rays starting from eyes or lights, it should also be possible to trace rays starting from an arbitrary point in the scene (we explored a similar method in 2017~\cite{Anderson:2017:AED}). 
@@ -145,15 +162,11 @@ A potential point of reference is the neural radiance caching work from Muller e
 A relatively simple starting point is to implement a simple exponential weighted moving average update for the 5D tree data structure of Muller et al.~\cite{Muller:2017:PPG}.
 Can you come up with heuristics to account for occlusion and parallax? What kind of information we can extract from a renderer that can help updating the data structure?
 
-\paragraph{Denoising Metropolis light transport rendering.}
-Denoising Monte Carlo rendered images have been extensively used in production rendering.
-However, denoising of Metropolis light transport rendered images have not been looked at at all.
-In particular, Metropolis light transport methods tend to produce correlation artifacts in images (e.g., patches of images being much brighter than it should), that can be jarring especially for animation rendering.
-Can we design denoising algorithms that work well for Metropolis light transport rendering?
-A relatively simple starting point is to collect a bunch of images rendered using Metropolis light transport and use them to train a standard convolutional neural network.
-How do we ensure the output animation to be temporally stable?
-Can we output anything during rendering to help denoising? A relevant reference is the work from Gu et al.~\cite{Gu:2022:NJC} for combining a path traced image and a denoised image with correlated artifacts.
-We can use a similar technique to combine a path traced image (can be collected ``for-free'' during the large step mutation in a Kelemen-style renderer~\cite{Kelemen:2002:SRM}) and the correlated MLT rendering.
+\paragraph{Jointly-learned path guiding and denoising.}
+Current rendering denoisers are usually trained separately from the rendering algorithms (in particular, they are usually trained using a standard path tracer). Can we train the denoiser with the sampling algorithm together to make them compensate for each other? You might want to read Bako's Offline Deep Importance Sampling~\cite{Bako:ODI:2019}.
+
+\paragraph{Learned multiple importance sampling.}
+While optimal importance sampling~\cite{Kondapaneni:2019:OMI} is shown to be optimal variance-wise, it has a few drawbacks: 1) it is computationally expensive, 2) it is only optimal under linear combination of existing contributions, and 3) it is only optimal for unbiased rendering -- it does not optimize for the Mean Square Error (bias squared plus variance). Therefore, it is tempting to simply learn to do multiple importance sampling. Take a few features as input (e.g., PDFs, roughness, curvature, ambient occlusion), train a parametric function (does not need to be a neural network) to combine your rendering samples. For this project, you don't need to implement in a renderer to start, you can just try it on some test functions.
 
 \paragraph{Neural mutation for Metropolis light transport.}
 Neural networks have been shown to be helpful for importance sampling in a Monte Carlo path tracer~\cite{Muller:2019:NIS}.
@@ -170,6 +183,7 @@ To achieve this, we need a neural representation that can represent a spatially 
 We will also need a way to importance sample both the phase function and transmittance of this neural representation.
 Alternatively, we can also explore a voxel-based representation (which can have similar performance to a neural representation!~\cite{KeilYu:2021:PRF}) using the SGGX phase function~\cite{Heitz:2015:SMD} and spherical harmonics for the scattering coefficients.
 I would recommend starting from known lighting (e.g., an environment map) and single scattering to make the problem easier.
+I would also recommend to implement this in \href{https://developer.nvidia.com/blog/differentiable-slang-example-applications/}{Slang} to leverage its automatic differentiation feature and GPU backends.
 
 \paragraph{Spatially varying neural BSDF for neural signed distance fields.}
 Another popular neural scene representation is neural signed distance fields~\cite{Bangaru:2022:DRN}.
@@ -177,6 +191,17 @@ However, similar to the situation of NeRF, existing neural signed distance field
 In this project, we will explore modeling a spatially varying BSDF for neural signed distance fields.
 The network architecture can be a 7D coordinate network that takes a 3D position and two 2D directions and outputs the BSDF response.
 For importance sampling, it might be useful to make the network a normalizing flow~\cite{Muller:2019:NIS} conditioned on the position and incoming direction. Similar to above, I would recommend starting from known lighting (e.g., an environment map) and direct lighting to make the problem easier.
+I would also recommend to implement this in \href{https://developer.nvidia.com/blog/differentiable-slang-example-applications/}{Slang} to leverage its automatic differentiation feature and GPU backends.
+
+\paragraph{Transmittance evaluation for NeRF training and inference.}
+In Neural Radiance Fields, the transmittance is typically evaluated using ray marching. This is different from the ones we did in Homework 2 (e.g., ratio tracking). Implement advanced unbiased transmittance evaluation schemes (e.g., Keuttnen et al.'s unbiased ray marcher~\cite{Kettunen:2021:URT}), and compare with standard NeRF ray marching (in terms of both quality and speed). For training (i.e., derivative evaluation), you might want to implement differential tracking from Nimier-David et al.~\cite{Nimier-David:2022:UIV}.
+As usual, I would also recommend to implement this in \href{https://developer.nvidia.com/blog/differentiable-slang-example-applications/}{Slang} to leverage its automatic differentiation feature and GPU backends.
+
+\paragraph{Faster Monte Carlo PDE solvers.}
+Sawhney et al.~\cite{Sawhney:2020:MCG} recently discussed a type of PDE solver that has very similar computational patterns with rendering. Can you think of a way to make it faster by applying techniques we learned in the course? For example, would something like Metropolis light transport help?
+
+\paragraph{Non-photorealistic rendering.}
+The course so far focuses mostly on physics-inspired models. However, there is a huge space for exploration of non-physical models. How do we define the models? How do we combine with existing renderers? Read my CSE 167 \href{https://cseweb.ucsd.edu/~tzli/cse167/fa2023/lectures/17_nonphotorealistic_rendering.pdf}{slides} and our \href{https://people.csail.mit.edu/kach/dpp-dpp/}{inverse inverse rendering paper} for inspirations.
 
 \bibliographystyle{plain}
 \bibliography{refs}
