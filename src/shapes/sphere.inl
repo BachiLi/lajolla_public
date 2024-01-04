@@ -68,7 +68,12 @@ void sphere_intersect_func(const RTCIntersectFunctionNArguments* args) {
         // No intersection
         return;
     }
-    assert(t0 <= t1);
+    // This can happen due to numerical inaccuracies
+    if (t0 > t1) {
+        std::swap(t0, t1);
+    }
+
+
     Real t = -1;
     if (t0 >= ray.tnear && t0 < ray.tfar) {
         t = t0;
@@ -126,7 +131,10 @@ void sphere_occluded_func(const RTCOccludedFunctionNArguments* args) {
         return;
     }
 
-    assert(t0 <= t1);
+    // This can happen due to numerical inaccuracies
+    if (t0 > t1) {
+        std::swap(t0, t1);
+    }
     Real t = -1;
     if (t0 >= ray.tnear && t0 < ray.tfar) {
         t = t0;
