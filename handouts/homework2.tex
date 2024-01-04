@@ -369,6 +369,8 @@ def L(screen_pos, rng):
       next_dir = sample_phase_function(-ray.dir, rng)
       current_path_throughput *=
         (phase_function(-ray.dir, next_dir) / sample_phase_pdf(-ray.dir, next_dir)) * sigma_s
+      # update ray.dir
+      # ...
     else:
       # Hit a surface -- don't need to deal with this yet
       break
