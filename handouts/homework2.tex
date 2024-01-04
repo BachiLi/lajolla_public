@@ -223,7 +223,7 @@ L_2(\mathbf{p}(0), \omega) = \int_{0}^{t_{\text{hit}}} \exp\left(-\sigma_t t \ri
 \label{eq:rte_single_scattering_integral_form}
 \end{equation}
 
-To sample this integral, we importance sample the transmittance $\exp\left(-\sigma_t t\right)$. To do this we need to sample $t$ such that $p(t) \propto \exp\left(-\sigma_t t\right)$. This can be done by the standard inverse tranform sampling. We first integrate $\exp\left(-\sigma_t t \right)$:
+To sample this integral, we importance sample the transmittance $\exp\left(-\sigma_t t\right)$. To do this we need to sample a distance $t$ such that $p(t) \propto \exp\left(-\sigma_t t\right)$. This can be done by the standard inverse tranform sampling. We first integrate $\exp\left(-\sigma_t t \right)$:
 \begin{equation}
 \int_{0}^{t} \exp\left(-\sigma_t s\right) \mathrm{d}s = -\frac{exp(-\sigma_t * t)}{\sigma_t} + \frac{1}{\sigma_t}.
 \end{equation}
@@ -480,9 +480,9 @@ def next_event_estimation(p, current_medium):
         p = p + next_t * dir_light
 
     if T_light > 0:
-      # Compute T_light * G * f * L & pdf_nee
+      # Compute T_light * G * rho * L & pdf_nee
       # ...
-      contrib = T_light * G * f * L / pdf_nee
+      contrib = T_light * G * rho * L / pdf_nee
       # Multiple importance sampling: it's also possible
       # that a phase function sampling + multiple exponential sampling
       # will reach the light source.
@@ -810,7 +810,7 @@ Same when computing multiple importance sampling.
 
 \paragraph{Task (12\%).} You will implement the algorithms above in the \lstinline{vol_path_tracing} function in \lstinline{vol_path_tracing.h}. For getting the majorant, use \lstinline{get_majorant} defined in \lstinline{medium.h}. For accessing \lstinline{max_null_collisions}, use \lstinline{scene.options.max_null_collisions}. Test your rendering using the scenes \lstinline{scenes/volpath_test/volpath_test6.xml} (chromatic homogeneous medium), \lstinline{scenes/volpath_test/hetvol.xml},  \lstinline{scenes/volpath_test/hetvol_colored.xml}. You should get images that look like the ones in Figure~\ref{fig:gallery},~\ref{fig:volpath6}, and~\ref{fig:hetvol}.
 
-\paragraph{Bonus (10\%).} Design some scenes yourself and render them! Consider using Blender to model and export the scene. If you did this bonus, please submit the scene files and rendering and mention it in the README file.
+\paragraph{Bonus (20\%).} Design some scenes yourself and render them! Consider using Blender to model and export the scene. If you did this bonus, please submit the scene files and rendering and mention it in the README file. For heterogeneous volumes, read \href{https://github.com/BachiLi/lajolla_public/blob/main/src/volume.cpp}{volume.cpp} for the file format. You may find the \href{https://github.com/mitsuba-renderer/mitsuba2-vdb-converter}{Mitsuba 2 VDB converter} to be useful, though I haven't used it myself.
 
 \bibliographystyle{plain}
 \bibliography{refs}
