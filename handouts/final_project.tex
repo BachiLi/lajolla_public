@@ -21,9 +21,9 @@ For the final project, you can either do it alone or form a group of two people.
 For the research type projects, to avoid conflicts, if multiple groups want to work on the same project, we will consider merging the groups. 
 
 \paragraph{Logistics.}
-Before 2/27, please let us know what you plan to do for the final project by submitting a 1-2 pages brief report to Canvas.
+Before 2/26, please let us know what you plan to do for the final project by submitting a 1-2 pages brief report to Canvas.
 Schedule a chat with us if you have any question. 
-We will have a checkpoint at 3/13: send us a brief progress report in a few pages on Canvas (ideally provide results and images) describing what you did and what you plan to do next.
+We will have a checkpoint at 3/11: send us a brief progress report in a few pages on Canvas (ideally provide results and images) describing what you did and what you plan to do next.
 
 \section{Implementation ideas}
 
@@ -34,7 +34,7 @@ I did not sort them in terms of difficulty.
 \paragraph{Energy-preserving microfacet BSDFs.} 
 Implement Heitz et al.'s multiple-scattering microfacet BSDF~\cite{Heitz:2016:MMB} in lajolla.
 Alternatively, implement the position-free variant~\cite{Wang:2022:PMC}.
-As a bonus, compare them to the energy compensation technique introduced by Kulla and Conty\footnote{\url{https://blog.selfshadow.com/publications/s2017-shading-course/imageworks/s2017_pbs_imageworks_slides_v2.pdf}}, and show the pros and cons.
+As a bonus, compare them to the \href{https://blog.selfshadow.com/publications/s2017-shading-course/imageworks/s2017_pbs_imageworks_slides_v2.pdf}{energy compensation technique} introduced by Kulla and Conty, and show the pros and cons.
 
 \paragraph{Normal map and displacement map filtering.}
 Implement LEAN~\cite{Olano:2010:LM} and use it for rendering high resolution normal map in lajolla.
@@ -54,11 +54,14 @@ As a bonus, read Gamboa et al.'s work~\cite{Gamboa:2020:ETE} and implement their
 \paragraph{Hair BCSDF.}
 Implement Marschner's hair scattering model~\cite{Marschner:2003:LSH} in lajolla.
 You'll have to implement a ray-curve intersection routine (it is acceptable to reuse the one from Embree) and a hair BCSDF.
-You may want to read Matt Pharr's note on implement hair rendering in pbrt.\footnote{See \url{https://www.pbrt.org/hair.pdf}}. 
+You may want to read Matt Pharr's \href{https://www.pbrt.org/hair.pdf}{note} on implement hair rendering in pbrt.
 
 \paragraph{Thin-film iridescence BSDF.}
 Implement Belcour's thin-film iridescence BSDF~\cite{Belcour:2017:PEM} in lajolla.
 Feel free to look at Belcour's source code.
+
+\paragraph{Faster null-scattering using space partitioning.}
+Implement Yue et al.'s kd-tree data structure~\cite{Yue:2010:UAS} or uniform grid~\cite{Yue:2011:TOS} for better upper bound of the extinction coefficients. As a bonus, implement progressive null tracking~\cite{Misso:2023:PNT}. 
 
 \paragraph{Efficient transmittance estimation.}
 Implement Kettunen et al.'s unbiased ray marching estimator~\cite{Kettunen:2021:URT}.
@@ -72,8 +75,8 @@ Implement the SGGX microflake phase function~\cite{Heitz:2015:SMD} in lajolla. U
 \paragraph{BSSRDF.}
 Implement a BSSRDF in lajolla.
 You can use the one from Christensen and Burley~\cite{Christensen:2015:ARP}.
-For importance sampling the BSSRDF, check out King et al.'s talk\footnote{\url{https://pdfs.semanticscholar.org/90da/5211ce2a6f63d50b8616736c393aaf8bf4ca.pdf}}.
-You are encouraged to read pbrt's code\footnote{\url{https://www.pbr-book.org/3ed-2018/Light_Transport_II_Volume_Rendering/Sampling_Subsurface_Reflection_Functions}}.
+For importance sampling the BSSRDF, check out King et al.'s \href{https://pdfs.semanticscholar.org/90da/5211ce2a6f63d50b8616736c393aaf8bf4ca.pdf}{talk}.
+You are encouraged to read pbrt's \href{https://www.pbr-book.org/3ed-2018/Light_Transport_II_Volume_Rendering/Sampling_Subsurface_Reflection_Functions}{code}.
 
 \paragraph{Single scattering.}
 Implement Chen et al.'s 1D Min-Max mipmap shadow mapping technique for rendering single scattering volumes~\cite{Chen:2011:RVS}.
@@ -85,25 +88,25 @@ Implement edge sampling or warped area sampling in \href{https://developer.nvidi
 \paragraph{Stratification.}
 Implement low-discrepancy sampling in lajolla.
 A simpler starting point is Halton sequence.
-Read the related chapters in pbrt\footnote{\url{https://www.pbr-book.org/3ed-2018/Sampling_and_Reconstruction/The_Halton_Sampler}} for the reference.
-Smallppm\footnote{\url{https://cs.uwaterloo.ca/~thachisu/smallppm_exp.cpp}} from Toshiya Hachisuka also contains a low discrepenacy photon mapper using Halton sequence.
+Read the related \href{https://www.pbr-book.org/3ed-2018/Sampling_and_Reconstruction/The_Halton_Sampler}{chapters} in pbrt for the reference.
+\href{https://cs.uwaterloo.ca/~thachisu/smallppm_exp.cpp}{Smallppm} from Toshiya Hachisuka also contains a low discrepenacy photon mapper using Halton sequence.
 
 \paragraph{Bidirectional path tracing.}
 Implement a bidirectional path tracer in lajolla.
-Read the related chapters in pbrt\footnote{\url{https://www.pbr-book.org/3ed-2018/Light_Transport_III_Bidirectional_Methods/Bidirectional_Path_Tracing}} for the reference.
-Another good reference code is \textit{smallpssmlt}\footnote{\url{https://cs.uwaterloo.ca/~thachisu/smallpssmlt.cpp}} from Toshiya Hachisuka.
+Read the related \href{https://www.pbr-book.org/3ed-2018/Light_Transport_III_Bidirectional_Methods/Bidirectional_Path_Tracing}{chapters} in pbrt for the reference.
+Another good reference code is \href{https://cs.uwaterloo.ca/~thachisu/smallpssmlt.cpp}{smallpssmlt} from Toshiya Hachisuka.
 
 \paragraph{Progressive photon mapping.}
 Implement progressive photon mapping~\cite{Hachisuka:2008:PPM} in lajolla.
-Read the related chapters in pbrt\footnote{\url{https://www.pbr-book.org/3ed-2018/Light_Transport_III_Bidirectional_Methods/Stochastic_Progressive_Photon_Mapping}}.
-Another good reference code is \textit{smallppm}\footnote{\url{https://cs.uwaterloo.ca/~thachisu/smallppm_exp.cpp}} from Toshiya Hachisuka.
+Read the related \href{https://www.pbr-book.org/3ed-2018/Light_Transport_III_Bidirectional_Methods/Stochastic_Progressive_Photon_Mapping}{chapters} in pbrt.
+Another good reference code is \href{https://cs.uwaterloo.ca/~thachisu/smallppm_exp.cpp}{smallppm} from Toshiya Hachisuka.
 You can also implement the probabilistic variant from Knaus et al.~\cite{Knaus:2011:PPM}.
 
 \paragraph{Gradient-domain path tracing.} 
 Implement gradient-domain path tracing~\cite{Kettunen:2015:GPT} in lajolla.
-A good reference code is smallgdpt from me\footnote{\url{https://gist.github.com/BachiLi/4f5c6e5a4fef5773dab1}}.
+A good reference code is \href{https://gist.github.com/BachiLi/4f5c6e5a4fef5773dab1}{smallgdpt} written by me.
 
-\paragraph{Metropolis light transport.} Implement Kelemen-style Metropolis light transport~\cite{Kelemen:2002:SRM} in lajolla. Read the relevant chapters in pbrt\footnote{\url{https://www.pbr-book.org/3ed-2018/Light_Transport_III_Bidirectional_Methods/Metropolis_Light_Transport}}. Another good reference code is \textit{smallpssmlt}\footnote{\url{https://cs.uwaterloo.ca/~thachisu/smallpssmlt.cpp}} and \textit{smallmmlt}\footnote{\url{https://cs.uwaterloo.ca/~thachisu/smallmmlt.cpp}} from Toshiya Hachisuka.
+\paragraph{Metropolis light transport.} Implement Kelemen-style Metropolis light transport~\cite{Kelemen:2002:SRM} in lajolla. Read the relevant \href{https://www.pbr-book.org/3ed-2018/Light_Transport_III_Bidirectional_Methods/Metropolis_Light_Transport}{chapters} in pbrt. Another good reference code is \href{https://cs.uwaterloo.ca/~thachisu/smallpssmlt.cpp}{smallpssmlt} and \href{https://cs.uwaterloo.ca/~thachisu/smallmmlt.cpp}{smallmmlt} from Toshiya Hachisuka.
 
 \paragraph{Manifold exploration.} Implement Zeltner's specular manifold sampling~\cite{Zeltner:2020:SMS} in lajolla. Start with a basic LSDE path with reflective objects (instead of refraction).
 
@@ -134,7 +137,6 @@ I did not sort them in terms of difficulty.
 \paragraph{Differentiable hair rendering.}
 Existing inverse hair rendering methods (e.g.,~\cite{Rosu:2022:NSL}) do not consider the light scattering in the hair fiber, and this can lead to less realistic results.
 In this project, we will develop a differentiable renderer~\cite{Li:2018:DMC} that is capable of computing the derivatives of a rendering of hair with respect to the shading and geometry parameters, and use it for inferring hair reflectance and geometry from images.
-% I would recommend porting pbrt's hair rendering code\footnote{\url{https://www.pbrt.org/hair.pdf}} to Mitsuba 3\footnote{\url{https://github.com/mitsuba-renderer/mitsuba3}}'s automatic differentiation utility for derivative computation.
 You can either implement this in \href{https://github.com/mitsuba-renderer/mitsuba3}{Mitsuba 3} or \href{https://developer.nvidia.com/blog/differentiable-slang-example-applications/}{Slang} to leverage their automatic differentiation feature and GPU backends.
 For the scope of the final project, it is sufficient to only consider the hair BSDF parameters and ignore the curve geometry.
 To handle the geometry derivatives, you can likely adapt Bangaru et al.'s differentiable signed distance field rendering algorithm~\cite{Bangaru:2022:DRN} (since the computation of ray-curve intersection relies on the distance between the ray and the curve).
