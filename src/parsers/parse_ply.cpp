@@ -13,7 +13,8 @@ TriangleMesh parse_ply(const fs::path &filename, const Matrix4x4 &to_world) {
 
     std::shared_ptr<tinyply::PlyData> vertices, uvs, normals, faces;
     try {
-        vertices = ply_file.request_properties_from_element("vertex", { "x", "y", "z" }); 
+        vertices = xform_point(to_world,
+            ply_file.request_properties_from_element("vertex", { "x", "y", "z" }));
     } catch (const std::exception & e) { 
         Error(std::string("Vertex positions not found in ") + filename.string());
     }
@@ -23,7 +24,8 @@ TriangleMesh parse_ply(const fs::path &filename, const Matrix4x4 &to_world) {
         // It's fine to not have UVs    
     }
     try {
-        normals = ply_file.request_properties_from_element("vertex", { "nx", "ny", "nz" });
+        normals = xform_normal(inverse(to_world),
+            ply_file.request_properties_from_element("vertex", { "nx", "ny", "nz" }));
     } catch (const std::exception & e) {
         // It's fine to not have shading normals
     }
