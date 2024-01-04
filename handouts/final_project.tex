@@ -18,12 +18,12 @@ It is sufficient to show your work and the initial prototypes and experiments yo
 \paragraph{Teaming up.}
 For the final project, you can either do it alone or form a group of two people. We do expect that you'll do more difficult projects with two people, but only slightly so. As every software developer know, more people doesn't immediately lead to faster progress, so be careful. What teamwork buys you is probably more capacity to brainstorm ideas and the friendship.
 
+For the research type projects, to avoid conflicts, if multiple groups want to work on the same project, we will consider merging the groups. 
+
 \paragraph{Logistics.}
 Before 2/27, please let us know what you plan to do for the final project by submitting a 1-2 pages brief report to Canvas.
 Schedule a chat with us if you have any question. 
 We will have a checkpoint at 3/13: send us a brief progress report in a few pages on Canvas (ideally provide results and images) describing what you did and what you plan to do next.
-Let's have a maximum of two people in a group. 
-For the research type projects, to avoid conflicts, if multiple groups want to work on the same project, we will consider merging the groups. 
 
 \section{Implementation ideas}
 
@@ -134,15 +134,17 @@ I did not sort them in terms of difficulty.
 \paragraph{Differentiable hair rendering.}
 Existing inverse hair rendering methods (e.g.,~\cite{Rosu:2022:NSL}) do not consider the light scattering in the hair fiber, and this can lead to less realistic results.
 In this project, we will develop a differentiable renderer~\cite{Li:2018:DMC} that is capable of computing the derivatives of a rendering of hair with respect to the shading and geometry parameters, and use it for inferring hair reflectance and geometry from images.
-I would recommend porting pbrt's hair rendering code\footnote{\url{https://www.pbrt.org/hair.pdf}} to Mitsuba 3\footnote{\url{https://github.com/mitsuba-renderer/mitsuba3}}'s automatic differentiation utility for derivative computation.
+% I would recommend porting pbrt's hair rendering code\footnote{\url{https://www.pbrt.org/hair.pdf}} to Mitsuba 3\footnote{\url{https://github.com/mitsuba-renderer/mitsuba3}}'s automatic differentiation utility for derivative computation.
+You can either implement this in \href{https://github.com/mitsuba-renderer/mitsuba3}{Mitsuba 3} or \href{https://developer.nvidia.com/blog/differentiable-slang-example-applications/}{Slang} to leverage their automatic differentiation feature and GPU backends.
 For the scope of the final project, it is sufficient to only consider the hair BSDF parameters and ignore the curve geometry.
 To handle the geometry derivatives, you can likely adapt Bangaru et al.'s differentiable signed distance field rendering algorithm~\cite{Bangaru:2022:DRN} (since the computation of ray-curve intersection relies on the distance between the ray and the curve).
 
 \paragraph{Differentiable curved surfaces rendering.}
 Most of the discontinuity handling methods in differentiable rendering currently focuses on triangle meshes and signed distance fields. In Computer Aided Design, parametric surfaces such as NURBS or Beizer patches are often used (see Bartosz Ciechanowski's \href{https://ciechanow.ski/curves-and-surfaces/}{blog post} for an excellent introduction). Can you design a method to handle the discontinuity when differentiating curved surface rendering? Note that existing work handled this by first converting the geometry to triangle meshes~\cite{Worchel:2023:DRP}, and we are aiming for an exact method without the conversion. You may find the technique of \href{https://web.mit.edu/hyperbook/Patrikalakis-Maekawa-Cho/node68.html}{``implicitization''} useful -- it converts a polynomial parametric surface into an implicit surface, you can then apply our differentiable SDF rendering technique~\cite{Bangaru:2022:DRN}.
+Same as above, you can either implement this in \href{https://github.com/mitsuba-renderer/mitsuba3}{Mitsuba 3} or \href{https://developer.nvidia.com/blog/differentiable-slang-example-applications/}{Slang} to leverage their automatic differentiation feature and GPU backends.
 
 \paragraph{Theoretical analysis of warped-area sampling.}
-While we have a sketch of correctness analysis in the warped-area sampling papers~\cite{Bangaru:2020:UWS,Bangaru:2022:DRN,Xu:2023:PSDR-WAS}, the theoretical properties of the velocity field interpolation is not very well-understood. What is the optimal interpolation? When will the integral diverge? If you choose to work on this, you likely don't need to write much code (other than to verify your intuition) and it's mostly about writing down the formalism.
+While we have a sketch of correctness analysis in the warped-area sampling papers~\cite{Bangaru:2020:UWS,Bangaru:2022:DRN,Xu:2023:PSDR-WAS}, the theoretical properties of the velocity field interpolation are not very well-understood. What is the optimal interpolation? When will the integral diverge? If you choose to work on this, you likely don't need to write much code (other than to verify your intuition) and it's mostly about writing down the formalism.
 
 \paragraph{Guided tri-directional path tracing.}
 From Veach's path-space formulation, it is clear that in addition to tracing rays starting from eyes or lights, it should also be possible to trace rays starting from an arbitrary point in the scene (we explored a similar method in 2017~\cite{Anderson:2017:AED}). 
@@ -175,6 +177,9 @@ Similar methods have been explored in the machine learning community for Hamilto
 In this project, we will investigate the use of neural networks for designing mutation in a Metropolis light transport renderer.
 A relatively simple starting point is to implement Levy et al.'s method in a Kelemen-style path tracer and see how well it works. 
 
+\paragraph{Learning to build BVHs.}
+Current Bounding Volume Hierarchy constructions are usually based on heuristics (in particular, surface area heuristics). Can we find a better metric through data-driven methods? Find a better BVH construction by training the construction algorithm and its parameters for many scenes to minimize the ray tracing time. You may want to read Aila et al.'s study on surface area heuristics~\cite{Aila:2013:QMB}.
+
 \paragraph{Multiple-scattering NeRF with neural scattering fields.}
 Neural Radiance Fields~\cite{Mildenhall:2021:NRS} and their variants have been revolutionizing 3D computer vision using inverse volume rendering.
 However, all of the current NeRF variants do not consider multiple-scattering within the volumes.
@@ -187,14 +192,14 @@ I would also recommend to implement this in \href{https://developer.nvidia.com/b
 
 \paragraph{Spatially varying neural BSDF for neural signed distance fields.}
 Another popular neural scene representation is neural signed distance fields~\cite{Bangaru:2022:DRN}.
-However, similar to the situation of NeRF, existing neural signed distance fields do not model the BSDF of the surfaces (they assuming all surfaces are pure emitters).
+However, similar to the situation of NeRF, existing neural signed distance fields do not model the BSDF of the surfaces (they assume all surfaces are pure emitters).
 In this project, we will explore modeling a spatially varying BSDF for neural signed distance fields.
 The network architecture can be a 7D coordinate network that takes a 3D position and two 2D directions and outputs the BSDF response.
 For importance sampling, it might be useful to make the network a normalizing flow~\cite{Muller:2019:NIS} conditioned on the position and incoming direction. Similar to above, I would recommend starting from known lighting (e.g., an environment map) and direct lighting to make the problem easier.
 I would also recommend to implement this in \href{https://developer.nvidia.com/blog/differentiable-slang-example-applications/}{Slang} to leverage its automatic differentiation feature and GPU backends.
 
 \paragraph{Transmittance evaluation for NeRF training and inference.}
-In Neural Radiance Fields, the transmittance is typically evaluated using ray marching. This is different from the ones we did in Homework 2 (e.g., ratio tracking). Implement advanced unbiased transmittance evaluation schemes (e.g., Keuttnen et al.'s unbiased ray marcher~\cite{Kettunen:2021:URT}), and compare with standard NeRF ray marching (in terms of both quality and speed). For training (i.e., derivative evaluation), you might want to implement differential tracking from Nimier-David et al.~\cite{Nimier-David:2022:UIV}.
+In Neural Radiance Fields, the transmittance is typically evaluated using ray marching. This is different from the ones we did in Homework 2 (e.g., ratio tracking). Implement advanced unbiased transmittance evaluation schemes (e.g., Keuttnen et al.'s unbiased ray marcher~\cite{Kettunen:2021:URT}), and compare with standard NeRF ray marching (in terms of both quality and speed). For training (i.e., derivative evaluation), you might want to implement Nimier-David et al.'s differential tracking~\cite{Nimier-David:2022:UIV}.
 As usual, I would also recommend to implement this in \href{https://developer.nvidia.com/blog/differentiable-slang-example-applications/}{Slang} to leverage its automatic differentiation feature and GPU backends.
 
 \paragraph{Faster Monte Carlo PDE solvers.}
@@ -202,6 +207,12 @@ Sawhney et al.~\cite{Sawhney:2020:MCG} recently discussed a type of PDE solver t
 
 \paragraph{Non-photorealistic rendering.}
 The course so far focuses mostly on physics-inspired models. However, there is a huge space for exploration of non-physical models. How do we define the models? How do we combine with existing renderers? Read my CSE 167 \href{https://cseweb.ucsd.edu/~tzli/cse167/fa2023/lectures/17_nonphotorealistic_rendering.pdf}{slides} and our \href{https://people.csail.mit.edu/kach/dpp-dpp/}{inverse inverse rendering paper} for inspirations.
+
+\paragraph{Faster vector graphics rendering.}
+There are mainly two ways to render vector graphics currently. One is more like ray tracing~\cite{Ganacim:2014:MVG} where we shoot a ray from the pixel sample to see how many intersections it makes with the curves. One is more akin to rasterization~\cite{Kilgard:2012:GPR} where we convert the curves to triangle meshes and apply implicitization to determine whether the point is inside the shape or not. It is unclear which one is faster, or what even is the space of possible design for vector graphics rendering. Do a survey of the algorithms in this space, implement some combination of them, and ideally come up with a fast algorithm for vector graphics rendering. I find Raph Levien's \href{https://raphlinus.github.io/rust/graphics/gpu/2020/06/13/fast-2d-rendering.html}{blog post} to be very helpful.
+
+\paragraph{Megakernel vs Wavefront.}
+Laine et al. studied two styles of ray tracing on GPU back in 2013~\cite{Laine:2013:MCH}: megakernel style and wavefront style. They concluded that for complex, production material shaders, wavefront rendering is faster because of better memory locality. However, they didn't have hardware ray tracing back then and the hardware architecture is very different now. Is the conclusion still true today? Study different ways to implement path tracing on GPUs and compare their speed on modern GPU architectures.
 
 \bibliographystyle{plain}
 \bibliography{refs}
