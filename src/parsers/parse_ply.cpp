@@ -13,8 +13,7 @@ TriangleMesh parse_ply(const fs::path &filename, const Matrix4x4 &to_world) {
 
     std::shared_ptr<tinyply::PlyData> vertices, uvs, normals, faces;
     try {
-        vertices = xform_point(to_world,
-            ply_file.request_properties_from_element("vertex", { "x", "y", "z" }));
+        vertices = ply_file.request_properties_from_element("vertex", { "x", "y", "z" });
     } catch (const std::exception & e) { 
         Error(std::string("Vertex positions not found in ") + filename.string());
     }
@@ -24,8 +23,7 @@ TriangleMesh parse_ply(const fs::path &filename, const Matrix4x4 &to_world) {
         // It's fine to not have UVs    
     }
     try {
-        normals = xform_normal(inverse(to_world),
-            ply_file.request_properties_from_element("vertex", { "nx", "ny", "nz" }));
+        normals = ply_file.request_properties_from_element("vertex", { "nx", "ny", "nz" });
     } catch (const std::exception & e) {
         // It's fine to not have shading normals
     }
@@ -42,14 +40,14 @@ TriangleMesh parse_ply(const fs::path &filename, const Matrix4x4 &to_world) {
     if (vertices->t == tinyply::Type::FLOAT32) {
         float *data = (float*)vertices->buffer.get();
         for (size_t i = 0; i < vertices->count; i++) {
-            mesh.positions[i] = Vector3{
-                data[3 * i], data[3 * i + 1], data[3 * i + 2]};
+            mesh.positions[i] = xform_point(to_world,
+                Vector3{data[3 * i], data[3 * i + 1], data[3 * i + 2]});
         }
     } else if (vertices->t == tinyply::Type::FLOAT64) {
         double *data = (double*)vertices->buffer.get();
         for (size_t i = 0; i < vertices->count; i++) {
-            mesh.positions[i] = Vector3{
-                data[3 * i], data[3 * i + 1], data[3 * i + 2]};
+            mesh.positions[i] = xform_point(to_world,
+                Vector3{data[3 * i], data[3 * i + 1], data[3 * i + 2]});
         }
     }
     if (uvs) {
@@ -71,14 +69,14 @@ TriangleMesh parse_ply(const fs::path &filename, const Matrix4x4 &to_world) {
         if (normals->t == tinyply::Type::FLOAT32) {
             float *data = (float*)normals->buffer.get();
             for (size_t i = 0; i < normals->count; i++) {
-                mesh.normals[i] = Vector3{
-                    data[3 * i], data[3 * i + 1], data[3 * i + 2]};
+                mesh.normals[i] = xform_normal(inverse(to_world),
+                    Vector3{data[3 * i], data[3 * i + 1], data[3 * i + 2]});
             }
         } else if (normals->t == tinyply::Type::FLOAT64) {
             double *data = (double*)normals->buffer.get();
             for (size_t i = 0; i < normals->count; i++) {
-                mesh.normals[i] = Vector3{
-                    data[3 * i], data[3 * i + 1], data[3 * i + 2]};
+                mesh.normals[i] = xform_normal(inverse(to_world),
+                    Vector3{data[3 * i], data[3 * i + 1], data[3 * i + 2]});
             }
         }
     }
