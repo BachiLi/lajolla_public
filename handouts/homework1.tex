@@ -140,7 +140,7 @@ Note that the physical model here is a dielectric coating on top of a diffusive 
 \paragraph{Questions (7\%).} 
 Answer these questions in a text file:
 \begin{enumerate}
-    \item Compare the two BRDFs with a Lambertian BRDF (try to render images with all three BRDFs): what differences do you see? Why?
+    \item Compare the two BRDFs $f_{\text{baseDiffuse}}$ and $f_{\text{subsurface}}$ with a Lambertian BRDF (try to render images with all three BRDFs): what differences do you see? Why?
     \item Play with the roughness parameter: how does it affect the appearance? 
     \item Compare the base diffuse BRDF ($f_{\text{baseDiffuse}}$) with the subsurface BRDF ($f_{\text{subsurface}}$) by playing with the subsurface parameter. What differences do you see? Why? In what lighting condition does the base diffuse BRDF differ the most from the subsurface BRDF? (Play with the light position in \lstinline{simple_sphere.xml} for your experimentation)
     \item (Optional, bonus 3\%) Another popular option for modeling diffuse surfaces is the Oren-Nayar BRDF~\cite{Oren:1994:GLR}, which is used in the Autodesk's Standard Surface BSDF. What is the difference between the Oren-Nayar BRDF and the Disney diffuse BRDF? What are the pros and cons? What is your preference?
