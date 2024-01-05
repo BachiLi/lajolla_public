@@ -174,7 +174,7 @@ While our volumes are monochromatic, the light can be colored, so the final resu
 \end{figure}
 
 \paragraph{Question(s) (8\%).} 
-Answer these questions in a text file:
+Answer these questions on Gradescope:
 \begin{enumerate}
     \item Change the absorption parameters to zero in \lstinline{scenes/volpath_test/volpath_test1.xml}. What do you see? Why?
     \item In the homework, we assume the volume being not emissive. If you were tasked to modify the pseudo code above to add volume emission, how would you do it? Briefly describe your approach.
@@ -182,6 +182,11 @@ Answer these questions in a text file:
 Think about these questions as you write the code.
 
 \paragraph{Task (10\%).} You will implement the algorithm above in the \lstinline{vol_path_tracing_1} function in \lstinline{vol_path_tracing.h}. You might want to first look at the surface path tracing code in \lstinline{path_tracing.h} to understand lajolla's API better. Test your rendering using the scene \lstinline{scenes/volpath_test/volpath_test1.xml}. You should get an image that looks like Figure~\ref{fig:volpath1}.
+
+Store your rendering of the \lstinline{volpath_test1} scene as
+\begin{lstlisting}
+images/volpath_test1.exr
+\end{lstlisting}
 
 \paragraph{Ray differentials.} In the surface path tracer, lajolla uses ray differential for texture lookup. Determining ray differentials for volumetric scattering is an unsolved problem. For this homework, we will disable ray differentials by setting it to 0 and do not change it:
 \begin{lstlisting}[language=c++]
@@ -277,7 +282,7 @@ def L(screen_pos, rng):
 \end{figure}
 
 \paragraph{Question(s) (8\%).} 
-Answer these questions in a text file:
+Answer these questions on Gradescope:
 \begin{enumerate}
     \item In the derivation above, how did we get from $p(t) \propto \exp(-\sigma_t t)$ to $p(t) = \sigma_t \exp(\sigma_t t)$? 
     \item How was Equation~\eqref{eq:hit_surface_prob} incorporated into the pseudo code above? Why is it done this way?
@@ -288,7 +293,12 @@ Answer these questions in a text file:
 \paragraph{Task (10\%).} You will implement the algorithm above in the \lstinline{vol_path_tracing_2} function in \lstinline{vol_path_tracing.h}. For evaluating the phase function $\rho$, use the \lstinline{eval} function in \lstinline{phase_function.h}.
 Test your rendering using the scene \lstinline{scenes/volpath_test/volpath_test2.xml}. You should get an image that looks like Figure~\ref{fig:volpath2}. Note that the rendered image will be a bit noisy even a high sampling count. This is expected, since we are not importance sampling the geometry term $\frac{\left| \omega' \cdot \mathbf{n}_{\mathbf{p}'} \right|}{{\left\| \mathbf{p}(t) - \mathbf{p}' \right\|}^2} \text{visible}(\mathbf{p}(t), \mathbf{p}')$ along $t$. Such importance sampling scheme is called the \emph{equiangular sampling}~\cite{Rief:1984:TLE,Kulla:2012:IST}. Equiangular sampling is out of the scope for this homework, but you're free to implement it!
 
-\paragraph{Bonus (25\%).} Implement the \emph{equiangular sampling}~\cite{Kulla:2012:IST} sampling strategy. Potentially combine it with the transmittance sampling using multiple importance sampling. (I do not recommend you implement this until you've finished the whole homework.) If you implement this bonus, please mention it in the README file, and provide rendering comparisons.
+Store your rendering of the \lstinline{volpath_test2} scene as
+\begin{lstlisting}
+images/volpath_test2.exr
+\end{lstlisting}
+
+\paragraph{Bonus (35\%).} Implement the \emph{equiangular sampling}~\cite{Kulla:2012:IST} sampling strategy. Potentially combine it with the transmittance sampling using multiple importance sampling. (I do not recommend you implement this until you've finished the whole homework.) If you implement this bonus, please mention it in the README file, and provide rendering comparisons.
 
 \section{Multiple monochromatic homogeneous volumes with absorption and multiple-scattering using only phase function sampling, no surface lighting}
 \begin{figure}
@@ -409,7 +419,7 @@ is different from the exterior medium.
 \end{figure}
 
 \paragraph{Question(s) (8\%).}
-Answer these questions in a text file:
+Answer these questions on Gradescope:
 \begin{enumerate}
     \item Play with the parameters $\sigma_s$, $\sigma_a$ of different volumes, and change \lstinline{max_depth}, how do they affect the final image?
     How does increasing/decreasing $\sigma_s$ and $\sigma_a$ of \lstinline{medium1} and \lstinline{medium2} affect the appearance, respectively?
@@ -422,6 +432,11 @@ Think about these questions as you write the code.
 
 \paragraph{Task (10\%).} You will implement the algorithm above in the \lstinline{vol_path_tracing_3} function in \lstinline{vol_path_tracing.h}. For sampling the phase function $\rho$, use the \lstinline{sample_phase_function} and \lstinline{pdf_sample_phase} functions in \lstinline{phase_function.h}.
 Test your rendering using the scene \lstinline{scenes/volpath_test/volpath_test3.xml}. You should get an image that looks like Figure~\ref{fig:volpath3}. Again, the image can be a bit noisy since we have not implemented next event estimation.
+
+Store your rendering of the \lstinline{volpath_test3} scene as
+\begin{lstlisting}
+images/volpath_test3.exr
+\end{lstlisting}
 
 \section{Multiple monochromatic homogeneous volumes with absorption and multiple-scattering with both phase function sampling and next event estimation, no surface lighting}
 
@@ -561,6 +576,12 @@ if not scatter:
 
 \paragraph{Task (13\%).} You will implement the algorithm above in the \lstinline{vol_path_tracing_4} function in \lstinline{vol_path_tracing.h}. Test your rendering using the scenes \lstinline{scenes/volpath_test/volpath_test4.xml} and \lstinline{scenes/volpath_test/volpath_test4_2.xml}. You should get images that look like the ones in Figure~\ref{fig:volpath4}.
 
+Store your rendering of the \lstinline{volpath_test4} and \lstinline{volpath_test4_2} scenes as
+\begin{lstlisting}
+images/volpath_test4.exr
+images/volpath_test4_2.exr
+\end{lstlisting}
+
 \section{Multiple monochromatic homogeneous volumes with absorption and multiple-scattering with both phase function sampling and next event estimation, with surface lighting}
 
 We are finally adding surface lighting to our volumetric renderer. This should be much easier compared to the last two parts. So far, whenever we encounter a surface, we use $L_e$ to represent its emission. Adding surface lighting is just replacing $L_e$ with the full rendering equation (that includes transmittance and volumetric scattering). Code-wise, we just need to go through all the places where we sample or evaluate the phase function, and also consider the case where we hit a surface and include the BSDF sampling and evaluation. I will let you figure out the details! 
@@ -588,6 +609,14 @@ We are finally adding surface lighting to our volumetric renderer. This should b
 \end{enumerate}
 
 \paragraph{Task (10\%).} You will add surface lighting in the \lstinline{vol_path_tracing_5} function in \lstinline{vol_path_tracing.h}. Test your rendering using the scenes \lstinline{scenes/volpath_test/volpath_test5.xml} and \lstinline{scenes/volpath_test/volpath_test5_2.xml}. You should get images that look like the ones in Figure~\ref{fig:volpath5}. Also check out \lstinline{scenes/volpath_test/vol_cbox.xml} and \lstinline{scenes/volpath_test/vol_cbox_teapot.xml} to see what we can render now (Figure~\ref{fig:volpath5_cbox})!
+
+Store your rendering of the \lstinline{volpath_test5}, \lstinline{volpath_test5_2}, \lstinline{vol_cbox}, \lstinline{vol_cbox_teapot} scenes as
+\begin{lstlisting}
+images/volpath_test5.exr
+images/volpath_test5_2.exr
+images/vol_cbox.exr
+images/vol_cbox_teapot.exr
+\end{lstlisting}
 
 \section{Multiple chromatic heterogeneous volumes with absorption and multiple-scattering with both phase function sampling and next event estimation, with surface lighting}
 
