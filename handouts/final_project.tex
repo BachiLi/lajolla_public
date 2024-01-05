@@ -63,6 +63,9 @@ Feel free to look at Belcour's source code.
 \paragraph{Faster null-scattering using space partitioning.}
 Implement Yue et al.'s kd-tree data structure~\cite{Yue:2010:UAS} or uniform grid~\cite{Yue:2011:TOS} for better upper bound of the extinction coefficients. As a bonus, implement progressive null tracking~\cite{Misso:2023:PNT}. 
 
+\paragraph{Emissive volumes.}
+Add emissive volumes to your Homework 2 code. You might want to read Pixar's volume sampling paper from Villemin and Hery~\cite{Villemin:2013:PIF}.
+
 \paragraph{Efficient transmittance estimation.}
 Implement Kettunen et al.'s unbiased ray marching estimator~\cite{Kettunen:2021:URT}.
 You can extend your volumetric path tracer in homework 2 for this.
@@ -171,7 +174,7 @@ Can you come up with heuristics to account for occlusion and parallax? What kind
 Current rendering denoisers are usually trained separately from the rendering algorithms (in particular, they are usually trained using a standard path tracer). Can we train the denoiser with the sampling algorithm together to make them compensate for each other? You might want to read Bako's Offline Deep Importance Sampling~\cite{Bako:ODI:2019}.
 
 \paragraph{Learned multiple importance sampling.}
-While optimal importance sampling~\cite{Kondapaneni:2019:OMI} is shown to be optimal variance-wise, it has a few drawbacks: 1) it is computationally expensive, 2) it is only optimal under linear combination of existing contributions, and 3) it is only optimal for unbiased rendering -- it does not optimize for the Mean Square Error (bias squared plus variance). Therefore, it is tempting to simply learn to do multiple importance sampling. Take a few features as input (e.g., PDFs, roughness, curvature, ambient occlusion), train a parametric function (does not need to be a neural network) to combine your rendering samples. For this project, you don't need to implement in a renderer to start, you can just try it on some test functions.
+While optimal multiple importance sampling~\cite{Kondapaneni:2019:OMI} is shown to be optimal variance-wise, it has a few drawbacks: 1) it is computationally expensive, 2) it is only optimal under linear combination of existing contributions, and 3) it is only optimal for unbiased rendering -- it does not optimize for the Mean Square Error (bias squared plus variance). Therefore, it is tempting to simply learn to do multiple importance sampling. Take a few features as input (e.g., PDFs, roughness, curvature, ambient occlusion), train a parametric function (does not need to be a neural network) to combine your rendering samples. For this project, you don't need to implement in a renderer to start, you can just try it on some test functions.
 
 \paragraph{Neural mutation for Metropolis light transport.}
 Neural networks have been shown to be helpful for importance sampling in a Monte Carlo path tracer~\cite{Muller:2019:NIS}.
