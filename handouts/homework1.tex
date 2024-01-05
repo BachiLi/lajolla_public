@@ -17,8 +17,7 @@ We will implement the Disney BSDF with slight simplifications: first, we won't i
 A Disney BSDF is made of five components: a \textbf{diffuse} lobe that captures the base diffusive color of the surface, a \textbf{metallic} lobe that features major specular highlights, a \textbf{clearcoat} lobe that models the heavy tails of the specularity, a \textbf{sheen} lobe that addresses retroreflection, and a \textbf{glass} lobe that handles transmission. We will first implement each individual component; then we will combine all of them into a single material. 
 
 \paragraph{Submission and grading.} 
-Please upload a zip file to Canvas including your code, and a text file (readme.txt) answering the questions below.
-We will grade your code by comparing individual ray queries with our reference code for the BSDF evaluation, we will check if your sampling code is consistent with the PDF, and we will eyeball your rendering to make sure everything looks fine. 
+Please upload a zip file to Canvas including your code and a folder \lstinline{images} containing your rendering of the scenes below. For the questions, answer them on Gradescope.
 For the questions, as long as you say something plausible, you will get full scores.
 Some questions do not have a single correct answer.
 Do think hard about the questions though. We want you to get the high-level concepts correct, rather than trying to match every single detail.
@@ -138,7 +137,7 @@ where $\text{subsurface}$ is a parameter.
 Note that the physical model here is a dielectric coating on top of a diffusive scattering media (similar to the \lstinline{roughplastic} material in lajolla/Mitsuba), but $f_{\text{diffuse}}$ does not model the specular reflection of the dielectric coating. We will include the specular reflection in the final assembly.
 
 \paragraph{Questions (7\%).} 
-Answer these questions in a text file:
+Answer these questions on Gradescope:
 \begin{enumerate}
     \item Compare the two BRDFs $f_{\text{baseDiffuse}}$ and $f_{\text{subsurface}}$ with a Lambertian BRDF (try to render images with all three BRDFs): what differences do you see? Why?
     \item Play with the roughness parameter: how does it affect the appearance? 
@@ -164,9 +163,14 @@ Real pdf_sample_bsdf_op::operator()(const DisneyDiffuse &bsdf) const;
 std::optional<BSDFSampleRecord> sample_bsdf_op::operator()(const DisneyDiffuse &bsdf) const;
 \end{lstlisting}
 
-For sampling, we will simply use a cosine hemisphere sampling. Look at \lstinline{materials/lambertian.inl} to see how it is done. Feel free to copy-paste the code and modify anything. Also notice how the Lambertian BRDF implementation handles the discrepancy between geometric normals and shading normals.
+For sampling, we will simply use a cosine-weighted hemisphere sampling. Look at \lstinline{materials/lambertian.inl} to see how it is done. Feel free to copy-paste the code and modify anything. Also observe how the Lambertian BRDF implementation handles the discrepancy between geometric normals and shading normals.
 
 Try out the scene \lstinline{scenes/disney_bsdf_test/simple_sphere.xml} (you'll need to modify the scene file to use the \lstinline{DisneyDiffuse} material) and \lstinline{scenes/disney_bsdf_test/disney_diffuse.xml} to see how the material look like. Play with the parameters.
+
+Store your rendering in
+\begin{lstlisting}
+images/disney_diffuse.exr
+\end{lstlisting}
 
 \section{Metal}
 \begin{figure}
@@ -217,7 +221,7 @@ G(\omega) &= \frac{1}{1 + \Lambda(\omega)} \\
 
 Combining all of these, and you will get a nice metallic BRDF.
 
-\paragraph{Questions (7\%).} Answer these question(s) in a text file:
+\paragraph{Questions (7\%).} Answer these question(s) on Gradescope:
 \begin{enumerate}
     \item Compare \lstinline{DisneyMetal} with the \lstinline{roughplastic} material (try to render images with both BRDFs). What differences do you see? Why?
     \item Change the roughness parameters. Apart from how specular the surface it, do you observe any other differences?
@@ -246,6 +250,11 @@ std::optional<BSDFSampleRecord> sample_bsdf_op::operator()(const DisneyMetal &bs
 For sampling, we will use the visible normal sampling developed by Heitz~\cite{Heitz:2018:SGD}, which importance samples $\frac{D_m G(\omega_{\text{in}})}{4 |n \cdot \omega_{\text{in}}|}$. See Heitz's presentation \href{https://jcgt.org/published/0007/04/01/slides.pdf}{slides} for a really nice illustration of the method. This sampling is also used in the \lstinline{roughplastic} material in lajolla, so you might want to look at it as well.
 
 Try out the scene \lstinline{scenes/disney_bsdf_test/simple_sphere.xml} and the scene \\ \lstinline{scenes/disney_bsdf_test/disney_metal.xml} to see how the material look like. Play with the parameters.
+
+Store your rendering in
+\begin{lstlisting}
+images/disney_metal.exr
+\end{lstlisting}
 
 \section{Clearcoat}
 \begin{figure}
@@ -282,7 +291,7 @@ The $\alpha_g$ parameter is mapped to a parameter $\text{clearcoatGloss}$ with t
 \end{equation}
 The higher the $\text{clearcoatGloss}$, the lower the $\alpha_g$.
 
-\paragraph{Questions (7\%).} Answer these question(s) in a text file:
+\paragraph{Questions (7\%).} Answer these question(s) on Gradescope:
 \begin{enumerate}
     \item Compare \lstinline{DisneyClearcoat} with \lstinline{DisneyMetal} using similar roughness. What differences do you see? Where do the differences come from?
     \item For coating, Autodesk Standard Surface uses a standard Trowbridge-Reitz microfacet distribution, instead of the modified normal distribution function proposed by Burley. What are the pros and cons? What is your preference? 
@@ -318,6 +327,11 @@ h^l_z &= \cos(h_{\text{elevation}})
 
 Try out the scene \lstinline{scenes/disney_bsdf_test/simple_sphere.xml} and the scene \\ \lstinline{scenes/disney_bsdf_test/disney_clearcoat.xml} to see how the material look like. Play with the parameters.
 
+Store your rendering in
+\begin{lstlisting}
+images/disney_clearcoat.exr
+\end{lstlisting}
+
 \section{Glass}
 \begin{figure}
 	\centering
@@ -350,7 +364,7 @@ Sometimes we need to compute the Fresnel term solely using either the incoming d
 
 The normal distribution function $D_g$ and the masking-shadowing term $G_g$ are the same as the metal case.
 
-\paragraph{Questions (7\%).} Answer these question(s) in a text file:
+\paragraph{Questions (7\%).} Answer these question(s) on Gradescope:
 \begin{enumerate}
     \item Why do we take a square root of \lstinline{baseColor} in the refractive case?
     \item Play with the index of refraction parameter $\eta$ (the physically plausible range is $[1, 2]$). How does it affect appearance?
@@ -382,6 +396,11 @@ Lajolla already has an implementation of a dielectric glass in \lstinline{roughd
 
 Try out the scene \lstinline{scenes/disney_bsdf_test/disney_glass.xml} to see how the material look like. Play with the parameters.
 
+Store your rendering in
+\begin{lstlisting}
+images/disney_glass.exr
+\end{lstlisting}
+
 \section{Sheen}
 \begin{figure}
 	\centering
@@ -404,7 +423,7 @@ Physical-wise, specular reflection caused by a dielectric material is usually ac
 
 In the 2015 version of the Disney BSDF, the sheen component is applied for both the reflection and transmission. We only apply the sheen for the reflection here, since it is easier to sample and code.
 
-\paragraph{Questions (7\%).} Answer these question(s) in a text file:
+\paragraph{Questions (7\%).} Answer these question(s) on Gradescope:
 \begin{enumerate}
     \item Render the \lstinline{simple_sphere} scene with the sheen BRDF. What do you see? Why? What happens if you change the position of the light source?
     \item Play with the parameter \lstinline{sheenTint}, how does it affect the appearance? Why?
@@ -431,6 +450,11 @@ std::optional<BSDFSampleRecord> sample_bsdf_op::operator()(const DisneySheen &bs
 For sampling we will simply apply a cosine hemisphere sampling.
 
 Try out \lstinline{scenes/disney_bsdf_test/simple_sphere.xml} and \lstinline{scenes/disney_bsdf_test/disney_sheen.xml} to see how the material look like. Play with the parameters.
+
+Store your rendering in
+\begin{lstlisting}
+images/disney_sheen.exr
+\end{lstlisting}
 
 \section{Putting everything together}
 Finally, we combine the five components we have and weigh them to get our final BSDF:
@@ -469,7 +493,7 @@ inside the object) gives more visually pleasing results. Therefore we define:
 \end{aligned}.
 \end{equation}
 
-\paragraph{Questions (7\%).} Answer these question(s) in a text file:
+\paragraph{Questions (7\%).} Answer these question(s) on Gradescope:
 \begin{enumerate}
     \item What are the differences between the \lstinline{specular} and \lstinline{metallic} parameters? How do they affect the appearance?
     \item What are the differences between the \lstinline{roughness} and \lstinline{clearcoat_gloss} parameters? How do they affect the appearance?
@@ -523,6 +547,11 @@ When implementing, add one component at a time. Don't rush and put everything in
 Also recall from homework 0: you might need to rescale your random number $w$ for selecting reflection/refraction.
 
 Try out the scene \lstinline{scenes/disney_bsdf_test/disney_bsdf.xml} to see how the material look like. Play with the parameters.
+
+Store your rendering in
+\begin{lstlisting}
+images/disney_bsdf.exr
+\end{lstlisting}
 
 \paragraph{Task (10\%).} Render an image that is not in the test scenes with your Disney BSDF! Play with textures and geometry to make it look interesting. Use the Mitsuba-Blender add-on for converting the scenes (lajolla can parse the Disney BSDF parameters exported from Blender). Have fun!
 
