@@ -8,14 +8,24 @@ on:
 
 jobs:
   build:
-
-    runs-on: [ubuntu-latest, windows-latest, macos-latest]
+    name: ${{ matrix.os }}-${{ github.workflow }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        include:
+          - os: windows-latest
+            triplet: x64-windows
+          - os: ubuntu-latest
+            triplet: x64-linux
+          - os: macos-latest
+            triplet: x64-osx
 
     steps:
     - uses: actions/checkout@v3
     - name: configure
       run: mkdir build; cd build; cmake ..
     - name: make
-      run: cd build; make -j
+      run: cd build; cmake --build . -j
     - name: make test
-      run: cd build; make test
+      run: cd build; cmake --build . -- test
