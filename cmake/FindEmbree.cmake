@@ -18,9 +18,9 @@ find_library(TBB_LIBRARY NAMES tbb PATHS
 elseif (WIN32)
 find_library(EMBREE_LIBRARY NAMES embree4 PATHS
   ${CMAKE_SOURCE_DIR}/embree/lib-win32)
-else ()
 find_library(TBB_LIBRARY NAMES tbb PATHS
   ${CMAKE_SOURCE_DIR}/embree/lib-win32)
+else ()
 find_library(EMBREE_LIBRARY NAMES embree4 PATHS
   ${CMAKE_SOURCE_DIR}/embree/lib-linux
   /usr/lib
