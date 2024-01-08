@@ -19,7 +19,7 @@ jobs:
             triplet: x64-windows
           - os: ubuntu-latest
             triplet: x64-linux
-          - os: macos-latest
+          - os: macos-11
             triplet: x64-osx
 
     steps:
