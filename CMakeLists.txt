@@ -17,7 +17,7 @@ endif()
 
 find_package(Embree REQUIRED)
 include_directories(${EMBREE_INCLUDE_PATH})
-link_libraries(${EMBREE_LIBRARY})
+link_libraries(${EMBREE_LIBRARY} ${TBB_LIBRARY})
 
 include_directories(${CMAKE_SOURCE_DIR}/src)
 
