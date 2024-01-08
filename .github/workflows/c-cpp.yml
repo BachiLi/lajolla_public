@@ -28,5 +28,5 @@ jobs:
       run: mkdir build; cd build; cmake ..
     - name: make
       run: cd build; cmake --build . -j -v
-    - name: make test
-      run: cd build; cmake --build . -v -- test
+    - name: test
+      run: cd build; ctest
