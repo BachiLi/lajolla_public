@@ -4,7 +4,7 @@
 #include "frame.h"
 #include "table_dist.h"
 #include "vector.h"
-#include <embree3/rtcore.h>
+#include <embree4/rtcore.h>
 #include <variant>
 #include <vector>
 

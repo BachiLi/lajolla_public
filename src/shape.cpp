@@ -2,7 +2,7 @@
 #include "intersection.h"
 #include "point_and_normal.h"
 #include "ray.h"
-#include <embree3/rtcore.h>
+#include <embree4/rtcore.h>
 
 struct register_embree_op {
     uint32_t operator()(const Sphere &sphere) const;

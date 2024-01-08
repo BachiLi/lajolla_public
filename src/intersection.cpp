@@ -2,13 +2,13 @@
 #include "material.h"
 #include "ray.h"
 #include "scene.h"
-#include <embree3/rtcore.h>
+#include <embree4/rtcore.h>
 
 std::optional<PathVertex> intersect(const Scene &scene,
                                     const Ray &ray,
                                     const RayDifferential &ray_diff) {
-    RTCIntersectContext rtc_context;
-    rtcInitIntersectContext(&rtc_context);
+    RTCIntersectArguments rtc_args;
+    rtcInitIntersectArguments(&rtc_args);
     RTCRayHit rtc_rayhit;
     RTCRay &rtc_ray = rtc_rayhit.ray;
     RTCHit &rtc_hit = rtc_rayhit.hit;
@@ -29,7 +29,7 @@ std::optional<PathVertex> intersect(const Scene &scene,
         RTC_INVALID_GEOMETRY_ID, // geometry ID
         {RTC_INVALID_GEOMETRY_ID} // instance IDs
     };
-    rtcIntersect1(scene.embree_scene, &rtc_context, &rtc_rayhit);
+    rtcIntersect1(scene.embree_scene, &rtc_rayhit, &rtc_args);
     if (rtc_hit.geomID == RTC_INVALID_GEOMETRY_ID) {
         return {};
     };
@@ -65,8 +65,8 @@ std::optional<PathVertex> intersect(const Scene &scene,
 }
 
 bool occluded(const Scene &scene, const Ray &ray) {
-    RTCIntersectContext rtc_context;
-    rtcInitIntersectContext(&rtc_context);
+    RTCOccludedArguments rtc_args;
+    rtcInitOccludedArguments(&rtc_args);
     RTCRay rtc_ray;
     rtc_ray.org_x = (float)ray.org[0];
     rtc_ray.org_y = (float)ray.org[1];
@@ -80,7 +80,7 @@ bool occluded(const Scene &scene, const Ray &ray) {
     rtc_ray.time = 0.f;
     rtc_ray.flags = 0;
     // TODO: switch to rtcOccluded16
-    rtcOccluded1(scene.embree_scene, &rtc_context, &rtc_ray);
+    rtcOccluded1(scene.embree_scene, &rtc_ray, &rtc_args);
     return rtc_ray.tfar < 0;
 }
 

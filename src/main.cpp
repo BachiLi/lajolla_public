@@ -3,7 +3,7 @@
 #include "image.h"
 #include "render.h"
 #include "timer.h"
-#include <embree3/rtcore.h>
+#include <embree4/rtcore.h>
 #include <memory>
 #include <thread>
 #include <vector>
