@@ -10,7 +10,6 @@ int main(int argc, char *argv[]) {
     );
     Matrix4x4 m_inv = inverse(m);
     Matrix4x4 m_inv_m = m_inv * m;
-    int count = 1;
     for (int i = 0; i < 4; i++) {
         for (int j = 0; j < 4; j++) {
             Real target = i == j ? Real(1) : Real(0);
@@ -18,7 +17,6 @@ int main(int argc, char *argv[]) {
                 printf("FAIL\n");
                 return 1;
             }
-            count++;
         }
     }
 
