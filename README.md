@@ -8,10 +8,11 @@ If you are on Unix systems, try
 mkdir build
 cd build
 cmake ..
+cmake --build .
 ```
 It requires compilers that support C++17 (gcc version >= 8, clang version >= 7, Apple Clang version >= 11.0, MSVC version >= 19.14).
 
-Apple M1 users: you might need to build Embree from scratch since the prebuilt MacOS binary provided is built for x86 machines.
+Apple M1 users: you might need to build Embree from scratch since the prebuilt MacOS binary provided is built for x86 machines. (But try build command above first.)
 
 # Run
 Try 
