@@ -28,7 +28,5 @@ jobs:
       run: mkdir build; cd build; cmake ..
     - name: make
       run: cd build; cmake --build . -j -v
-    - name: macos-test
-      run: cd build; ./test_filter
-    #- name: test
-    #  run: cd build; ctest
+    - name: test
+      run: cd build; ctest
