@@ -220,6 +220,9 @@ There are mainly two ways to render vector graphics currently. One is more like 
 \paragraph{Megakernel vs Wavefront.}
 Laine et al. studied two styles of ray tracing on GPU back in 2013~\cite{Laine:2013:MCH}: megakernel style and wavefront style. They concluded that for complex, production material shaders, wavefront rendering is faster because of better memory locality. However, they didn't have hardware ray tracing back then and the hardware architecture is very different now. Is the conclusion still true today? Study different ways to implement path tracing on GPUs and compare their speed on modern GPU architectures.
 
+\paragraph{Multiple-scattering LEAN or LEADR}
+The normal/displacement map filtering methods LEADN/LEADR~\cite{Olano:2010:LM,Dupuy:2013:LEA} convert normal map filtering to a microfacet NDF fitting problem. However, the microfacet models they are using do not consider multiple scattering between the microfacets. It seems that it would be straightforward to apply the recent advances in multiple-scattering microfacet BSDFs to these methods. Would adding multiple-scattering into LEADN/LEADR improve the visual appearance? Do we need a different multiple-scattering model or microfacet configuration?
+
 \bibliographystyle{plain}
 \bibliography{refs}
 
