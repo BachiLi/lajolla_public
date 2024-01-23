@@ -215,9 +215,10 @@ Given a normal distribution function and a microfacet configuration, it is possi
 \begin{aligned}
 G_m &= G(\omega_{\text{in}}) G(\omega_{\text{out}}) \\
 G(\omega) &= \frac{1}{1 + \Lambda(\omega)} \\
-\Lambda(\omega) &= \frac{\sqrt{1 + \frac{\left(\omega.x \cdot \alpha_x\right)^2 + \left(\omega.y \cdot \alpha_y\right)^2}{\omega.z^2}} - 1}{2}
+\Lambda(\omega) &= \frac{\sqrt{1 + \frac{\left(\omega_l.x \cdot \alpha_x\right)^2 + \left(\omega_l.y \cdot \alpha_y\right)^2}{\omega_l.z^2}} - 1}{2}
 \end{aligned}.
 \end{equation}
+Here, $\omega_l$ means the projction of $\omega$ to the local frame.
 
 Combining all of these, and you will get a nice metallic BRDF.
 
@@ -275,7 +276,7 @@ F_c &= R_0(\eta = 1.5) + (1 - R_0(\eta = 1.5)) \left(1 - |h \cdot \omega_{\text{
 D_c &= \frac{\alpha_g^2 - 1}{\pi \log(\alpha_g^2) \left( 1 + (\alpha_g^2 - 1) \left(h^l_z\right)^2 \right)} \\
 G_c &= G_{c}(\omega_{\text{in}}) G_{c}(\omega_{\text{out}}) \\
 G_{c}(\omega) &= \frac{1}{1 + \Lambda_c(\omega)} \\
-\Lambda_c(\omega) &= \frac{\sqrt{1 + \frac{\left(\omega.x \cdot 0.25\right)^2 + \left(\omega.y \cdot 0.25\right)^2}{\omega.z^2}} - 1}{2}
+\Lambda_c(\omega) &= \frac{\sqrt{1 + \frac{\left(\omega_l.x \cdot 0.25\right)^2 + \left(\omega_l.y \cdot 0.25\right)^2}{\omega_l.z^2}} - 1}{2}
 \end{aligned}.
 \end{equation}
 The Schlick Fresnel $F_c$ has a hard-coded index of refraction $\eta = 1.5$. The normal distribution function $D_c$ uses an isotropic roughness $\alpha = \alpha_g$. The masking-shadowing term $G_c$ uses a fixed roughness $0.25$. Note that this is an ad-hoc fit, and there is no clear geometric meaning of this microfacet BRDF.
