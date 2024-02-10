@@ -6,4 +6,4 @@
 #include <memory>
 
 /// Parse Mitsuba's XML scene format.
-Scene parse_scene(const fs::path &filename, const RTCDevice &embree_device);
+Scene* parse_scene(const fs::path &filename, const RTCDevice &embree_device);

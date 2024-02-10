@@ -1406,7 +1406,7 @@ Shape parse_shape(pugi::xml_node node,
     return shape;
 }
 
-Scene parse_scene(pugi::xml_node node, const RTCDevice &embree_device) {
+Scene* parse_scene(pugi::xml_node node, const RTCDevice &embree_device) {
     RenderOptions options;
     Camera camera(Matrix4x4::identity(),
                   c_default_fov,
@@ -1586,7 +1586,7 @@ Scene parse_scene(pugi::xml_node node, const RTCDevice &embree_device) {
             }
         }
     }
-    return Scene{embree_device,
+    return new Scene{embree_device,
                  camera,
                  materials,
                  shapes,
@@ -1598,7 +1598,7 @@ Scene parse_scene(pugi::xml_node node, const RTCDevice &embree_device) {
                  filename};
 }
 
-Scene parse_scene(const fs::path &filename, const RTCDevice &embree_device) {
+Scene* parse_scene(const fs::path &filename, const RTCDevice &embree_device) {
     pugi::xml_document doc;
     pugi::xml_parse_result result = doc.load_file(filename.c_str());
     if (!result) {
@@ -1609,7 +1609,7 @@ Scene parse_scene(const fs::path &filename, const RTCDevice &embree_device) {
     // back up the current working directory and switch to the parent folder of the file
     fs::path old_path = fs::current_path();
     fs::current_path(filename.parent_path());
-    Scene scene = parse_scene(doc.child("scene"), embree_device);
+    Scene* scene = parse_scene(doc.child("scene"), embree_device);
     // switch back to the old current working directory
     fs::current_path(old_path);
     return scene;
