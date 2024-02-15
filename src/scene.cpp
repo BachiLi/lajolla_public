@@ -52,18 +52,6 @@ Scene::Scene(const RTCDevice &embree_device,
     light_dist = make_table_dist_1d(power);
 }
 
-Scene::Scene(const Scene& t) :
-        embree_device(t.embree_device), embree_scene(t.embree_scene),
-        camera(t.camera), materials(t.materials),
-        shapes(t.shapes), lights(t.lights), media(t.media),
-        envmap_light_id(t.envmap_light_id),
-        texture_pool(t.texture_pool), bounds(t.bounds), options(t.options),
-        output_filename(t.output_filename), light_dist(t.light_dist) {
-    // embree_scene is managed by Embree using reference counting.
-    // it's crucial for us to also maintain the reference count when copying scenes.
-    rtcRetainScene(t.embree_scene);
-}
-
 Scene::~Scene() {
     // This decreses the reference count of embree_scene in Embree,
     // if it reaches zero, Embree will deallocate the scene.

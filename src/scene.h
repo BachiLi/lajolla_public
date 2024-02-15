@@ -52,7 +52,7 @@ struct Scene {
           const RenderOptions &options,
           const std::string &output_filename);
     ~Scene();
-    Scene(const Scene& t);
+    Scene(const Scene& t) = delete;
     Scene& operator=(const Scene& t) = delete;
 
     RTCDevice embree_device;

@@ -34,11 +34,11 @@ int main(int argc, char *argv[]) {
         Timer timer;
         tick(timer);
         std::cout << "Parsing and constructing scene " << filename << "." << std::endl;
-        Scene scene = parse_scene(filename, embree_device);
+        std::unique_ptr<Scene> scene = parse_scene(filename, embree_device);
         std::cout << "Done. Took " << tick(timer) << " seconds." << std::endl;
         std::cout << "Rendering..." << std::endl;
-        Image3 img = render(scene);
-        if (outputfile.compare("") == 0) {outputfile = scene.output_filename;}
+        Image3 img = render(*scene);
+        if (outputfile.compare("") == 0) {outputfile = scene->output_filename;}
         std::cout << "Done. Took " << tick(timer) << " seconds." << std::endl;
         imwrite(outputfile, img);
         std::cout << "Image written to " << outputfile << std::endl;
