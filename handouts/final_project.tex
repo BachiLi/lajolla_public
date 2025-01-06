@@ -129,6 +129,9 @@ You don't need to implement the temporal reuse, but you should explore spatial r
 \paragraph{GPU rendering.}
 Port most of lajolla to Vulkan/DirectX 12/CUDA/OpenCL/Metal/Slang.
 
+\paragraph{Build a game in Unreal Engine 5!}
+Discuss what rendering technology you used in the game and why you used them.
+
 \section{Research project ideas}
 These projects are likely publishable in a conference or a journal if done well (you will likely need to work on it longer even after the course ends for this to happen though).
 They are for students who are more motivated and want to get into rendering research.
@@ -182,6 +185,7 @@ Can we apply them to Metropolis light transport as well?
 Similar methods have been explored in the machine learning community for Hamiltonian Monte Carlo~\cite{Levy:2018:GHM}.
 In this project, we will investigate the use of neural networks for designing mutation in a Metropolis light transport renderer.
 A relatively simple starting point is to implement Levy et al.'s method in a Kelemen-style path tracer and see how well it works. 
+The topic is also broadly related to diffusion models.
 
 \paragraph{Learning to build BVHs.}
 Current Bounding Volume Hierarchy constructions are usually based on heuristics (in particular, surface area heuristics). Can we find a better metric through data-driven methods? Find a better BVH construction by training the construction algorithm and its parameters for many scenes to minimize the ray tracing time. You may want to read Aila et al.'s study on surface area heuristics~\cite{Aila:2013:QMB}.
