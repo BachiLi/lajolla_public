@@ -9,7 +9,7 @@
 	<medium type="homogeneous" id="medium">
 		<rgb name="sigmaA" value="1.0 1.0 1.0"/>
 		<rgb name="sigmaS" value="0.5 0.5 0.5"/>
-		<float name="scale" value="200"/>
+		<float name="scale" value="2"/>
 	</medium>
 
 	<shape type="sphere">
@@ -22,6 +22,17 @@
 			<float name="intIOR" value="1.33"/>
 			<!-- <float name="roughness" value="0.316"/> -->
 			<float name="alpha" value="0.1"/>
+		</bsdf>
+	</shape>
+
+	<shape type="sphere">
+		<point name="center" x="0" y="0" z="0"/>
+		<float name="radius" value="0.7"/>
+
+		<ref name="exterior" id="medium"/>
+
+		<bsdf type="diffuse">
+			<rgb name="reflectance" value="0.9 0.2 0.2"/>
 		</bsdf>
 	</shape>
 
